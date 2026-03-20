@@ -6,6 +6,9 @@ use mod_constant
   real(8)::phi0,beta,eta,sigmastar,kp0,kpmin,kpmax,kL,kT,pinj,pbcl,pbcr,pbct,pbcb,qinj,q0
   real(8)::qbcl,qbcr,qbct,qbcb
   real(8)::tinj=1d5
+  real(8) :: rw
+  real(8) :: skin
+  real(8) :: Sw_fwid
   real(8),pointer::kp(:),kpG(:),qtimes(:),qvals(:,:),pfhyd(:,:),phi(:),phiG(:)
   character(128)::bc,bcl,bcr,bct,bcb,setting,injection,injection_file,network_file
   logical::injectionfromfile,switch,permev,permsigma,network
@@ -61,11 +64,11 @@ subroutine input_well(param_diff,my_rank)
     read(77,*) param_diff%iwell(kwell),param_diff%jwell(kwell)
     read(77,*) param_diff%qvals(kwell,1:param_diff%npoint)
   end do
-  
+
   close(77)
   param_diff%switch=.false.
   param_diff%nn=2
-end subroutine 
+end subroutine
      !pressure dependent permeability
   subroutine diffusion2dwp(pf,sigma,h,ds0,time,dtnxt,param_diff)
     implicit none
@@ -221,7 +224,7 @@ end subroutine
 
     x=pf!-pfhyd !initial guess
 
-    b=pf-SAT!-pfhyd   
+    b=pf-SAT!-pfhyd
     !injection at the center of the fault
     if(param_diff%injection=='pressure' .and. time<param_diff%tinj*365*24*3600) then
       b(N/2)=b(N/2)+h*param_diff%pinj/1e1 !injection pressure
@@ -331,10 +334,10 @@ end subroutine
     Am(:,3)=-h*Dxx(:,3)
 
     SAT=0d0
-    
+
     x=pf!-pfhyd !initial guess
 
-    b=pf-SAT!-pfhyd   
+    b=pf-SAT!-pfhyd
 
     if(param_diff%injection=='pressure' .and. time<param_diff%tinj*365*24*3600) then
       b(N/2)=b(N/2)+h*param_diff%pinj/1e1 !injection pressure
@@ -411,12 +414,13 @@ end subroutine
     return
   end subroutine
 
-  subroutine diffusion3dwop(imax,jmax,pf,h,ds0,time,dtnxt,param_diff)
+  subroutine diffusion3dwop(imax,jmax,pf,h,ds0,time,dtnxt,param_diff,pw)
     implicit none
     integer::kit,errloc(1),l,l_,i,j,niter,nn
     integer,intent(in)::imax,jmax
-    real(8),intent(inout)::pf(:),dtnxt
+    real(8),intent(inout)::pf(:),dtnxt,pw(:)
     real(8),intent(in)::h,time,ds0
+    real(8),allocatable::pwold(:),pwnew(:)
     real(8)::dpf(imax*jmax),pfd(imax,jmax),pfnew(imax,jmax),sigmae(imax*jmax),cdiff(imax,jmax),err,err0,adpf(imax*jmax),pfhydd(imax,jmax)
     real(8)::cc,str(imax,jmax),x
     real(8),parameter::dpth=0.1,tny=1d0
@@ -424,7 +428,8 @@ end subroutine
 
     !real(8),parameter::cc=1d-12 !beta(1e-8)*phi(1e-1)*eta(1e-3)
     cdiff=0d0
-    
+    allocate(pwold(param_diff%nwell), pwnew(param_diff%nwell))
+
     do l=1,size(pf)
       !sigma(l)=sigmae(l)+pf(l)
       i=(l-1)/jmax+1
@@ -437,10 +442,11 @@ end subroutine
       !cdiff(i,j)=kpmax/cc*1d-6 !Pa-->MPa
       !write(*,*) l_,i,j
     end do
+    pwold = pw
 
     err=0d0
 
-    call Beuler2d(imax,jmax,ds0,pfd,cdiff,str,param_diff,h,pfnew,time,niter)!,pfhydd)
+    call Beuler2d(imax,jmax,ds0,pfd,cdiff,str,param_diff,h,pfnew,time,niter,pwold,pwnew)!,pfhydd)
 
     do l=1,imax*jmax
       i=(l-1)/jmax+1
@@ -448,6 +454,7 @@ end subroutine
       dpf(l)=pfnew(i,j)-pf(l)
       pf(l)=pfnew(i,j)
     end do
+    pw=pwnew
       !write(*,*)sum(pf)
 
     !write(*,*) param_diff%setting
@@ -469,28 +476,33 @@ end subroutine
         !write(*,*) param_diff%nn,param_diff%qtimes(1,param_diff%nn),time+dtnxt
       end if
     end if
-    
+    deallocate(pwold, pwnew)
     return
   end subroutine
 
-  subroutine Beuler2d(imax,jmax,ds0,pf,cdiff,str,param_diff,h,pfnew,time,niter)
+  subroutine Beuler2d(imax,jmax,ds0,pf,cdiff,str,param_diff,h,pfnew,time,niter,pwold,pwnew)
     implicit none
     integer,parameter::itermax=1000
     integer,intent(in)::imax,jmax
     real(8),intent(in)::pf(:,:),h,cdiff(:,:),str(:,:),time,ds0!,pfhyd(:,:)
     real(8),intent(out)::pfnew(:,:)
+    real(8),intent(in)::pwold(:)           ! Added from snippet
+    real(8),intent(out)::pwnew(:)          ! Added from snippet
     integer,intent(out)::niter
     real(8)::Dxx(imax,jmax,3),Dyy(imax,jmax,3),Amx(imax,jmax,3),Amy(imax,jmax,3),mx(imax,jmax),my(imax,jmax)
     real(8)::p(imax,jmax),m(imax,jmax),r(imax,jmax),x(imax,jmax),b(imax,jmax),SAT(imax,jmax)
-    integer::n,iter,i,j,k,kwell
-    real(8)::p0=0.0,rsold,rsnew,tmp1,tmp2,alpha,v1,v0,t1,t0,qtmp,qdt
+    integer::n,iter,i,j,k,kwell,l
+    real(8)::p0=0.0,rsold,rsnew,tmp1,tmp2,alpha,v1,v0,t1,t0,qdt
+    real(8),allocatable::qtmp(:), gamma(:), TT(:), T(:)               ! Added for Peaceman logic
     real(8),parameter::tol=1e-6
     type(t_params):: param_diff
     !real(8),parameter::str=1e-11 !beta(1e-9)*phi(1e-2)
     niter=0
     p=0d0;m=0d0;r=0d0;x=0d0;b=0d0
 
-    Dxx=0d0 
+    allocate(qtmp(param_diff%nwell), gamma(param_diff%nwell), T(param_diff%nwell), TT(param_diff%nwell))
+
+    Dxx=0d0
     do i=1,imax
         !compute Dxx for Dirichlet BC
         select case(param_diff%bct)
@@ -577,7 +589,7 @@ end subroutine
     Amy(imax,:,2)=-h*Dyy(imax,:,2)
 
     SAT=0d0
-  
+
     x=pf!-pfhyd !initial guess
 
     select case(param_diff%bct)
@@ -615,33 +627,44 @@ end subroutine
     b=pf-SAT!-pfhyd
     !write(*,*) param_diff%setting
     if(param_diff%injectionfromfile) then
-      qtmp=0d0
+
       do kwell=1,param_diff%nwell
+        qtmp(kwell) = 0.0d0
         do k=1,param_diff%npoint-1
           t0=param_diff%qtimes(k)
           t1=param_diff%qtimes(k+1)
           v0=param_diff%qvals(kwell,k)
           v1=param_diff%qvals(kwell,k+1)
           if (time >= t0 .and. time <= t1) then
-            qtmp=(v1-v0)/(t1-t0)*(time-t0)+v0
-          else if (time> t1.and. k == param_diff%npoint-1) then
-            qtmp=v1
+            qtmp(kwell)=(v1-v0)/(t1-t0)*(time-t0)+v0
+          else if (time > t1 .and. k == param_diff%npoint-1) then
+            qtmp(kwell)=v1
           end if
         end do
-        if(qtmp<0) qtmp=0d0
+        if(qtmp(kwell) < 0) qtmp(kwell) = 0d0
+
         i=param_diff%iwell(kwell)
         j=param_diff%jwell(kwell)
-        !write(*,*)i,j,qtmp
-        b(i,j)=b(i,j)+h*qtmp/str(i,j)*1e-12/ds0/ds0
+        l = j + (i-1)*jmax
+
+        ! Add Peaceman well model
+        T(kwell) = 2*pi*param_diff%kpG(l) / param_diff%eta / (log(0.2*ds0*1e3/param_diff%rw)+param_diff%skin)
+        !gamma(kwell) = Sw_fwid / h / (Sw_fwid / h + T(kwell))
+        gamma(kwell) = param_diff%Sw_fwid / h / (param_diff%Sw_fwid / h +T(kwell))        
+        TT(kwell) = T(kwell) / (str(i, j) * ds0 * ds0 * 1.0d6)
+        Amx(i, j, 2) = Amx(i, j, 2) + h * gamma(kwell) * TT(kwell) * 0.5
+        Amy(i, j, 2) = Amy(i, j, 2) + h * gamma(kwell) * TT(kwell) * 0.5
+        b(i, j) = b(i, j) + h * gamma(kwell) * TT(kwell) * (pwold(kwell) + h * qtmp(kwell) / param_diff%Sw_fwid * 1d-6) ! check unit of qtmp
+
       end do
-    else if(param_diff%injection=='flowrate' .and. time<param_diff%tinj*365*24*3600) then
+    ! else if(param_diff%injection=='flowrate' .and. time<param_diff%tinj*365*24*3600) then
     !write(*,*) param_diff%tinj,"injection"
-      b(imax/2,jmax/2)=b(imax/2,jmax/2)+h*param_diff%qinj/str(imax/2,jmax/2)*1e-12/ds0/ds0
+      ! b(imax/2,jmax/2)=b(imax/2,jmax/2)+h*param_diff%qinj/str(imax/2,jmax/2)*1e-12/ds0/ds0 ! No longer correct!
     ! end if
     end if
 
     !b(imax/2-5:imax/2+5,jmax/2-5:jmax/2+5)=b(imax/2-5:imax/2+5,jmax/2-5:jmax/2+5)+h*q0/beta/phi0*1e-12/ds0/ds0
-    
+
 
     mx=0d0
     do i=1,imax
@@ -682,7 +705,7 @@ end subroutine
             end do
             mx(i,jmax)=p(i,jmax)*Amx(i,jmax,3)+p(i,jmax-1)*Amx(i,jmax,2)
         end do
-    
+
         my=0d0
         do j=1,jmax
             my(1,j)=p(1,j)*Amy(1,j,1)+p(2,j)*Amy(1,j,2)
@@ -693,7 +716,7 @@ end subroutine
         end do
 
         m=mx+my
-  
+
         tmp2=sum(m*p)
         alpha=tmp1/tmp2
         x=x+alpha*p
@@ -707,12 +730,23 @@ end subroutine
         p = r + (rsnew / rsold) * p
         rsold = rsnew
         !write(*,'(9e15.6)')x
-  
+
       end do
 
       if(niter==itermax) write(*,*) "Maximum iteration"
       100 pfnew=x!+pfhyd
 
+      if(param_diff%injectionfromfile) then
+        do kwell=1,param_diff%nwell
+          i=param_diff%iwell(kwell)
+          j=param_diff%jwell(kwell)
+          l = j + (i-1)*jmax
+          ! Calculate wellbore pressure based on the Peaceman relationship
+          pwnew(kwell) = gamma(kwell)*(pwold(kwell) + h*qtmp(kwell)/param_diff%Sw_fwid*1d-6) + (1-gamma(kwell))*pfnew(i, j)
+        end do
+      end if
+
+      deallocate(qtmp, gamma, T, TT) ! Clean up memory
     return
     end subroutine
 
