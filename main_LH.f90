@@ -11,6 +11,10 @@ program main
 
   !job ID
   integer::number
+  ! pw output
+  integer :: unit_pw
+  character(len=256) :: fname_pw
+  logical :: pw_file_open
   !# of elements and timestep
   integer::NCELL,NCELLg,NSTEP
   integer::imax,jmax !for 3dp,3dhr
@@ -62,7 +66,7 @@ program main
   !variables
   real(8),allocatable::psi(:),vel(:),tau(:),sigma(:),slip(:),mu(:),rupt(:),islip(:),velp(:),cslip(:),sigma0(:),tau0(:),vslip(:)
   real(8),allocatable::taus(:),taud(:),vels(:),veld(:),slips(:),slipd(:),rake(:),lbds(:),pf(:),sigmat(:),dpdt(:)
-
+  real(8), allocatable :: pw(:)
   real(8),allocatable::rdata(:)
   integer::lp,i,i_,j,k,kstart,kend,m,counts,interval,lrtrn,nl,ios,nmain,rk,nout(20),file_size,nrjct,ncol
   integer::hypoloc(1),load,eventcount,thec,inloc,sw,onset_step
@@ -153,6 +157,7 @@ program main
   opening=.false.;  viscous=.false.; bingham=.false.; relax=.false.
   meshisinmeter=.false.; parameterfromfile=.false.; rakefromglobal=.false.
   debug=.false.; structured=.false.; dilatancy=.false.
+  pw_file_open = .false.
   maxsig=300d0; minsig=1d0; muinit=0d0
   dtout=365*24*3600; dtout_co=1000.0; dtinit=1d0;  dtmax=1e10
   tp=86400d0
@@ -166,24 +171,37 @@ program main
   param_diff%bcl='Neumann';param_diff%bcr='Neumann';param_diff%bct='Neumann';param_diff%bcb='Neumann'
   param_diff%injection='none'
   param_diff%tinj=1e8;param_diff%permev=.false.;param_diff%permsigma=.false.;param_diff%injectionfromfile=.false.
+  param_diff%rw = 0.089d0
+  param_diff%skin = 0.0d0
+  param_diff%Sw_fwid = 1.0d0
 
   !read input file
   call read_inputfile()
 
   !check inconsistency in input parameters
+
   if(pressurediffusion) then
-    if(param_diff%injectionfromfile) then
-      call input_well(param_diff,my_rank)
+      if(param_diff%injectionfromfile) then
+        call input_well(param_diff,my_rank)
+      else
+        if(my_rank == 0) write(*,*) 'ERROR: pressurediffusion requires injectionfromfile'
+        stop
+      end if
+
+      if(.not. allocated(pw)) allocate(pw(param_diff%nwell))
+      pw = 0.0d0
+
+      if(param_diff%network) then
+        call setup_network(param_diff, my_rank)
+      end if
+
+      select case(problem)
+      case('2dnh','3dht','3dnt')
+        if(my_rank == 0) write(*,*) 'ERROR: pressurediffusion is impossible for problem ', problem
+        stop
+      end select
     end if
-    if(param_diff%network) then
-      call setup_network(param_diff, my_rank)
-    end if
-    select case(problem)
-    case('2dnh','3dht','3dnt')
-      if(my_rank == 0) write(*,*) 'ERROR: pressurediffusion is impossible for problem ', problem
-    stop
-    end select
-  end if
+
 
   tmax=tmax*365*24*3600
   dtout_inter=dtout*365*24*3600
@@ -271,7 +289,6 @@ program main
   allocate(taug(NCELLg),sigmag(NCELLg),pfG(Ncellg),velG(NCELLg),rake(NCELLg),cslipG(NCELLg),velnG(NCELLg),tmparray(NCELLg))
   allocate(taudotg(NCELLg),sigdotg(NCELLg),vplg(NCELLg),param_diff%kpG(NCELLg),param_diff%phiG(NCELLg))
   param_diff%kpG=param_diff%kp0;param_diff%phiG=param_diff%phi0;pfG=pfinit
-
   st_bemv%xcol=0d0;st_bemv%ycol=0d0;st_bemv%zcol=0d0;st_bemv%ds=0d0
   st_bemv%w=ds0
   st_bemv%problem=problem
@@ -1276,6 +1293,7 @@ program main
   close(47)
   close(46)
   close(44)
+  if(pw_file_open) close(unit_pw)
   close(19)
 end if
 !if(my_rank==0) write(19,'(a20,i0,f16.2)')'Finished job number=',number,time2-time1
@@ -1293,10 +1311,22 @@ stop
 contains
   !------------output-----------------------------------------------------------!
   subroutine output_monitor()
-    implicit none
-    time2=MPi_Wtime()
-    write(52,'(i7,f19.4,7e16.5,i4,f16.4)')k,x,log10(mvelG),meanslipG,meanmuG,maxnormG,minnormG,errmax_gb,dtdid,nrjct,time2-time1
-  end subroutine
+      implicit none
+
+      time2=MPI_Wtime()
+      write(52,'(i7,f19.4,7e16.5,i4,f16.4)')k,x,log10(mvelG),meanslipG,meanmuG,maxnormG,minnormG,errmax_gb,dtdid,nrjct,time2-time1
+
+      if(my_rank == 0 .and. pressurediffusion .and. allocated(pw)) then
+        if(.not. pw_file_open) then
+          write(fname_pw,'("output/pw",i0,".dat")') number
+          open(999,file=fname_pw)
+          unit_pw = 999
+          pw_file_open = .true.
+        end if
+        write(unit_pw,'(*(f16.6))') pw
+      end if
+    end subroutine
+
 
   subroutine output_local(nf,loc_)
     implicit none
@@ -2405,7 +2435,7 @@ end subroutine
           call diffusion2dwop(pfG,dtdid,ds0,x,dtnxt,param_diff)
         end if
       case('3dp','3dph')
-        call diffusion3dwop(imax,jmax,pfG,dtdid,ds0,x,dtnxt,param_diff)
+        call diffusion3dwop(imax,jmax,pfG,dtdid,ds0,x,dtnxt,param_diff,pw)
       end select
     !end if
     end if
@@ -2838,6 +2868,12 @@ end subroutine
       read(pvalue,*) param_diff%permsigma
     case('bingham')
       read(pvalue,*) bingham
+    case('rw','RW')
+      read(pvalue,*) param_diff%rw
+    case('skin','SKIN')
+      read(pvalue,*) param_diff%skin
+    case('Sw_fwid','SW_fwid','SW_FWID','sw_fwid')
+      read(pvalue,*) param_diff%Sw_fwid
     case('meshisinmeter')
       read(pvalue,*) meshisinmeter
     case('parameter_file_ncol')
