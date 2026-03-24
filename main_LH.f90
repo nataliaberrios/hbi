@@ -1323,7 +1323,7 @@ contains
           unit_pw = 999
           pw_file_open = .true.
         end if
-        write(unit_pw,'(*(f16.6))') pw
+        write(unit_pw,'(i7,1x,f19.4,1x,es16.6)') k, x, pw(1)
       end if
     end subroutine
 
