@@ -423,7 +423,10 @@ end subroutine
     real(8),allocatable::pwold(:),pwnew(:)
     real(8)::dpf(imax*jmax),pfd(imax,jmax),pfnew(imax,jmax),sigmae(imax*jmax),cdiff(imax,jmax),err,err0,adpf(imax*jmax),pfhydd(imax,jmax)
     real(8)::cc,str(imax,jmax),x
-    real(8),parameter::dpth=0.1,tny=1d0
+    real(8)::dt_to_event
+    real(8),parameter::dpth=0.1d0
+    real(8),parameter::event_dtmin=1d-6
+
     type(t_params):: param_diff
 
     !real(8),parameter::cc=1d-12 !beta(1e-8)*phi(1e-1)*eta(1e-3)
@@ -462,20 +465,36 @@ end subroutine
     !write(*,*) 'dpf',maxval(adpf)
     if(dtnxt/h*maxval(adpf)>dpth)  dtnxt=dpth*h/maxval(adpf)
 
-    !check if next time step is after the change in the injection rate
-    if(param_diff%switch) then
-        dtnxt=2e1
-        param_diff%switch=.false.
+! Keep timesteps from crossing injection-file breakpoints.
+! The injection rate is interpolated between qtimes, so q(t) is continuous
+! but its slope can change at each qtime. Make those qtimes step boundaries
+! instead of letting RK steps cross them.
+if(param_diff%injectionfromfile) then
+  do
+    if(param_diff%nn > param_diff%npoint) exit
+
+    dt_to_event = param_diff%qtimes(param_diff%nn) - time
+
+    ! If we are already at/past this injection time within roundoff, skip it.
+    ! This prevents zero or microscopic event-limited timesteps.
+    if(dt_to_event <= event_dtmin) then
+      param_diff%nn = param_diff%nn + 1
+      cycle
     end if
-    if(param_diff%injectionfromfile) then
-      if(time+dtnxt>param_diff%qtimes(param_diff%nn)) then
-        dtnxt=param_diff%qtimes(param_diff%nn)-time-tny
-        param_diff%switch=.true.
-        param_diff%nn=param_diff%nn+1
-        if(param_diff%qtimes(param_diff%nn)-param_diff%qtimes(param_diff%nn-1)<1e0) param_diff%nn=param_diff%nn+1
-        !write(*,*) param_diff%nn,param_diff%qtimes(1,param_diff%nn),time+dtnxt
-      end if
+
+    ! If the next proposed step would cross the next injection-file time,
+    ! shorten it so the step lands exactly on that time.
+    if(time + dtnxt > param_diff%qtimes(param_diff%nn)) then
+      dtnxt = dt_to_event
     end if
+
+    exit
+  end do
+end if
+
+
+
+
     deallocate(pwold, pwnew)
     return
   end subroutine
