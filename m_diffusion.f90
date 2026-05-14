@@ -465,25 +465,23 @@ end subroutine
     !write(*,*) 'dpf',maxval(adpf)
     if(dtnxt/h*maxval(adpf)>dpth)  dtnxt=dpth*h/maxval(adpf)
 
-! Keep timesteps from crossing injection-file breakpoints.
-! The injection rate is interpolated between qtimes, so q(t) is continuous
-! but its slope can change at each qtime. Make those qtimes step boundaries
-! instead of letting RK steps cross them.
+! keep timesteps from crossing injection-file breakpoints, the injection rate is interpolated between qtimes, so q(t) is continuous
+! but its slope can change at each qtime. Make qtimes step boundaries
+! instead of letting RK steps cross them
 if(param_diff%injectionfromfile) then
   do
     if(param_diff%nn > param_diff%npoint) exit
 
     dt_to_event = param_diff%qtimes(param_diff%nn) - time
 
-    ! If we are already at/past this injection time within roundoff, skip it.
-    ! This prevents zero or microscopic event-limited timesteps.
+    ! if we are already at/past this injection time within roundoff, skip it
+    ! prevents zero or microscopic event-limited timesteps
     if(dt_to_event <= event_dtmin) then
       param_diff%nn = param_diff%nn + 1
       cycle
     end if
 
-    ! If the next proposed step would cross the next injection-file time,
-    ! shorten it so the step lands exactly on that time.
+    ! if the next proposed step would cross the next injection-file time, shorten it so the step lands exactly on that time
     if(time + dtnxt > param_diff%qtimes(param_diff%nn)) then
       dtnxt = dt_to_event
     end if
