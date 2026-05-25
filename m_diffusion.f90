@@ -6,6 +6,7 @@ use mod_constant
   real(8)::phi0,beta,eta,sigmastar,kp0,kpmin,kpmax,kL,kT,pinj,pbcl,pbcr,pbct,pbcb,qinj,q0
   real(8)::qbcl,qbcr,qbct,qbcb
   real(8)::tinj=1d5
+  real(8) :: pwinit
   real(8) :: rw
   real(8) :: skin
   real(8) :: Sw_fwid
