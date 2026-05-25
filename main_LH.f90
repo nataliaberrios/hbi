@@ -174,6 +174,7 @@ program main
   param_diff%rw = 0.089d0
   param_diff%skin = 0.0d0
   param_diff%Sw_fwid = 1.0d0
+  param_diff%pwinit = 0.0d0
 
   !read input file
   call read_inputfile()
@@ -189,7 +190,7 @@ program main
       end if
 
       if(.not. allocated(pw)) allocate(pw(param_diff%nwell))
-      pw = 0.0d0
+      pw = param_diff%pwinit
 
       if(param_diff%network) then
         call setup_network(param_diff, my_rank)
@@ -2874,6 +2875,8 @@ end subroutine
       read(pvalue,*) param_diff%skin
     case('Sw_fwid','SW_fwid','SW_FWID','sw_fwid')
       read(pvalue,*) param_diff%Sw_fwid
+    case('pwinit','PWINIT','pw_init','PW_INIT')
+      read(pvalue,*) param_diff%pwinit
     case('meshisinmeter')
       read(pvalue,*) meshisinmeter
     case('parameter_file_ncol')
