@@ -707,7 +707,7 @@ end if
     p=r
     rsold=sum(r*r)
     !write(*,*)rsold
-    if(rsold<tol**2*imax*jmax)  then
+    if(rsold<1d-30)  then
       go to 100
     end if
 
