@@ -36,10 +36,11 @@ for VARIANT in buggy fixed; do
   rm -rf "$SRC"
   mkdir -p "$SRC"
 
-  # same tree for both, then restore the pre-fix main_LH.f90 for the buggy one
-  git -C "$REPO" archive "$FIX_COMMIT" | tar -x -C "$SRC"
+  # same tree for both, then restore the pre-fix main_LH.f90 for the buggy one.
+  # git on the compute nodes is old enough to lack -C, hence the subshell cd.
+  ( cd "$REPO" && git archive "$FIX_COMMIT" ) | tar -x -C "$SRC"
   if [ "$VARIANT" = "buggy" ]; then
-    git -C "$REPO" show "$BASE_COMMIT:main_LH.f90" > "$SRC/main_LH.f90"
+    ( cd "$REPO" && git show "$BASE_COMMIT:main_LH.f90" ) > "$SRC/main_LH.f90"
   fi
   # the Sherlock/Intel compiler selection is an uncommitted working-tree edit,
   # so take the Makefile from the live tree rather than from the commit

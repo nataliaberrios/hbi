@@ -1,0 +1,63 @@
+filenumber 990001
+
+! CONTROL case for the limitsigma A/B test.
+!
+! Identical to ab_test.in except sigmainit is 500 MPa instead of 30, so the
+! effective normal stress never comes near minsig and the clamp never fires.
+! With no clamp corrections to accumulate, the pre-fix and post-fix binaries
+! must produce bit-for-bit identical output. This is the null test: it shows
+! the fix is inert on runs the bug never touched.
+
+problem 3dp
+imax 151
+jmax 151
+ds 0.005
+
+interval 20
+nstep 40000
+tmax 0.00548
+dtmax 43200
+dtout 1e-4
+
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 500.0
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+
+pressurediffusion T
+permev T
+
+kpmax 5e-14
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 2.005e-8
+eta 0.89e-3
+
+kL 1e-3
+kT 1e15
+
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+
+injectionfromfile T
+injection_file "inj_ab_test.txt"
+
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2
