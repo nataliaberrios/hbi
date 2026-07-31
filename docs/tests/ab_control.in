@@ -7,6 +7,10 @@ filenumber 990001
 ! With no clamp corrections to accumulate, the pre-fix and post-fix binaries
 ! must produce bit-for-bit identical output. This is the null test: it shows
 ! the fix is inert on runs the bug never touched.
+!
+! maxsig must be raised too. It defaults to 300 MPa (main_LH.f90:165), which
+! sigmainit=500 exceeds, so leaving it at the default clamps every cell on the
+! upper bound at every step and makes this the opposite of a null test.
 
 problem 3dp
 imax 151
@@ -30,6 +34,7 @@ sigmainit 500.0
 velinit 1d-12
 limitsigma T
 minsig 1
+maxsig 1e6
 velmin 1d-20
 
 pressurediffusion T
