@@ -66,6 +66,10 @@ program main
   !variables
   real(8),allocatable::psi(:),vel(:),tau(:),sigma(:),slip(:),mu(:),rupt(:),islip(:),velp(:),cslip(:),sigma0(:),tau0(:),vslip(:)
   real(8),allocatable::taus(:),taud(:),vels(:),veld(:),slips(:),slipd(:),rake(:),lbds(:),pf(:),sigmat(:),dpdt(:)
+  !sigmat: total normal stress, a state variable advanced only by the elastic
+  !increment. sigmac: the (possibly clamped) effective normal stress handed to
+  !the RK step last time, so that sigma-sigmac recovers that elastic increment.
+  real(8),allocatable::sigmac(:)
   real(8), allocatable :: pw(:)
   real(8),allocatable::rdata(:)
   integer::lp,i,i_,j,k,kstart,kend,m,counts,interval,lrtrn,nl,ios,nmain,rk,nout(20),file_size,nrjct,ncol
@@ -547,6 +551,7 @@ program main
   !allocate local variables
   allocate(y(3*NCELL),yscal(3*NCELL),dydx(3*NCELL))
   allocate(psi(NCELL),vel(NCELL),tau(NCELL),sigma(NCELL),slip(NCELL),mu(NCELL),veln(NCELL),slipn(ncell),pf(Ncell),sigmat(Ncell))
+  allocate(sigmac(Ncell))
   allocate(islip(NCELL),cslip(NCELL),sigma0(NCELL),tau0(NCELL),etav(NCELL),etab(NCELL),pre(NCELL),vflow(NCELL),vslip(NCELL),dpdt(NCELL))
   psi=0d0;vel=0d0;tau=0d0;sigma=0d0;slip=0d0;etav=0d0;etab=0d0;pre=0d0;vflow=0d0;vslip=0d0;pf=0d0
   allocate(a(NCELL),b(NCELL),dc(NCELL),f0(NCELL),vc(NCELL),vw(NCELL),fw(NCELL),taudot(NCELL),tauddot(NCELL),sigdot(NCELL),vpl(NCELL))
@@ -1080,6 +1085,12 @@ program main
     y(3*i-2) = psi(i)
     y(3*i-1) = tau(i)
     y(3*i) = sigma(i)
+    !total normal stress is set once here (covers both the fresh-start and the
+    !restart path, since sigma and pf are populated by this point) and from now
+    !on is only ever advanced by the elastic increment, never rebuilt from a
+    !clamped sigma
+    sigmat(i) = sigma(i)+pf(i)
+    sigmac(i) = sigma(i)
     !if(my_rank==53)write(*,*) psi(i),tau(i),sigma(i)
   end do
   !$omp end parallel do
@@ -1121,7 +1132,6 @@ program main
       
       slip(i)=slip(i)+(vel(i)+vflow(i))*dtdid*0.5d0
       mu(i)=tau(i)/sigma(i)
-      sigmat(i)=sigma(i)+pf(i)
     end do
     !$omp end parallel do
 
@@ -2449,11 +2459,16 @@ end subroutine
       i_=st_sum%lodc(i)
       pf(i)=pfG(i_)
       dpdt(i)=(pf(i)-pfo(i))/dtdid
+      !advance the total normal stress by the elastic increment accumulated by
+      !the RK step. sigma-sigmac is that increment and nothing else, so a clamp
+      !applied below can no longer leak into sigmat and ratchet it upward
+      sigmat(i)=sigmat(i)+(sigma(i)-sigmac(i))
       sigma(i)=sigmat(i)-pf(i)
       if(limitsigma) then
         if(sigma(i)<minsig) sigma(i)=minsig
         if(sigma(i)>maxsig) sigma(i)=maxsig
       end if
+      sigmac(i)=sigma(i)
       y(3*i)=sigma(i)
     end do
     !write(*,*) maxval(dpdt)
