@@ -1,0 +1,9 @@
+# build artifacts -- currently untracked and easy to commit by accident
+*.o
+*.mod
+lhbiem
+
+# figures are DERIVED. The scripts in docs/ regenerate them
+# (hbi_analysis/refresh_figures.sbatch runs all of them), so only the small
+# vector versions of figures that appear in the writeup are tracked.
+docs/figs/**/*.png
