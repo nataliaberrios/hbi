@@ -1,14 +1,15 @@
 Effect of storage $\phi\beta$ at understressed $\mu_0$=0.46
 ==============================================================================
-fixed: mu_0=0.46, barsigma_0=27.99 MPa (tau_0=12.9 MPa, understressed), permev F, Taiyi perm map
+fixed: mu_0=0.46, barsigma_0=27.99 MPa (tau_0=12.9 MPa, understressed), permev F, Taiyi perm map (1.1e-12 near-well / 4e-13 far)
+WARNING: phi=0.01 for the first four runs but 0.005 for 632721 — phibeta=5e-12 is unreachable at phi=0.01 without beta below the 1e-9 floor
 window 0-8.00 d, observed lambda on this window = 0.1412
 
      run                      param   lambda   /obs   p bias   p RMS   tau0  reached
 --------------------------------------------------------------------------------------
-  632700            phibeta=3.0e-11   0.0259   0.18    +3.14    3.62  12.88     8.00
-  632702            phibeta=2.0e-11   0.0492   0.35    +3.47    3.91  12.88     8.00
-  632704            phibeta=1.5e-11   0.0673   0.48    +3.70    4.11  12.88     8.00
-  632720            phibeta=1.0e-11   0.0962   0.68    +4.00    4.39  12.88     8.00
-  632721            phibeta=5.0e-12   0.1621   1.15    +4.47    4.86  12.88     8.00
+  632700 phibeta=3.0e-11  (phi=0.01, beta=3e-9)   0.0259   0.18    +3.14    3.62  12.88     8.00
+  632702 phibeta=2.0e-11  (phi=0.01, beta=2e-9)   0.0492   0.35    +3.47    3.91  12.88     8.00
+  632704 phibeta=1.5e-11  (phi=0.01, beta=1.5e-9)   0.0673   0.48    +3.70    4.11  12.88     8.00
+  632720 phibeta=1.0e-11  (phi=0.01, beta=1e-9)   0.0962   0.68    +4.00    4.39  12.88     8.00
+  632721 phibeta=5.0e-12  (phi=0.005, beta=1e-9)   0.1621   1.15    +4.47    4.86  12.88     8.00
 
-NOTE: Storage is the lever that moves the front: smaller phi*beta spreads pressure faster, so the front runs further on the same injected volume.
+NOTE: NOT A PURE SWEEP AT THE ENDPOINT. beta varies at phi = 0.01 for the first four runs; 632721 instead has phi = 0.005, because phi*beta = 5e-12 requires beta = 5e-10 at phi = 0.01, below the 1e-9 floor in the physical-ranges table. Two parameters therefore differ between 632721 and the rest of its own sweep, and 632721 is both the endpoint and one of three runs passing both targets. Runs 632790/632791/632792 test whether the product is the sole control; until they land, the trend through 632721 is provisional.

@@ -105,15 +105,28 @@ SWEEPS = [
     dict(key="storage",
          title=r"Effect of storage $\phi\beta$ at understressed $\mu_0$=0.46",
          fixed=r"fixed: $\mu_0$=0.46, $\bar\sigma_0$=27.99 MPa ($\tau_0$=12.9 MPa, "
-               r"understressed), permev F, Taiyi perm map",
-         param=lambda d: f"$\\phi\\beta$={ffloat(d['phi'])*ffloat(d['beta']):.1e}",
+               r"understressed), permev F, Taiyi perm map (1.1e-12 near-well / 4e-13 far)"
+               "\nWARNING: $\\phi$=0.01 for the first four runs but 0.005 for 632721 — "
+               r"$\phi\beta$=5e-12 is unreachable at $\phi$=0.01 without $\beta$ below "
+               r"the 1e-9 floor",
+         param=lambda d: (f"$\\phi\\beta$={ffloat(d['phi'])*ffloat(d['beta']):.1e}"
+                          f"  ($\\phi$={d['phi']}, $\\beta$={d['beta']})"),
          runs=[632700, 632702, 632704, 632720, 632721],
-         note="Storage is the lever that moves the front: smaller phi*beta spreads "
-              "pressure faster, so the front runs further on the same injected volume."),
+         note="NOT A PURE SWEEP AT THE ENDPOINT. beta varies at phi = 0.01 for the "
+              "first four runs; 632721 instead has phi = 0.005, because phi*beta = "
+              "5e-12 requires beta = 5e-10 at phi = 0.01, below the 1e-9 floor in the "
+              "physical-ranges table. Two parameters therefore differ between 632721 "
+              "and the rest of its own sweep, and 632721 is both the endpoint and one "
+              "of three runs passing both targets. Runs 632790/632791/632792 test "
+              "whether the product is the sole control; until they land, the trend "
+              "through 632721 is provisional."),
     dict(key="storage_mu050",
          title=r"Effect of storage $\phi\beta$ at $\mu_0$=0.50 (Taiyi-equivalent stress)",
-         fixed=r"fixed: $\mu_0$=0.50, $\bar\sigma_0$=27.99 MPa, permev F, Taiyi perm map",
-         param=lambda d: f"$\\phi\\beta$={ffloat(d['phi'])*ffloat(d['beta']):.1e}",
+         fixed=r"fixed: $\mu_0$=0.50, $\bar\sigma_0$=27.99 MPa, permev F, Taiyi perm map "
+               r"(1.1e-12 near-well / 4e-13 far), $\phi$=0.01 throughout — this one IS a "
+               r"pure $\beta$ sweep",
+         param=lambda d: (f"$\\phi\\beta$={ffloat(d['phi'])*ffloat(d['beta']):.1e}"
+                          f"  ($\\phi$={d['phi']}, $\\beta$={d['beta']})"),
          runs=[632706, 632708, 632710, 632722],
          note="Same storage sweep at a stronger fault, to separate the effect of "
               "storage from the effect of strength."),
