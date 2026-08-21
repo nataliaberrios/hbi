@@ -107,6 +107,22 @@ SWEEPS = [
          note="Enhancement is a NEGATIVE feedback here: the slip-formed high-k "
               "channel bleeds pressure away from the well, lowering peak p_f and "
               "shrinking the front rather than extending it."),
+    dict(key="enhancement_at_match",
+         title="Enhancement turned ON at the one parameter point that matched "
+               "(632721)",
+         fixed=r"fixed: $\mu_0$=0.46, $\bar\sigma_0$=27.99 MPa ($\tau_0$=12.88 MPa, "
+               r"understressed), $\phi\beta$=5e-12, dc=1e-4, Taiyi perm map, "
+               r"kpmin=4e-13.  Enhancement is the ONLY difference.",
+         param=lambda d: ("permev F (fixed perm)"
+                          if not d.get("permev", "F").upper().startswith("T")
+                          else f"permev T, kpmax={d.get('kpmax','unset')}, "
+                               f"kL={d.get('kL','?')}"),
+         runs=[632721, 632752, 632751, 632750],
+         note="The decisive test. Enhancement IMPROVES the pressure match "
+              "(632752 reaches -0.8%) and destroys the front in the same move: "
+              "the slip-opened high-k channel bleeds pressure away from the well, "
+              "so effective normal stress never drops far enough to keep the fault "
+              "failing. No enhancement setting keeps both targets."),
     dict(key="kpmax",
          title="Effect of enhanced permeability ceiling kpmax",
          fixed=r"fixed: $\mu_0$=0.37, $\bar\sigma_0$=27.99 MPa, $\phi\beta$=1e-10, "

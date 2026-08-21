@@ -1,0 +1,13 @@
+Enhancement turned ON at the one parameter point that matched (632721)
+==============================================================================
+fixed: mu_0=0.46, barsigma_0=27.99 MPa (tau_0=12.88 MPa, understressed), phibeta=5e-12, dc=1e-4, Taiyi perm map, kpmin=4e-13.  Enhancement is the ONLY difference.
+window 0-8.00 d, observed lambda on this window = 0.1412
+
+     run                      param   lambda   /obs   p bias   p RMS   tau0  reached
+--------------------------------------------------------------------------------------
+  632721      permev F (fixed perm)   0.1621   1.15    +4.47    4.86  12.88     8.00
+  632752 permev T, kpmax=5e-12, kL=1e-4   0.0593   0.42    -0.33    2.72  12.88     8.00
+  632751 permev T, kpmax=2e-11, kL=1e-4  NO SLIP   -       -1.56    3.39  12.88     8.00
+  632750 permev T, kpmax=2e-11, kL=1e-5  NO SLIP   -       -2.88    4.39  12.88     8.00
+
+NOTE: The decisive test. Enhancement IMPROVES the pressure match (632752 reaches -0.8%) and destroys the front in the same move: the slip-opened high-k channel bleeds pressure away from the well, so effective normal stress never drops far enough to keep the fault failing. No enhancement setting keeps both targets.
