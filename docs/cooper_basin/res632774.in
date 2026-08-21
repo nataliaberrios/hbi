@@ -1,0 +1,89 @@
+filenumber 632774
+! CONSISTENT nonuniform perm + enhancement.
+! The initial map's near-well 150 m disc IS kpmax (1e-10) and its background
+! IS kpmin (4e-13), so the near-well region starts already at the enhanced
+! ceiling and slip propagates that conduit outward from the floor.
+!
+! This is the property that separates the archive: of 35 runs where
+! kpmax = k_near AND kpmin = k_far, 29 reached dc and 12 land within 15% of
+! the observed front. Of 77 runs whose bounds did not match their map, 2
+! reached dc and none matched. The earlier conclusion that enhancement
+! suppresses slip was drawn from that misconfigured 77.
+!
+! Contrast is 50x (kpmax 2e-11) or 250x (1e-10), reproducing the contrasts of
+! the runs that matched the front (5e-14/1e-15 and 2.5e-13/1e-15) but with a
+! PHYSICAL far field of 4e-13 rather than 1e-15 -- the 1e-15 is what let
+! wellhead pressure run to +280% in that family.
+!
+! Understressed: muinit 0.46, sigmainit 27.99 -> tau0 12.88 MPa vs Taiyi 15.0.
+! kL 1e-3, the value every front-matching run used.
+! phi 0.005 x beta 1e-9 = phi*beta 5e-12. Storage is swept to its physical
+! ceiling (4e-10) because a realistic far field raises diffusivity ~200x.
+! STORAGE AT THE PHYSICAL FLOOR, enhancement OFF.
+! Storage is the only lever that raises lambda without suppressing initiation:
+! phi*beta 3e-11 -> lambda 0.0236, 2e-11 -> 0.0492 at muinit 0.46.
+! Enhancement is ruled out -- 632701/703/707/709/711 all produced NO slip even
+! with a +5.8 MPa margin, because at kL 1e-5 it bleeds pf below dp_crit.
+! phi 0.005 x beta 1e-9 = 5.0e-12. beta 1e-9 is already the stiff edge of
+! defensible (water alone is 4.4e-10 /Pa); phi 0.005 halves the product again.
+! sigmainit 27.99, muinit 0.46 -> tau0 12.88 MPa (Taiyi 15.0), dp_crit 6.53.
+! If lambda still falls short here, the front cannot be matched in this
+! configuration at ANY physically admissible storage.
+
+problem 3dp
+imax 601
+jmax 601
+ds 0.020
+
+interval 30
+nstep 400000
+tmax 0.02191781
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_cons_601_ds20_kmax1e-10.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.46
+sigmainit 27.99
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+
+pressurediffusion T
+permev T
+
+kp 4e-13
+kpmin 4e-13
+kpmax 1e-10
+phi 0.005
+beta 1e-9
+eta 0.89e-3
+
+kL 1e-3
+kT 1e15
+
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+
+injectionfromfile T
+
+injection_file "june_clean.txt"
+
+
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2

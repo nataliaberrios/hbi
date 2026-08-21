@@ -1,0 +1,86 @@
+filenumber 632764
+! THE EMPTY CELL in the enhancement search.
+! Understressed (muinit 0.46, sigmainit 27.99 -> tau0 12.88 MPa vs Taiyi 15.0)
+! + permeability enhancement ON + nonuniform initial perm (Taiyi map,
+! 1.1e-12 near-well / 4e-13 far) + kL 1e-3 + LOW storage.
+!
+! Why this combination and no other: every enhancement run that matched the
+! front (632509/632510/632522/632524, lambda/obs 0.97-0.99) has kL 1e-3 AND a
+! far-field kpmin of 1e-15, which is 400x below Taiyi's 4e-13 and is what let
+! wellhead pressure run to +280%. Every run with a realistic 4e-13 either used
+! kL 1e-4/1e-5 (which suppressed slip entirely) or sat at phi*beta 1e-10 (too
+! large for the front). This cell was never run.
+!
+! phi 0.005 x beta 4e-9 = phi*beta 2e-11;  kpmax 1.1e-12, kpmin 4e-13, kL 1e-3.
+! kpmax is set at/just above the NEAR-WELL initial perm, the way the matching
+! family set it, so slip propagates the existing conduit outward rather than
+! building a super-conduit.
+! Reference: 632721 is this deck with permev F (front 1.15x, pressure +11.2%).
+! STORAGE AT THE PHYSICAL FLOOR, enhancement OFF.
+! Storage is the only lever that raises lambda without suppressing initiation:
+! phi*beta 3e-11 -> lambda 0.0236, 2e-11 -> 0.0492 at muinit 0.46.
+! Enhancement is ruled out -- 632701/703/707/709/711 all produced NO slip even
+! with a +5.8 MPa margin, because at kL 1e-5 it bleeds pf below dp_crit.
+! phi 0.005 x beta 4e-9 = 5.0e-12. beta 4e-9 is already the stiff edge of
+! defensible (water alone is 4.4e-10 /Pa); phi 0.005 halves the product again.
+! sigmainit 27.99, muinit 0.46 -> tau0 12.88 MPa (Taiyi 15.0), dp_crit 6.53.
+! If lambda still falls short here, the front cannot be matched in this
+! configuration at ANY physically admissible storage.
+
+problem 3dp
+imax 601
+jmax 601
+ds 0.020
+
+interval 30
+nstep 400000
+tmax 0.02191781
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_taiyi_601_ds20.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.46
+sigmainit 27.99
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+
+pressurediffusion T
+permev T
+
+kp 4e-13
+kpmin 4e-13
+kpmax 1.1e-12
+phi 0.005
+beta 4e-9
+eta 0.89e-3
+
+kL 1e-3
+kT 1e15
+
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+
+injectionfromfile T
+
+injection_file "june_clean.txt"
+
+
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2
