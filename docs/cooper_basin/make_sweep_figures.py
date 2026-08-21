@@ -80,6 +80,28 @@ SWEEPS = [
          runs=[632532, 632534, 632536, 632507],
          note="mu_0 is the ONLY difference. 632507 at mu=0.50 is Taiyi-equivalent "
               "stress (tau_0 15.0 MPa); the rest are understressed."),
+    dict(key="muinit_permevT",
+         title=r"Effect of $\mu_0$ with permeability enhancement ON",
+         fixed=r"fixed: $\bar\sigma_0$=27.99 MPa, $\phi\beta$=1e-10, permev T, "
+               r"kpmax=2e-11, kpmin=4e-13, kL=1e-5, Taiyi perm map, dc=1e-4",
+         param=lambda d: f"$\\mu_0$={ffloat(d['muinit']):.2f}"
+                         f"  ($\\tau_0$={ffloat(d['muinit'])*ffloat(d['sigmainit']):.1f} MPa)",
+         runs=[632568, 632580, 632592],
+         note="The enhancement-ON counterpart to sweep_muinit. Note 632533/632535/"
+              "632537 look like the natural T twins of that figure (same sigma, same "
+              "phi*beta) but leave kpmax AND kpmin unset, so permeability decays "
+              "uncontrolled -- k reached 1.1e-16 in 632537. They are excluded."),
+    dict(key="muinit_permevT_kmax1e-10",
+         title=r"Effect of $\mu_0$ with enhancement ON at the highest defensible "
+               r"kpmax",
+         fixed=r"fixed: $\bar\sigma_0$=27.99 MPa, $\phi\beta$=1e-10, permev T, "
+               r"kpmax=1e-10 ($\approx$100 D), kpmin=4e-13, kL=1e-5, Taiyi perm map",
+         param=lambda d: f"$\\mu_0$={ffloat(d['muinit']):.2f}"
+                         f"  ($\\tau_0$={ffloat(d['muinit'])*ffloat(d['sigmainit']):.1f} MPa)",
+         runs=[632570, 632582, 632594],
+         note="Same mu_0 sweep at kpmax 1e-10, the upper edge of a defensible "
+              "fault-zone conduit, to check the mu_0 response is not specific to "
+              "one enhancement ceiling."),
     dict(key="storage",
          title=r"Effect of storage $\phi\beta$ at understressed $\mu_0$=0.46",
          fixed=r"fixed: $\mu_0$=0.46, $\bar\sigma_0$=27.99 MPa ($\tau_0$=12.9 MPa, "

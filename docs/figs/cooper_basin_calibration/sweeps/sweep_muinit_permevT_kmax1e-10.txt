@@ -1,0 +1,12 @@
+Effect of $\mu_0$ with enhancement ON at the highest defensible kpmax
+==============================================================================
+fixed: barsigma_0=27.99 MPa, phibeta=1e-10, permev T, kpmax=1e-10 (approx100 D), kpmin=4e-13, kL=1e-5, Taiyi perm map
+window 0-8.00 d, observed lambda on this window = 0.1412
+
+     run                      param   lambda   /obs   p bias   p RMS   tau0  reached
+--------------------------------------------------------------------------------------
+  632570 mu_0=0.37  (tau_0=10.4 MPa)  NO SLIP   -       +0.70    2.45  10.36     8.00
+  632582 mu_0=0.42  (tau_0=11.8 MPa)  NO SLIP   -       -1.84    3.50  11.76     8.00
+  632594 mu_0=0.46  (tau_0=12.9 MPa)  NO SLIP   -       -3.80    5.11  12.88     8.00
+
+NOTE: Same mu_0 sweep at kpmax 1e-10, the upper edge of a defensible fault-zone conduit, to check the mu_0 response is not specific to one enhancement ceiling.
