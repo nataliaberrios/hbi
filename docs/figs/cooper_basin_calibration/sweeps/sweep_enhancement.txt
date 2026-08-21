@@ -1,0 +1,15 @@
+Effect of permeability enhancement (permev T vs F), matched pairs
+==============================================================================
+fixed within each pair: mu_0=0.46, barsigma_0=27.99 MPa, Taiyi perm map;  permev T uses kpmax=2e-11, kL=1e-5
+window 0-8.00 d, observed lambda on this window = 0.1412
+
+     run                      param   lambda   /obs   p bias   p RMS   tau0  reached
+--------------------------------------------------------------------------------------
+  632700  phibeta=3.0e-11, permev F   0.0259   0.18    +3.14    3.62  12.88     8.00
+  632701  phibeta=3.0e-11, permev T  NO SLIP   -       -2.70    4.21  12.88     8.00
+  632702  phibeta=2.0e-11, permev F   0.0492   0.35    +3.47    3.91  12.88     8.00
+  632703  phibeta=2.0e-11, permev T  NO SLIP   -       -2.73    4.24  12.88     8.00
+  632704  phibeta=1.5e-11, permev F   0.0673   0.48    +3.70    4.11  12.88     8.00
+  632705  phibeta=1.5e-11, permev T  NO SLIP   -       -2.76    4.26  12.88     8.00
+
+NOTE: Enhancement is a NEGATIVE feedback here: the slip-formed high-k channel bleeds pressure away from the well, lowering peak p_f and shrinking the front rather than extending it.

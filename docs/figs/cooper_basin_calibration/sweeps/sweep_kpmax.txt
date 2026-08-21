@@ -1,0 +1,13 @@
+Effect of enhanced permeability ceiling kpmax
+==============================================================================
+fixed: mu_0=0.37, barsigma_0=27.99 MPa, phibeta=1e-10, permev T, kL=1e-3, Taiyi perm map
+window 0-17.20 d, observed lambda on this window = 0.1709
+
+     run                      param   lambda   /obs   p bias   p RMS   tau0  reached
+--------------------------------------------------------------------------------------
+  632551              kpmax=1.1e-12  NO SLIP   -       -0.27    2.00  10.36    17.20
+  632548                kpmax=5e-12  NO SLIP   -       -0.37    2.11  10.36    17.20
+  632549                kpmax=2e-11  NO SLIP   -       -0.59    2.35  10.36    17.20
+  632550                kpmax=1e-10  NO SLIP   -       -0.94    2.78  10.36    17.20
+
+NOTE: Raising the ceiling two orders of magnitude lowers the pressure the well can hold, which is the same negative feedback seen in the pairs.

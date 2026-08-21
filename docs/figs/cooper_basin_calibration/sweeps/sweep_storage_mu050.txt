@@ -1,0 +1,13 @@
+Effect of storage $\phi\beta$ at $\mu_0$=0.50 (Taiyi-equivalent stress)
+==============================================================================
+fixed: mu_0=0.50, barsigma_0=27.99 MPa, permev F, Taiyi perm map
+window 0-8.00 d, observed lambda on this window = 0.1412
+
+     run                      param   lambda   /obs   p bias   p RMS   tau0  reached
+--------------------------------------------------------------------------------------
+  632706            phibeta=3.0e-11   0.1046   0.74    +3.14    3.62  13.99     8.00
+  632708            phibeta=2.0e-11   0.1317   0.93    +3.47    3.91  13.99     8.00
+  632710            phibeta=1.5e-11   0.1564   1.11    +3.70    4.11  13.99     8.00
+  632722            phibeta=1.0e-11   0.1939   1.37    +4.00    4.39  13.99     8.00
+
+NOTE: Same storage sweep at a stronger fault, to separate the effect of storage from the effect of strength.

@@ -1,0 +1,13 @@
+Effect of initial friction $\mu_0$  (fault strength)
+==============================================================================
+fixed: barsigma_0=30.0 MPa, phibeta=1e-10, permev F, Taiyi perm map, dc=1e-4
+window 0-17.20 d, observed lambda on this window = 0.1709
+
+     run                      param   lambda   /obs   p bias   p RMS   tau0  reached
+--------------------------------------------------------------------------------------
+  632532 mu_0=0.37  (tau_0=11.1 MPa)  NO SLIP   -       -0.27    2.01  11.10    17.20
+  632534 mu_0=0.42  (tau_0=12.6 MPa)   0.0036   0.02    -0.27    2.00  12.60    17.20
+  632536 mu_0=0.46  (tau_0=13.8 MPa)   0.0293   0.17    -0.27    2.00  13.80    17.20
+  632507 mu_0=0.50  (tau_0=15.0 MPa)   0.0786   0.46    -0.27    2.00  15.00    17.20
+
+NOTE: mu_0 is the ONLY difference. 632507 at mu=0.50 is Taiyi-equivalent stress (tau_0 15.0 MPa); the rest are understressed.
