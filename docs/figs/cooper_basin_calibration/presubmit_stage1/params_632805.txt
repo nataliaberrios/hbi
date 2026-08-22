@@ -1,4 +1,4 @@
-run 632803
+run 632805
 ==================================================================
 
 DERIVED — what the solver responds to, not stated in the deck
@@ -7,21 +7,21 @@ DERIVED — what the solver responds to, not stated in the deck
   dp_crit = sigmainit(1-mu/f0)   10.729 MPa   (overpressure needed to fail)
   tmax                           5.0000 d  (HBI year = 365 d)
   permeability field             UNIFORM 1.000e-15 m^2 (parameterfromfile F)
-  D near-well                    4.9937e-03 m^2/s
-  D far-field                    4.9937e-03 m^2/s
-  str = beta*phi                 1.5768e-09 1/Pa   (m_diffusion.f90:444)
+  D near-well                    5.6040e-03 m^2/s
+  D far-field                    5.6040e-03 m^2/s
+  str = beta*phi                 2.0050e-10 1/Pa   (m_diffusion.f90:444)
   Peaceman log(0.2*ds/rw)+skin   2.4191
-  T_at_kpmin                     2.0451e-11   (m_diffusion.f90:669)
-  T_at_kpmax                     5.1128e-09   (m_diffusion.f90:669)
+  T_at_kpmin                     2.9183e-12   (m_diffusion.f90:669)
+  T_at_kpmax                     1.4592e-10   (m_diffusion.f90:669)
   wellbore coupling gamma = (Sw_fwid/h)/((Sw_fwid/h)+T), m_diffusion.f90:671
-    h600_kpmax               0.0024
-    h600_kpmin               0.3762
-    h60_kpmax                0.0236
-    h60_kpmin                0.8578
+    h600_kpmax               0.0779
+    h600_kpmin               0.8087
+    h60_kpmax                0.4581
+    h60_kpmin                0.9769
 
-FULL DECK, verbatim (parent: res1807.in)
+FULL DECK, verbatim (parent: res1808.in)
 ------------------------------------------------------------------
-  filenumber             632803
+  filenumber             632805
   problem                3dp
   imax                   601
   jmax                   601
@@ -46,12 +46,12 @@ FULL DECK, verbatim (parent: res1807.in)
   velmin                 1d-20
   pressurediffusion      T
   permev                 T
-  kpmax                  2.5e-13
+  kpmax                  5e-14
   kpmin                  1e-15
   kp                     1e-15
   phi                    0.01
-  beta                   1.5768e-07
-  eta                    1.27e-4
+  beta                   2.005e-8
+  eta                    0.89e-3
   kL                     1e-3
   kT                     1e15
   pfinit                 0d0

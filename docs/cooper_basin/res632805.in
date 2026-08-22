@@ -1,18 +1,18 @@
-filenumber 632800
-! STAGE 1 -- res1807.in physics rerun on FIXED HBI, uniform initial perm.
+filenumber 632805
+! STAGE 1 -- res1808.in physics rerun on FIXED HBI, uniform initial perm.
 ! Combination A: the parent's own fluid and storage.
 !
 !
 ! permev T with UNIFORM kp = kpmin = 1e-15; slip grows it toward
-! kpmax = 2.5e-13. No permeability map -- parameterfromfile F. The
+! kpmax = 5e-14. No permeability map -- parameterfromfile F. The
 ! near-well high-permeability zone is therefore created DYNAMICALLY by slip,
 ! which is what distinguishes Stage 1 from Stage 2.
 !
-! phi 0.01 x beta 2.25e-8 ;  D(far, at kpmin) = 4.9938e-03 m^2/s
-! sigmainit 30.0 MPa  (res1807/1808's own value; a round number, NOT measurement-derived)
-! tau0 = muinit x sigmainit = 11.10 MPa  (Taiyi 15.0, so understressed)
-! dp_crit = sigmainit(1 - muinit/f0) = 11.50 MPa; the peak MEASURED downhole
-! overpressure in the first 5 d is 10.92 MPa, so this run CANNOT fail without over-pressurising.
+! phi 0.01 x beta 2.005e-8 ;  D(far, at kpmin) = 5.6040e-03 m^2/s
+! sigmainit 27.99 MPa  (DERIVED from sv 100, sH 160, dip 10 deg, p_pore 73.82)
+! tau0 = muinit x sigmainit = 10.36 MPa  (Taiyi 15.0, so understressed)
+! dp_crit = sigmainit(1 - muinit/f0) = 10.73 MPa; the peak MEASURED downhole
+! overpressure in the first 5 d is 10.92 MPa, so this run CAN fail at the observed pressure.
 ! Its sigmainit twin differs in sigmainit and nothing else.
 !
 ! DELIBERATE deviations from the parent deck:
@@ -43,18 +43,18 @@ b 0.012
 dc 1e-4
 f0 0.6
 muinit 0.37
-sigmainit 30.0
+sigmainit 27.99
 velinit 1d-12
 limitsigma T
 minsig 1
 velmin 1d-20
 pressurediffusion T
 permev T
-kpmax 2.5e-13
+kpmax 5e-14
 kpmin 1e-15
 kp 1e-15
 phi 0.01
-beta 2.25e-8
+beta 2.005e-8
 eta 0.89e-3
 kL 1e-3
 kT 1e15

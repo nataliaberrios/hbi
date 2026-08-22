@@ -1,9 +1,9 @@
-res1807.in  ->  res632801.in   (comments stripped)
+res1808.in  ->  res632804.in   (comments stripped)
 ============================================================
 1c1
-< filenumber 1807
+< filenumber 1808
 ---
-> filenumber 632801
+> filenumber 632804
 3,4c3,4
 < imax 600
 < jmax 600
@@ -18,10 +18,6 @@ res1807.in  ->  res632801.in   (comments stripped)
 < dtout 0.001
 ---
 > dtout 0.0002
-19c19
-< sigmainit 30.0
----
-> sigmainit 27.99
 44c44
 < injection_file "april_clean_fixed2.txt"
 ---

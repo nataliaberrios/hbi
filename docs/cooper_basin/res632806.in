@@ -1,14 +1,14 @@
-filenumber 632800
-! STAGE 1 -- res1807.in physics rerun on FIXED HBI, uniform initial perm.
-! Combination A: the parent's own fluid and storage.
-!
+filenumber 632806
+! STAGE 1 -- res1808.in physics rerun on FIXED HBI, uniform initial perm.
+! Combination B: correct reservoir viscosity eta 1.27e-4 with beta scaled by 7.007874
+! so that D = k/(eta*phi*beta) is UNCHANGED from combination A.
 !
 ! permev T with UNIFORM kp = kpmin = 1e-15; slip grows it toward
-! kpmax = 2.5e-13. No permeability map -- parameterfromfile F. The
+! kpmax = 5e-14. No permeability map -- parameterfromfile F. The
 ! near-well high-permeability zone is therefore created DYNAMICALLY by slip,
 ! which is what distinguishes Stage 1 from Stage 2.
 !
-! phi 0.01 x beta 2.25e-8 ;  D(far, at kpmin) = 4.9938e-03 m^2/s
+! phi 0.01 x beta 1.4051e-07 ;  D(far, at kpmin) = 5.6039e-03 m^2/s
 ! sigmainit 30.0 MPa  (res1807/1808's own value; a round number, NOT measurement-derived)
 ! tau0 = muinit x sigmainit = 11.10 MPa  (Taiyi 15.0, so understressed)
 ! dp_crit = sigmainit(1 - muinit/f0) = 11.50 MPa; the peak MEASURED downhole
@@ -26,6 +26,14 @@ filenumber 632800
 !
 ! rw 8.9e-2 and Sw_fwid 7.4e-9 are inherited unchanged -- they were ALREADY
 ! in the parent deck and are not new parameters.
+!
+! CAVEAT: holding D fixed does NOT reproduce combination A. The Peaceman
+! well index T = 2*pi*k/eta (m_diffusion.f90:669) depends on eta ALONE, so
+! gamma = (Sw_fwid/h)/((Sw_fwid/h)+T) (m_diffusion.f90:671) is not preserved:
+! 0.977 -> 0.858 at the initial kp, and 0.145 -> 0.024 once kp reaches kpmax.
+! Also phi*beta = 1.405e-09 is ~3.9x above the maximum the stated
+! physical ranges allow (phi<=0.02, beta<=2e-8). Deliberate, for diffusivity
+! consistency; see docs/figs/cooper_basin_calibration.
 problem 3dp
 imax 601
 jmax 601
@@ -50,12 +58,12 @@ minsig 1
 velmin 1d-20
 pressurediffusion T
 permev T
-kpmax 2.5e-13
+kpmax 5e-14
 kpmin 1e-15
 kp 1e-15
 phi 0.01
-beta 2.25e-8
-eta 0.89e-3
+beta 1.4051e-07
+eta 1.27e-4
 kL 1e-3
 kT 1e15
 pfinit 0d0

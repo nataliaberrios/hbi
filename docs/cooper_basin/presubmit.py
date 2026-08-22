@@ -42,9 +42,11 @@ IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 REPO = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_basin_calibration")
 
 STAGES = {
-    1: dict(runs=[632800, 632801, 632802, 632803],
-            parents={632800: 1807, 632801: 1807, 632802: 1808, 632803: 1808},
-            title="Stage 1 — res1807/res1808 physics on fixed HBI, uniform initial perm"),
+    1: dict(runs=list(range(632800, 632808)),
+            parents={632800: 1807, 632801: 1807, 632802: 1807, 632803: 1807,
+                     632804: 1808, 632805: 1808, 632806: 1808, 632807: 1808},
+            title="Stage 1 — res1807/res1808 physics on fixed HBI, uniform initial "
+                  "perm, twinned on sigmabar_0"),
 }
 
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
@@ -201,18 +203,35 @@ def feasibility(rows):
              if o["dp_crit"] > dp_obs else "can fail")
         L.append(f"| {n} | {dk['muinit']} | {o['dp_crit']:.2f} | "
                  f"{o['dp_crit'] - dp_obs:+.2f} | {v} |")
-    sig = ff(rows[0][2]["sigmainit"])
+    # sigmabar_0 is an axis, so the floor has to be quoted per value
     f0 = ff(rows[0][2]["f0"])
-    mu_min = f0 * (1 - dp_obs / sig)
-    L += ["", f"**Minimum μ₀ for failure at the observed pressure: "
-          f"{mu_min:.4f}** (τ₀ = {mu_min*sig:.2f} MPa at σ̄₀ = {sig:g}). This is a "
-          f"floor on how understressed the fault can be in *any* model that also "
-          f"matches the pressure — it follows from the data and the friction law "
-          f"alone, with no simulation involved.", "",
-          "So these baselines are expected to slip only by over-pressurising, which "
-          "is precisely the 1807/1808 behaviour being characterised (their wellhead "
-          "runs +67% to +280%). The μ₀ sweep in Stage 3 starts at 0.3867, the first "
-          "value above this floor."]
+    sigs = sorted({ff(dk["sigmainit"]) for _, _, dk, _ in rows}, reverse=True)
+    L += ["", "**How understressed can the fault be and still fail at the observed "
+          "pressure?** μ₀ ≥ f₀(1 − Δp_obs/σ̄₀):", "",
+          "| σ̄₀ MPa | minimum μ₀ | minimum τ₀ MPa | source of σ̄₀ |",
+          "|---|---|---|---|"]
+    for sg in sigs:
+        mm = f0 * (1 - dp_obs / sg)
+        src = ("res1807/res1808's own value — a round number, **not** a measurement"
+               if abs(sg - 30.0) < 1e-9 else
+               "derived from σ_v 100, σ_Hmax 160, dip 10°, p_pore 73.82")
+        L += [f"| {sg:g} | **{mm:.4f}** | **{mm*sg:.2f}** | {src} |"]
+    if len(sigs) > 1:
+        lo, hi = min(sigs), max(sigs)
+        t_lo = f0 * (1 - dp_obs / lo) * lo
+        t_hi = f0 * (1 - dp_obs / hi) * hi
+        L += ["", f"So σ̄₀ = {lo:g} admits a fault **{t_hi - t_lo:.2f} MPa more "
+              f"understressed** than σ̄₀ = {hi:g} does ({t_lo:.2f} vs {t_hi:.2f} MPa). "
+              "Both floors follow from the wellhead record and the friction law alone, "
+              "with no simulation involved. The lower σ̄₀ is also the "
+              "measurement-derived one, so it is both the more defensible choice and "
+              "the more permissive one."]
+    L += ["", "The μ₀ = 0.37 runs at σ̄₀ = 30.0 are therefore expected to slip only by "
+          "over-pressurising — which is precisely the 1807/1808 behaviour being "
+          "characterised (their wellhead runs +67% to +280%). Their σ̄₀ = 27.99 twins "
+          "sit just below the threshold and should be able to slip at the observed "
+          "pressure, by 0.19 MPa. That margin is thin enough that the twins may "
+          "differ qualitatively, not just quantitatively."]
     return L
 
 
@@ -320,13 +339,14 @@ def main():
     L = [f"# {cfg['title']}", "",
          "**Nothing here has been submitted.** This is the pre-submittal check.",
          "", "## Decks", "",
-         "| run | parent | eta Pa·s | beta 1/Pa | phi | phi*beta | kpmax | kp=kpmin | "
-         "perm field | muinit | tau0 MPa | dp_crit MPa | tmax d |",
-         "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+         "| run | parent | **sigmabar_0** | eta Pa·s | beta 1/Pa | phi | phi*beta | "
+         "kpmax | kp=kpmin | perm field | muinit | tau0 MPa | dp_crit MPa | tmax d |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for n, parent, dk, o in rows:
         field = ("uniform" if o["map"] is None
                  else f"{o['map']} ({o['near']/o['far']:.0f}x)")
-        L.append(f"| [{n}](params_{n}.txt) | {parent} | {dk['eta']} | {dk['beta']} | "
+        L.append(f"| [{n}](params_{n}.txt) | {parent} | **{dk['sigmainit']}** | "
+                 f"{dk['eta']} | {dk['beta']} | "
                  f"{dk['phi']} | {o['phibeta']:.3e} | {dk.get('kpmax','—')} | "
                  f"{dk.get('kpmin','—')} | {field} | {dk['muinit']} | "
                  f"{o['tau0']:.2f} | {o['dp_crit']:.2f} | {o['tmax_d']:.2f} |")
