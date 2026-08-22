@@ -3,7 +3,7 @@
 
 Sherlock priority is a finite resource, so no stage is submitted until this has
 been pushed and looked at. Per stage it produces, into
-docs/figs/cooper_basin_calibration/presubmit_stage<N>/:
+docs/figs/cooper_grid/presubmit_stage<N>/:
 
     PRESUBMIT_stage<N>.md   one table, every deck parameter plus derived values
     params_<run>.txt        that deck verbatim + the derived block
@@ -39,7 +39,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
-REPO = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_basin_calibration")
+REPO = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_grid")
 
 STAGES = {
     1: dict(runs=list(range(632800, 632808)),

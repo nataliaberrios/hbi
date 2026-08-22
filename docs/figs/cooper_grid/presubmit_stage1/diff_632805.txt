@@ -1,0 +1,29 @@
+res1808.in  ->  res632805.in   (comments stripped)
+============================================================
+1c1
+< filenumber 1808
+---
+> filenumber 632805
+3,4c3,4
+< imax 600
+< jmax 600
+---
+> imax 601
+> jmax 601
+8c8
+< tmax 0.084
+---
+> tmax 0.01369863
+10c10
+< dtout 0.001
+---
+> dtout 0.0002
+19c19
+< sigmainit 30.0
+---
+> sigmainit 27.99
+44c44
+< injection_file "april_clean_fixed2.txt"
+---
+> injection_file "june_clean.txt"
+

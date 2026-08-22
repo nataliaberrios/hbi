@@ -32,7 +32,7 @@ import importlib.util as iu
 
 H = Path("/home/users/nberrios/3dhbi/hbi_analysis")
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
-REPO = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_basin_calibration")
+REPO = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_grid")
 TAU0_TAIYI = 15.0
 TCUT = 8.0            # shared front-fit window, set by the 8 d runs
 

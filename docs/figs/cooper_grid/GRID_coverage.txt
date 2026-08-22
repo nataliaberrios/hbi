@@ -1,0 +1,67 @@
+25 archived runs sit on this grid (June injection, kpmin 1e-15, bounds matching the map)
+
+    run  parent   sigma            fluid      perm  permev  muinit   tau0  dp_crit  can slip?  tmax d    state   days   code
+----------------------------------------------------------------------------------------------------------------------------------
+ 632801    1807   27.99                A   uniform       T  0.3700  10.36    10.73        yes    5.00     none   0.00      ?
+ 632803    1807   27.99    B (D-matched)   uniform       T  0.3700  10.36    10.73        yes    5.00     none   0.00      ?
+   1703    1807    30.0                A   uniform       T  0.3700  11.10    11.50         NO    0.06     done   0.06  fixed
+ 318070    1807    30.0                A   uniform       T  0.3700  11.10    11.50         NO   30.66     done  30.66  BUGGY
+ 532440    1807    30.0                A   uniform       T  0.3700  11.10    11.50         NO    2.00     done   0.46  fixed
+ 532443    1807    30.0                A   uniform       T  0.3700  11.10    11.50         NO    2.00     done   0.46  fixed
+ 632440    1807    30.0                A   uniform       F  0.3700  11.10    11.50         NO    2.00     done   0.46  fixed
+ 632443    1807    30.0                A   uniform       F  0.3700  11.10    11.50         NO    2.00     done   0.46  fixed
+ 632509    1807    30.0                A   twozone       T  0.3700  11.10    11.50         NO   30.66     done  30.66  BUGGY
+ 632511    1807    30.0                A   twozone       T  0.3700  11.10    11.50         NO   30.66     done  30.66  BUGGY
+ 632522    1807    30.0                A   twozone       T  0.3700  11.10    11.50         NO    8.00     done   8.00  fixed
+ 632523    1807    30.0                A   twozone       F  0.3700  11.10    11.50         NO    8.00     done   8.00  fixed
+ 632530    1807    30.0                A   twozone       T  0.3700  11.10    11.50         NO   30.00     none   0.00      ?
+ 632531    1807    30.0                A   twozone       F  0.3700  11.10    11.50         NO   30.00     none   0.00      ?
+ 632800    1807    30.0                A   uniform       T  0.3700  11.10    11.50         NO    5.00     none   0.00      ?
+ 632802    1807    30.0    B (D-matched)   uniform       T  0.3700  11.10    11.50         NO    5.00     none   0.00      ?
+ 632805    1808   27.99                A   uniform       T  0.3700  10.36    10.73        yes    5.00     none   0.00      ?
+ 632807    1808   27.99    B (D-matched)   uniform       T  0.3700  10.36    10.73        yes    5.00     none   0.00      ?
+ 318080    1808    30.0                A   uniform       T  0.3700  11.10    11.50         NO   30.66     done  18.34  BUGGY
+ 632510    1808    30.0                A   twozone       T  0.3700  11.10    11.50         NO   30.66     done  30.66  BUGGY
+ 632512    1808    30.0                A   twozone       T  0.3700  11.10    11.50         NO   30.66     done  30.66  BUGGY
+ 632524    1808    30.0                A   twozone       T  0.3700  11.10    11.50         NO    8.00     done   8.00  fixed
+ 632525    1808    30.0                A   twozone       F  0.3700  11.10    11.50         NO    8.00     done   8.00  fixed
+ 632804    1808    30.0                A   uniform       T  0.3700  11.10    11.50         NO    5.00     none   0.00      ?
+ 632806    1808    30.0    B (D-matched)   uniform       T  0.3700  11.10    11.50         NO    5.00     none   0.00      ?
+
+==================================================================================================================================
+PLANNED SLICES  (a full factorial over these axes would be ~800 runs)
+==================================================================================================================================
+
+S1 baseline, uniform perm, enhancement ON: 8 cells | 0 DONE (fixed code, >=4.8 d), 8 deck exists but not usable yet, 0 no deck
+   not yet  p1807 sigma   30.0 A                permev T  -> 1703 [only 0.06 d], 318070 [BUGGY code], 532440 [only 0.46 d], 532443 [only 0.46 d], 632800 [none]
+   not yet  p1807 sigma   30.0 B (D-matched)    permev T  -> 632802 [none]
+   not yet  p1807 sigma  27.99 A                permev T  -> 632801 [none]
+   not yet  p1807 sigma  27.99 B (D-matched)    permev T  -> 632803 [none]
+   not yet  p1808 sigma   30.0 A                permev T  -> 318080 [BUGGY code], 632804 [none]
+   not yet  p1808 sigma   30.0 B (D-matched)    permev T  -> 632806 [none]
+   not yet  p1808 sigma  27.99 A                permev T  -> 632805 [none]
+   not yet  p1808 sigma  27.99 B (D-matched)    permev T  -> 632807 [none]
+
+S2 two-zone perm, consistent bounds, enhancement ON: 8 cells | 2 DONE (fixed code, >=4.8 d), 0 deck exists but not usable yet, 6 no deck
+   DONE     p1807 sigma   30.0 A                permev T  -> 632522 (8.00 d)
+   DONE     p1808 sigma   30.0 A                permev T  -> 632524 (8.00 d)
+   NO DECK  p1807 sigma   30.0 B (D-matched)    permev T  (dp_crit 11.50 -> NO SLIP)
+   NO DECK  p1807 sigma  27.99 A                permev T  (dp_crit 10.73 -> can slip)
+   NO DECK  p1807 sigma  27.99 B (D-matched)    permev T  (dp_crit 10.73 -> can slip)
+   NO DECK  p1808 sigma   30.0 B (D-matched)    permev T  (dp_crit 11.50 -> NO SLIP)
+   NO DECK  p1808 sigma  27.99 A                permev T  (dp_crit 10.73 -> can slip)
+   NO DECK  p1808 sigma  27.99 B (D-matched)    permev T  (dp_crit 10.73 -> can slip)
+
+S2b two-zone perm, enhancement OFF (the control for S2): 8 cells | 2 DONE (fixed code, >=4.8 d), 0 deck exists but not usable yet, 6 no deck
+   DONE     p1807 sigma   30.0 A                permev F  -> 632523 (8.00 d)
+   DONE     p1808 sigma   30.0 A                permev F  -> 632525 (8.00 d)
+   NO DECK  p1807 sigma   30.0 B (D-matched)    permev F  (dp_crit 11.50 -> NO SLIP)
+   NO DECK  p1807 sigma  27.99 A                permev F  (dp_crit 10.73 -> can slip)
+   NO DECK  p1807 sigma  27.99 B (D-matched)    permev F  (dp_crit 10.73 -> can slip)
+   NO DECK  p1808 sigma   30.0 B (D-matched)    permev F  (dp_crit 11.50 -> NO SLIP)
+   NO DECK  p1808 sigma  27.99 A                permev F  (dp_crit 10.73 -> can slip)
+   NO DECK  p1808 sigma  27.99 B (D-matched)    permev F  (dp_crit 10.73 -> can slip)
+
+muinit axis floor, from the data alone (muinit >= f0*(1 - dp_obs/sigma)):
+   sigma   30.0 -> muinit >= 0.3816, tau0 >= 11.45 MPa
+   sigma  27.99 -> muinit >= 0.3659, tau0 >= 10.24 MPa
