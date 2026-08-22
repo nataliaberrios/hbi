@@ -1,0 +1,61 @@
+filenumber 632861
+! STAGE 3 -- tau_0 sweep on a COMMON grid at both sigmabar_0.
+! Cell: tau_0 = 12.0 MPa at sigmainit 27.99  ->  muinit = tau_0/sigmainit = 0.4287
+! Built from res632820.in; only sigmainit and muinit differ.
+!
+! tau_0 is the swept axis, not muinit, because the question is how
+! understressed the fault can be -- a statement about tau_0. A common
+! tau_0 grid also makes the two sigmainit columns comparable at equal
+! shear stress.
+!
+! dp_crit = sigmainit(1 - muinit/f0) = 7.99 MPa against a peak
+! MEASURED downhole overpressure of 10.92 MPa over 0-5 d, so this
+! cell CAN fail at the observed pressure.
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 40000
+tmax 0.01369863
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_2zone_601_ds5_kmax5e-14.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.4287
+sigmainit 27.99
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 5e-14
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 1.4051e-07
+eta 1.27e-4
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2

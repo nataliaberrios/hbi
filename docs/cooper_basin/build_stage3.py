@@ -14,8 +14,16 @@ departing from the ranges arbitrarily. The alternative (a common muinit grid)
 was rejected because the sigmainit 27.99 column would top out at tau_0 13.99 and
 never reach his value.
 
-GRID: tau_0 = 11.0 to 15.0 MPa in 0.5 MPa steps, 9 values, at both sigmainit.
-18 runs.
+GRID: tau_0 = 11.0 to 15.0 MPa in 0.5 MPa steps, 9 values, at both sigmainit,
+at both parents. 36 runs, run as two blocks of 18 via --start.
+
+fluid and permev are FIXED at B (eta 1.27e-4) and T (enhancement on), because
+those are the model under test: fluid A is the Taiyi-faithful baseline and
+permev F is the enhancement control, and both are already covered at
+muinit 0.37 by Stage 1 and Stage 2. Carrying them into the tau_0 sweep would be
+sweeping the baselines rather than the model. parent stays an axis because on the
+runs available it points two ways -- 1808 gives the better front (0.73 vs 0.66)
+and the far worse wellhead (+310% vs +72%).
 
   sigmainit 30.00 -> muinit 0.3667 ... 0.5000
   sigmainit 27.99 -> muinit 0.3930 ... 0.5359
@@ -60,6 +68,8 @@ def main():
     ap.add_argument("--base", type=int, required=True,
                     help="the Stage 2 run whose (parent, fluid, permev) cell won")
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--start", type=int, default=START,
+                    help="first filenumber; two parents need two blocks")
     a = ap.parse_args()
 
     src = IN / f"res{a.base}.in"
@@ -77,7 +87,7 @@ def main():
           f"{'vs 10.92':>9s} {'can slip?':>10s}")
     print("-" * 64)
 
-    n = START
+    n = a.start
     made = []
     for sig in SIGMAS:
         s = float(sig)
