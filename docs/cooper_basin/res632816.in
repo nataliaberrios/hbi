@@ -1,0 +1,78 @@
+filenumber 632816
+! STAGE 2 -- two-zone initial permeability, consistent bounds.
+! Cell: parent 1808 | sigmainit 30.0 | fluid B | permev T
+! Built from res632524.in, which is the (30.0, A, T/F) cell of this slice.
+!
+! MAP: "perm_2zone_601_ds5_kmax5e-14.txt"
+!   near-well 150 m disc = kpmax = 5e-14
+!   background           = kp = kpmin = 1e-15
+!   The map's two values ARE the evolution bounds -- nothing else appears.
+!   Of 112 archived runs with enhancement and a nonuniform map, the 35
+!   obeying this had 29 reach dc; the 77 that did not had 2.
+!
+! permev T: slip drives the background up toward kpmax, extending the conduit.
+!
+!
+!
+! fluid B: eta 1.27e-4, beta 1.4051e-07  (beta x 7.007874 so D is unchanged from A)
+!   Holding D fixed is NOT a null change: the Peaceman well index
+!   T = 2*pi*k/eta (m_diffusion.f90:669) depends on eta alone, so the
+!   wellbore coupling gamma = (Sw_fwid/h)/((Sw_fwid/h)+T) shifts.
+!   Also phi*beta = 1.405e-09, ~3.9x above what phi<=0.02 and
+!   beta<=2e-8 allow. Deliberate, for diffusivity consistency.
+!
+! sigmainit 30.0 MPa  (res1807/1808's round number, NOT measurement-derived)
+! tau0 = 11.10 MPa (Taiyi 15.0)   dp_crit = 11.50 MPa
+! Peak MEASURED downhole overpressure in 5 d is 10.92 MPa, so this cell CANNOT
+! fail at the observed pressure -- it can only slip by over-pressurising.
+!
+! tmax 0.01369863 yr = 5.00 d. res632524.in ran 8 d; both cover the 0-5 d
+! comparison window that every score uses.
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 40000
+tmax 0.01369863
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_2zone_601_ds5_kmax5e-14.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 30.0
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 5e-14
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 1.4051e-07
+eta 1.27e-4
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2

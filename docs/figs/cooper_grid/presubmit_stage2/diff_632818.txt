@@ -1,0 +1,19 @@
+res632524.in  ->  res632818.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632524
+---
+> filenumber 632818
+8c8
+< tmax 0.02191781
+---
+> tmax 0.01369863
+10c10
+< dtout 0.001
+---
+> dtout 0.0002
+21c21
+< sigmainit 30.0
+---
+> sigmainit 27.99
+

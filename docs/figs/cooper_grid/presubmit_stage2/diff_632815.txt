@@ -1,0 +1,29 @@
+res632522.in  ->  res632815.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632522
+---
+> filenumber 632815
+8c8
+< tmax 0.02191781
+---
+> tmax 0.01369863
+10c10
+< dtout 0.001
+---
+> dtout 0.0002
+21c21
+< sigmainit 30.0
+---
+> sigmainit 27.99
+27c27
+< permev T
+---
+> permev F
+32,33c32,33
+< beta 2.25e-8
+< eta 0.89e-3
+---
+> beta 1.5768e-07
+> eta 1.27e-4
+

@@ -47,6 +47,11 @@ STAGES = {
                      632804: 1808, 632805: 1808, 632806: 1808, 632807: 1808},
             title="Stage 1 — res1807/res1808 physics on fixed HBI, uniform initial "
                   "perm, twinned on sigmabar_0"),
+    2: dict(runs=list(range(632810, 632822)),
+            parents={n: (632522 if n <= 632815 else 632524)
+                     for n in range(632810, 632822)},
+            title="Stage 2 — two-zone initial perm, consistent bounds, the 12 cells "
+                  "missing from the 16-cell slice"),
 }
 
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"

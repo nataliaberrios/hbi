@@ -1,0 +1,73 @@
+filenumber 632819
+! STAGE 2 -- two-zone initial permeability, consistent bounds.
+! Cell: parent 1808 | sigmainit 27.99 | fluid A | permev F
+! Built from res632524.in, which is the (30.0, A, T/F) cell of this slice.
+!
+! MAP: "perm_2zone_601_ds5_kmax5e-14.txt"
+!   near-well 150 m disc = kpmax = 5e-14
+!   background           = kp = kpmin = 1e-15
+!   The map's two values ARE the evolution bounds -- nothing else appears.
+!   Of 112 archived runs with enhancement and a nonuniform map, the 35
+!   obeying this had 29 reach dc; the 77 that did not had 2.
+!
+! permev F: enhancement OFF -- the conduit is the initial condition only. With a
+!   two-zone field this is a real alternative model, not a degenerate case:
+!   it asks whether slip needs to extend the conduit at all.
+!
+! fluid A: eta 0.89e-3, beta 2.005e-8  (the parent's own values)
+!
+! sigmainit 27.99 MPa  (DERIVED: sv 100, sH 160, dip 10 deg, p_pore 73.82 -> 27.99)
+! tau0 = 10.36 MPa (Taiyi 15.0)   dp_crit = 10.73 MPa
+! Peak MEASURED downhole overpressure in 5 d is 10.92 MPa, so this cell CAN
+! fail at the observed pressure.
+!
+! tmax 0.01369863 yr = 5.00 d. res632524.in ran 8 d; both cover the 0-5 d
+! comparison window that every score uses.
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 40000
+tmax 0.01369863
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_2zone_601_ds5_kmax5e-14.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 27.99
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev F
+kpmax 5e-14
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 2.005e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2
