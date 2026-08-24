@@ -59,7 +59,8 @@ _spec = iu.spec_from_file_location("sf", str(H / "make_sweep_figures.py"))
 sf = iu.module_from_spec(_spec)
 _spec.loader.exec_module(sf)
 
-STAGES = {1: list(range(632800, 632808)), 2: list(range(632810, 632822))}
+STAGES = {1: list(range(632800, 632808)), 2: list(range(632810, 632822)),
+          3: list(range(632830, 632848)) + list(range(632850, 632868))}
 EXTRA_STAGE2 = [632522, 632523, 632524, 632525]
 
 
@@ -169,7 +170,7 @@ def main():
     if a.stage:
         jobs = STAGES[a.stage] + (EXTRA_STAGE2 if a.stage == 2 else [])
     if a.all:
-        jobs = sorted(set(STAGES[1] + STAGES[2] + EXTRA_STAGE2))
+        jobs = sorted(set(sum(STAGES.values(), []) + EXTRA_STAGE2))
     if not jobs:
         raise SystemExit("give job numbers, --stage N, or --all")
 
