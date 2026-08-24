@@ -1,0 +1,46 @@
+window 0-5 d   lambda_obs = 0.1866   peak measured overpressure 10.92 MPa
+
+    run  sigma     mu   tau0      eta       beta  permev                           perm  reach  lam/obs      p %    RMS   pk/dc   code  bnds
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ 632830  30.00  0.367  11.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632831  30.00  0.383  11.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632832  30.00  0.400  12.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632833  30.00  0.417  12.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632834  30.00  0.433  13.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632835  30.00  0.450  13.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632836  30.00  0.467  14.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632837  30.00  0.483  14.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632838  30.00  0.500  15.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632839  27.99  0.393  11.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632840  27.99  0.411  11.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632841  27.99  0.429  12.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632842  27.99  0.447  12.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632843  27.99  0.465  13.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632844  27.99  0.482  13.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632845  27.99  0.500  14.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       1  fixed    ok
+ 632846  27.99  0.518  14.50 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       1  fixed    ok
+ 632847  27.99  0.536  15.00 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00        -     -0.5    1.4       1  fixed    ok
+ 632850  30.00  0.367  11.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.02    +33.5   13.7       9  fixed    ok
+ 632851  30.00  0.383  11.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.02    +33.5   13.7      11  fixed    ok
+ 632852  30.00  0.400  12.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.03    +33.5   13.7      14  fixed    ok
+ 632853  30.00  0.417  12.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.03    +33.5   13.7      18  fixed    ok
+ 632854  30.00  0.433  13.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.05    +33.5   13.7      23  fixed    ok
+ 632855  30.00  0.450  13.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.07    +33.5   13.7      29  fixed    ok
+ 632856  30.00  0.467  14.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.09    +33.5   13.7      37  fixed    ok
+ 632857  30.00  0.483  14.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.12    +33.6   13.8      46  fixed    ok
+ 632858  30.00  0.500  15.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.15    +33.5   13.7      58  fixed    ok
+ 632859  27.99  0.393  11.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.03    +33.5   13.7      15  fixed    ok
+ 632860  27.99  0.411  11.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.05    +33.5   13.7      20  fixed    ok
+ 632861  27.99  0.429  12.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.06    +33.5   13.7      25  fixed    ok
+ 632862  27.99  0.447  12.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.07    +33.5   13.7      32  fixed    ok
+ 632863  27.99  0.465  13.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.10    +33.5   13.7      41  fixed    ok
+ 632864  27.99  0.482  13.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.14    +33.6   13.8      51  fixed    ok
+ 632865  27.99  0.500  14.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.18    +33.6   13.8      63  fixed    ok
+ 632866  27.99  0.518  14.50 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.24    +33.5   13.7      79  fixed    ok
+ 632867  27.99  0.536  15.00 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.34    +33.5   13.7     101  fixed    ok
+
+36/36 usable (fixed code, bounds match the map, reached >=4.75 d)
+
+nothing inside both bands yet
+
+wrote /home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_grid/grid_scores.json

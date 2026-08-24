@@ -1,0 +1,35 @@
+Matplotlib is building the font cache; this may take a moment.
+window 0-5 d   lambda_obs = 0.1866   peak measured overpressure 10.92 MPa
+
+    run  sigma     mu   tau0      eta       beta  permev                           perm  reach  lam/obs      p %    RMS   pk/dc   code  bnds
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ 632522  30.00  0.370  11.10 8.90e-04  2.250e-08       T perm_2zone_601_ds5_kmax2.5e-13   8.00     0.66    +71.8   29.5     401  fixed    ok
+ 632523  30.00  0.370  11.10 8.90e-04  2.250e-08       F perm_2zone_601_ds5_kmax2.5e-13   8.00     0.57    +75.3   31.0    1065  fixed    ok
+ 632524  30.00  0.370  11.10 8.90e-04  2.005e-08       T perm_2zone_601_ds5_kmax5e-14.t   8.00     0.73   +309.7  129.3    1105  fixed    ok
+ 632525  30.00  0.370  11.10 8.90e-04  2.005e-08       F perm_2zone_601_ds5_kmax5e-14.t   8.00     0.62   +312.4  130.4    1092  fixed    ok
+ 632800  30.00  0.370  11.10 8.90e-04  2.250e-08       T                        uniform   5.00     0.76    +79.6   32.1     287  fixed    ok
+ 632801  27.99  0.370  10.36 8.90e-04  2.250e-08       T                        uniform   5.00     0.79    +77.8   31.5     291  fixed    ok
+ 632802  30.00  0.370  11.10 1.27e-04  1.577e-07       T                        uniform   5.00     0.24    +25.7   10.4      32  fixed    ok
+ 632803  27.99  0.370  10.36 1.27e-04  1.577e-07       T                        uniform   5.00     0.24    +23.8    9.7      33  fixed    ok
+ 632804  30.00  0.370  11.10 8.90e-04  2.005e-08       T                        uniform   5.00     0.79   +317.0  131.8     583  fixed    ok
+ 632805  27.99  0.370  10.36 8.90e-04  2.005e-08       T                        uniform   5.00     0.81   +315.7  131.3     569  fixed    ok
+ 632806  30.00  0.370  11.10 1.27e-04  1.405e-07       T                        uniform   5.00     0.26    +56.5   22.6      93  fixed    ok
+ 632807  27.99  0.370  10.36 1.27e-04  1.405e-07       T                        uniform   5.00     0.28    +54.8   21.9      94  fixed    ok
+ 632810  30.00  0.370  11.10 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632811  30.00  0.370  11.10 1.27e-04  1.577e-07       F perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632812  27.99  0.370  10.36 8.90e-04  2.250e-08       T perm_2zone_601_ds5_kmax2.5e-13   5.00     0.70    +70.7   29.0     291  fixed    ok
+ 632813  27.99  0.370  10.36 8.90e-04  2.250e-08       F perm_2zone_601_ds5_kmax2.5e-13   5.00     0.59    +75.3   31.0     603  fixed    ok
+ 632814  27.99  0.370  10.36 1.27e-04  1.577e-07       T perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632815  27.99  0.370  10.36 1.27e-04  1.577e-07       F perm_2zone_601_ds5_kmax2.5e-13   5.00  no slip     -0.5    1.4       0  fixed    ok
+ 632816  30.00  0.370  11.10 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.02    +33.5   13.7       9  fixed    ok
+ 632817  30.00  0.370  11.10 1.27e-04  1.405e-07       F perm_2zone_601_ds5_kmax5e-14.t   5.00     0.02    +33.5   13.7       9  fixed    ok
+ 632818  27.99  0.370  10.36 8.90e-04  2.005e-08       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.76   +309.1  129.0     570  fixed    ok
+ 632819  27.99  0.370  10.36 8.90e-04  2.005e-08       F perm_2zone_601_ds5_kmax5e-14.t   5.00     0.64   +312.4  130.4     755  fixed    ok
+ 632820  27.99  0.370  10.36 1.27e-04  1.405e-07       T perm_2zone_601_ds5_kmax5e-14.t   5.00     0.02    +33.5   13.7      12  fixed    ok
+ 632821  27.99  0.370  10.36 1.27e-04  1.405e-07       F perm_2zone_601_ds5_kmax5e-14.t   5.00     0.02    +33.5   13.7      12  fixed    ok
+
+24/24 usable (fixed code, bounds match the map, reached >=4.75 d)
+
+nothing inside both bands yet
+
+wrote /home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_grid/grid_scores.json
