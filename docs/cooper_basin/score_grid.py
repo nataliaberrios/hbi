@@ -221,8 +221,15 @@ def main():
         print("\nnothing inside both bands yet")
 
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "grid_scores.json").write_text(json.dumps(rows, indent=1) + "\n")
-    print(f"\nwrote {OUT}/grid_scores.json")
+    f = OUT / "grid_scores.json"
+    merged = {}
+    if f.exists():
+        for r in json.loads(f.read_text()):
+            merged[r["n"]] = r
+    for r in rows:
+        merged[r["n"]] = r
+    f.write_text(json.dumps([merged[k] for k in sorted(merged)], indent=1) + "\n")
+    print(f"\nwrote {f}  ({len(rows)} scored this run, {len(merged)} total)")
 
 
 if __name__ == "__main__":

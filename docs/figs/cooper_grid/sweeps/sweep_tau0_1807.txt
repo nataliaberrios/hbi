@@ -1,0 +1,18 @@
+$\tau_0$ sweep, 250$\times$ map, $\bar\sigma_0$=27.99 MPa
+============================================================================
+fixed: fluid B (eta 1.27e-4), permev T, near-well 2.5e-13 / background 1e-15
+mu_0 derived as tau_0/barsigma_0, 0.393 to 0.536
+
+window 0-5 d, lambda_obs 0.1866
+
+  632839  lam/obs NO SLIP   pressure -0.5%
+  632840  lam/obs NO SLIP   pressure -0.5%
+  632841  lam/obs NO SLIP   pressure -0.5%
+  632842  lam/obs NO SLIP   pressure -0.5%
+  632843  lam/obs NO SLIP   pressure -0.5%
+  632844  lam/obs NO SLIP   pressure -0.5%
+  632845  lam/obs NO SLIP   pressure -0.5%
+  632846  lam/obs NO SLIP   pressure -0.5%
+  632847  lam/obs nan   pressure -0.5%
+
+NOTE: NO SLIP at every tau_0 including Taiyi's own 15.0 MPa. The pressure is identical to three figures across the whole sweep, because with no slip the permeability never evolves and the hydraulics decouple from friction entirely.

@@ -1,0 +1,13 @@
+Enhancement on vs off, two-zone initial permeability
+============================================================================
+fixed: mu_0=0.37, barsigma_0=27.99 MPa, fluid A; dashed = permev F
+with a two-zone field the conduit already exists, so permev F asks whether slip needs to extend it
+
+window 0-5 d, lambda_obs 0.1866
+
+  632812  lam/obs 0.696   pressure +70.7%
+  632813  lam/obs 0.591   pressure +75.3%
+  632818  lam/obs 0.757   pressure +309.1%
+  632819  lam/obs 0.637   pressure +312.4%
+
+NOTE: Enhancement buys about 17% on the front and leaves the pressure essentially untouched.

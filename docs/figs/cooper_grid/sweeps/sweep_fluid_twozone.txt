@@ -1,0 +1,13 @@
+Fluid A vs B, two-zone initial permeability
+============================================================================
+fixed: mu_0=0.37, permev T, near-well disc = kpmax, background = kp = kpmin = 1e-15
+dashed = fluid B (eta 1.27e-4, D-matched)
+
+window 0-5 d, lambda_obs 0.1866
+
+  632812  lam/obs 0.696   pressure +70.7%
+  632810  lam/obs NO SLIP   pressure -0.5%
+  632818  lam/obs 0.757   pressure +309.1%
+  632816  lam/obs 0.017   pressure +33.5%
+
+NOTE: Fluid B on the 250x map has NO front at all while its wellhead sits at -0.5% (RMS 1.4 MPa), the best pressure match this project has produced.

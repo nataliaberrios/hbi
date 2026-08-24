@@ -1,0 +1,18 @@
+$\tau_0$ sweep, 50$\times$ map, $\bar\sigma_0$=27.99 MPa
+============================================================================
+fixed: fluid B (eta 1.27e-4), permev T, near-well 5e-14 / background 1e-15
+mu_0 derived as tau_0/barsigma_0, 0.393 to 0.536
+
+window 0-5 d, lambda_obs 0.1866
+
+  632859  lam/obs 0.033   pressure +33.5%
+  632860  lam/obs 0.047   pressure +33.5%
+  632861  lam/obs 0.059   pressure +33.5%
+  632862  lam/obs 0.074   pressure +33.5%
+  632863  lam/obs 0.100   pressure +33.5%
+  632864  lam/obs 0.138   pressure +33.6%
+  632865  lam/obs 0.182   pressure +33.6%
+  632866  lam/obs 0.236   pressure +33.5%
+  632867  lam/obs 0.341   pressure +33.5%
+
+NOTE: lambda/lambda_obs climbs 0.03 -> 0.34 across tau_0 11.0 -> 15.0. Monotonic but weak: extrapolating to 1.0 needs tau_0 well above Taiyi's 15.0, i.e. a MORE stressed fault.

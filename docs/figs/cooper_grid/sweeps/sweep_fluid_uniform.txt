@@ -1,0 +1,13 @@
+Fluid A vs B, uniform initial permeability
+============================================================================
+fixed: mu_0=0.37, permev T, uniform kp = kpmin = 1e-15, parameterfromfile F
+A = eta 8.9e-4 with the parent's beta;  B = eta 1.27e-4 with betatimes7.007874 so D is unchanged
+
+window 0-5 d, lambda_obs 0.1866
+
+  632800  lam/obs 0.757   pressure +79.6%
+  632802  lam/obs 0.241   pressure +25.7%
+  632804  lam/obs 0.788   pressure +317.0%
+  632806  lam/obs 0.260   pressure +56.5%
+
+NOTE: A and B have IDENTICAL D by construction, so any difference here is str = beta*phi and the wellbore coupling gamma -- the two quantities the D-matching does not preserve.

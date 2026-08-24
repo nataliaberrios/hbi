@@ -1,0 +1,13 @@
+$\bar\sigma_0$ twins: 30.0 vs 27.99 MPa, uniform perm
+============================================================================
+fixed: mu_0=0.37, permev T, uniform kp; each pair differs in barsigma_0 and nothing else
+dashed = 27.99 MPa (derived from the stress data)
+
+window 0-5 d, lambda_obs 0.1866
+
+  632800  lam/obs 0.757   pressure +79.6%
+  632801  lam/obs 0.788   pressure +77.8%
+  632804  lam/obs 0.788   pressure +317.0%
+  632805  lam/obs 0.814   pressure +315.7%
+
+NOTE: dp_crit is 11.50 MPa at 30.0 and 10.73 at 27.99, against a peak measured overpressure of 10.92 -- so only the 27.99 twin can fail at the observed pressure.
