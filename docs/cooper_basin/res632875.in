@@ -1,0 +1,79 @@
+filenumber 632875
+! STAGE 4 -- spatially GRADED POROSITY.
+! Built from res632812.in; only the parameter file and ncol change.
+!
+! WHY: the blocking constraint is the SHAPE of the pressure profile.
+! The injection rate and the wellhead are both measured, which pins the
+! transmissivity and hence Dp everywhere. For a UNIFORM medium the whole
+! profile is one logarithm, so Dp(r_w)/Dp(417 m) is fixed by geometry --
+! solving for the k and beta giving 11 MPa at the well and 6.54 MPa at
+! 417 m returns beta = 6.6e-18, eight orders below water. A GRADED medium
+! is not subject to that constraint.
+!
+! beta is a scalar in HBI and cannot vary in space, but phi can:
+!   str   = beta*phiG              m_diffusion.f90:444   storage
+!   cdiff = kpG/(eta*beta*phiG)    m_diffusion.f90:445   diffusivity
+! so lowering phi far from the well lowers storage AND raises diffusivity
+! there, both carrying pressure further with less drop. They cannot be
+! separated -- phi enters both.
+!
+! GRADING G3: phi = 0.005 within 150 m of the well,
+!   0.020 beyond (2821 cells near, equivalent radius 150 m).
+!   Both values are inside the 0.005-0.02 range recorded as defensible.
+! G3 is the INVERSE grading, included as a CONTROL: it should steepen
+! the profile and make the front worse. If it does not, the mechanism
+! is not what we think it is.
+!
+! phi*beta ranges 4.500e-10 (far) to 1.125e-10 (near),
+! against the scalar 2.250e-10 in the base run.
+!
+! kp column is copied verbatim from perm_2zone_601_ds5_kmax2.5e-13.txt, so the permeability
+! field is IDENTICAL to the base run and only porosity differs.
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 40000
+tmax 0.01369863
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "permphi_2zone_601_ds5_kmax2.5e-13_G3.txt"
+parameter_file_ncol 2
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 27.99
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 2.5e-13
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 2.25e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2
