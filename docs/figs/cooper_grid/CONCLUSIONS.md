@@ -139,3 +139,104 @@ that could plausibly change the answer:
   D-matched 1.577e-7. This is the single gap most directly on the line between
   632810 (pressure right, no slip) and 632812 (slip, pressure wrong), and it was
   designed but never run.
+
+---
+
+# ADDENDUM: the actual reason, from Wang & Dunham's own front formula
+
+Their repository contains a closed-form prediction for the seismicity front
+(`source_code/cmp_seis_extent.m`, used at `projects/mk_plots.m:596-645`). It needs
+no simulation, so it can be evaluated directly:
+
+    Dp(r,t) = (Q0*eta/(4*pi*k*w)) * E1(phi*eta*beta*r^2/(4*k*t)) * exp(-dz^2/(2*std^2))
+    front radius r solves  Dp(r,t) = Dtauc,   Dtauc = f0*sigmabar_0 - tau_0
+
+Evaluated with their Table 1 values (Q0 20e-3, eta 8.9e-4, k 4e-13, w 6 m,
+phi 0.01, beta 1e-8, sigmabar_0 28.0 MPa, dz 0.5 m, std 2 m):
+
+| t (d) | observed front | their tau_0 = 15.0 | resolved tau_0 = 10.26 |
+|---|---|---|---|
+| 1 | 187 m | 196 m | 3 m |
+| 3 | 323 m | 340 m | 5 m |
+| 5 | **417 m** | **438 m** | **7 m** |
+
+Their calibrated stress reproduces the observed front to about 5%. The resolved
+stress predicts 7 m instead of 417 m — sixty times too small.
+
+## Why the front is such a sharp constraint
+
+Dp falls off **logarithmically** with radius (E1(x) ~ -ln x for small x), so the
+radius at which Dp crosses a fixed threshold depends **exponentially** on that
+threshold. The prefactor is A = Q0*eta/(4*pi*k*w) = 0.572 MPa, so:
+
+| tau_0 MPa | Dtauc MPa | front at 5 d | vs observed |
+|---|---|---|---|
+| 10.26 (resolved) | 6.54 | 7 m | 0.02x |
+| 12.00 | 4.80 | 31 m | 0.08x |
+| 13.00 | 3.80 | 75 m | 0.18x |
+| 14.00 | 2.80 | 181 m | 0.43x |
+| **14.94** | **1.86** | **417 m** | **1.00x** |
+| 15.50 | 1.30 | 691 m | 1.66x |
+
+A 0.2 MPa change in tau_0 moves the front by 20%. This is not a soft target that
+can be traded against pressure.
+
+## This is why the parameter search could not succeed
+
+The two observations constrain two different things, and between them leave no
+freedom:
+
+- **the wellhead record fixes the pressure amplitude A** — it is what "matching
+  the pressure" means;
+- **the front fixes the ratio Dtauc/A**, and therefore, with A pinned, fixes
+  **Dtauc itself** to 1.86 MPa.
+
+At f0 = 0.6 and sigmabar_0 = 28.0 MPa that forces tau_0 = 14.94 MPa, essentially
+exactly the 15.00 MPa Wang & Dunham calibrated. So their value is not merely a
+fit to seismic moment; the front requires it independently.
+
+It also explains every HBI result above quantitatively. Our understressed runs
+sat at tau_0 = 10.4-13.0 MPa with f0 = 0.6, i.e. Dtauc = 3.8-6.5 MPa, for which
+the formula predicts fronts of 7-75 m. The only runs that reached 255 m did so by
+raising A — over-pressurising to 82.5 MPa wellhead against a measured 44.73.
+That is the trade-off, and it is not something a permeability, storage or
+enhancement choice can escape, because those choices act on A, which the wellhead
+already pins.
+
+## What this leaves for the understressed hypothesis
+
+The front constrains only the **combination** Dtauc = f0*sigmabar_0 - tau_0.
+There are two ways to reach the required 1.86 MPa:
+
+| route | tau_0 | f0 | keeps the stress measurement? |
+|---|---|---|---|
+| Wang & Dunham | **14.94** (calibrated) | 0.60 (lab granite) | no |
+| alternative | 10.26 (resolved) | **0.433** | **yes** |
+
+f0 = 0.433 sits inside the range published for chlorite-bearing granitic gouge
+(pure chlorite 0.37; unaltered granite/feldspar 0.60-0.71; mixed gouge decreasing
+monotonically with chlorite content). And Wang & Dunham already argue for
+phyllosilicates in this fault zone, in order to justify velocity-strengthening
+behaviour.
+
+So the honest conclusion is not that an understressed fault is impossible. It is:
+
+> **The observed front requires a strength margin of 1.86 MPa. An understressed
+> fault can supply that only if f0 is about 0.43 rather than 0.60. Permeability,
+> enhancement, storage and viscosity cannot supply it, because they act on the
+> pressure amplitude, which the wellhead record already fixes.**
+
+That is a single-parameter, falsifiable claim, and it is testable with a handful
+of HBI runs at f0 near 0.43 rather than another grid.
+
+## Limits of this addendum
+
+- The formula is Wang & Dunham's **Coulomb triggering criterion for the secondary
+  faults** (their spring-sliders), not HBI's rate-and-state main fault. f0 = 0.433
+  is therefore the value required *in their framework*. Whether HBI's aseismic
+  slip front responds identically has to be checked by running it.
+- It assumes constant-rate injection at Q0 = 20e-3 m^3/s, whereas the real record
+  is strongly variable, and uses their far-field k = 4e-13 with their viscosity
+  8.9e-4 rather than the corrected 1.27e-4.
+- dz = 0.5 m (the closest secondary-fault offset they plot) was used; larger dz
+  reduces the predicted radius.
