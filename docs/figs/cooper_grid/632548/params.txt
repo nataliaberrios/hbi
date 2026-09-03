@@ -1,0 +1,97 @@
+run 632548
+============================================================
+
+STATE
+  output       final: /scratch/users/nberrios/3dhbi/output/632548
+  frames       192
+  reached      17.2000 d
+  tmax         0.0471233 yr = 17.2000 d (HBI year = 365 d)
+  completed    YES
+  convergence_log.csv: status=CONVERGED
+
+GEOMETRY
+  grid         601 x 601 at ds 0.02 km (12.020 x 12.020 km)
+  problem      3dp
+
+MECHANICS
+  sigmainit    27.99 MPa
+  muinit       0.37   -> tau0 = 10.356 MPa
+  f0           0.6
+  dp to fail   10.729 MPa   (= sigmainit - tau0/f0)
+  a            0.015
+  b            0.012
+  dc           1e-4
+  limitsigma   T
+  minsig       1
+  velinit      1d-12
+  velmin       1d-20
+
+HYDRAULICS
+  permeability perm_taiyi_601_ds20.txt
+    near-well 1.100e-12 m^2 over 177 cells (equivalent disc radius 150 m)
+    far field 4.000e-13 m^2 over 361024 cells
+    contrast  3x
+  permev       T   (does perm evolve with slip)
+  kpmin        4e-13
+  kpmax        5e-12
+  kL           1e-3
+  kT           1e15
+  phi          0.01
+  beta         1e-8
+  eta          0.89e-3
+  pfinit       0d0
+  D (near-well)   12.36 m^2/s
+  D (far field)   4.494 m^2/s
+  injection    june_clean.txt
+
+FULL DECK (verbatim)
+------------------------------------------------------------
+  filenumber             632548
+  problem                3dp
+  imax                   601
+  jmax                   601
+  ds                     0.020
+  interval               30
+  nstep                  400000
+  tmax                   0.04712329
+  dtmax                  43200
+  dtout                  0.0002
+  parameterfromfile      T
+  parameter_file         perm_taiyi_601_ds20.txt
+  parameter_file_ncol    1
+  backslip               T
+  vpl                    0d0
+  a                      0.015
+  b                      0.012
+  dc                     1e-4
+  f0                     0.6
+  muinit                 0.37
+  sigmainit              27.99
+  velinit                1d-12
+  limitsigma             T
+  minsig                 1
+  velmin                 1d-20
+  pressurediffusion      T
+  permev                 T
+  kp                     4e-13
+  kpmin                  4e-13
+  kpmax                  5e-12
+  phi                    0.01
+  beta                   1e-8
+  eta                    0.89e-3
+  kL                     1e-3
+  kT                     1e15
+  pfinit                 0d0
+  bcl                    Dirichlet
+  bcr                    Dirichlet
+  bct                    Dirichlet
+  bcb                    Dirichlet
+  pbcl                   0d0
+  pbcr                   0d0
+  pbct                   0d0
+  pbcb                   0d0
+  injectionfromfile      T
+  injection_file         june_clean.txt
+  rigid                  24
+  Sw_fwid                7.4e-9
+  rw                     8.9e-2

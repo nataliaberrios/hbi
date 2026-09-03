@@ -1,0 +1,65 @@
+filenumber 632880
+! REFERENCE RUN -- Wang & Dunham's parameters, exactly.
+! Across 717 decks this project never once ran his parameter set, so it was
+! never checked that HBI reproduces his result from his inputs. Every
+! comparison so far has assumed it.
+!
+!   sigmainit 27.99   = |snn| - p_pore, snn from rotate_stress(-160e6, 0,
+!                       -100e6, 10 deg) = -101.8092 MPa, minus 73.82
+!   muinit 0.5359     = his calibrated tau_0 15.0 MPa / 27.9892
+!   f0 0.6, eta 0.89e-3 (his water-at-25C value), beta 1e-8, phi 0.01
+!   perm_taiyi_601_ds20.txt = Table 1, 1.1e-12 within 150 m / 4e-13 beyond
+!   permev F          = he has NO permeability enhancement at all
+!   rw 8.9e-2, Sw_fwid 7.4e-9 = his R_w = 0.1778/2 and V_w*beta_w/w
+!
+!   dc 1.53e-5  -- Taiyi's dc, from his setup_model.m
+!
+! Built from res632520.in, which was written months ago and never submitted.
+! Only dc, tmax and dtout differ from it.
+! tmax 5 d and dtout 0.0002 match the window every score in this project uses.
+problem 3dp
+imax 601
+jmax 601
+ds 0.020
+interval 30
+nstep 400000
+tmax 0.01369863
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_taiyi_601_ds20.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1.53e-5
+f0 0.6
+muinit 0.5359
+sigmainit 27.99
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev F
+kp 4e-13
+phi 0.01
+beta 1e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2
