@@ -107,7 +107,10 @@ for v, r in runs.items():
     s = r["slip"][n - 1].reshape(IMAX, JMAX)
     mi, mj = np.unravel_index(np.argmax(s), s.shape)
     off = np.hypot(mi - IWELL, mj - JWELL) * DS_KM * 1e3
-    ok = off < DS_KM * 1e3
+    # within one cell of the injector: a 1-cell offset is discretisation, not a
+    # ring.  The pre-fix cusp put the peak 17 cells (85 m) out, so this still
+    # separates the two cases.
+    ok = off <= DS_KM * 1e3 * 1.001
     print(f"    {v:5s}: max slip at ({mi},{mj}), {off:6.1f} m from the injector; "
           f"injector {s[IWELL,JWELL]*100:.4f} cm vs peak {s[mi,mj]*100:.4f} cm   "
           f"{'PASS' if ok else 'FAIL'}")

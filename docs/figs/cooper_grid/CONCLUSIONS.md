@@ -478,3 +478,207 @@ Point 1 deserves emphasis: dc sets the front CONTOUR as well as the friction
 length scale, so it moves lambda without moving the wellhead at all. Every lever
 measured above has a positive exchange rate; dc's is effectively infinite. It was
 on the "not yet swept" list from the very beginning and never got swept.
+
+---
+
+# SESSION 2026-09-03: the dc confound, the Taiyi reference, and what his model actually is
+
+Five things changed today. The first invalidates the paragraph immediately above.
+
+## 1. CORRECTION: the dc sweep, as argued above, was not interpretable
+
+The paragraph ending the Stage 4 section says dc "sets the front CONTOUR as well
+as the friction length scale, so it moves lambda without moving the wellhead at
+all... dc's exchange rate is effectively infinite." That treats the double role
+as a *feature*. It is a **confound**, and the sweep as designed could not have
+been read.
+
+The front was measured as the contour where slip exceeds **that run's own dc**
+(`make_sweep_figures.py:254`, `thr = ffloat(dk["dc"])`, and a duplicate in
+`make_run_figures.py:157`). So dc entered the metric twice, **with the same
+sign**:
+
+- contour level — lower dc means more cells counted as slipped, bigger front
+- nucleation size — lower dc means slip propagates further, bigger front
+
+Nothing can separate those by inspection. A dc sweep scored that way would have
+produced a clean monotonic trend that was part measurement artifact and part
+physics in unknown proportion.
+
+This was live, not hypothetical: 632880 uses Taiyi's dc = 1.53e-5 while the other
+64 grid decks use 1e-4, so it would have been scored against a threshold **6.5x
+lower** than everything it was being compared to.
+
+**Fixed.** `FRONT_THR = 1e-4 m`, fixed for every run. 64 of 66 decks already had
+dc = 1e-4, so every existing lambda is numerically unchanged — verified
+bit-identical for all 41 runs that have one. `peak_slip/dc` still uses each run's
+own dc, because that asks a different question (did the patch weaken at all).
+Runs whose dc differs also record `lam_at_own_dc`, so the artifact is measured.
+
+Threshold sensitivity, measured over a 100x range rather than assumed:
+
+| run | peak/dc | lambda/lambda_obs, 1e-5 -> 1e-3 m | spread |
+|---|---|---|---|
+| 632875 | 605 | 1.04 -> 0.99 | 5% |
+| 632874 | 271 | 0.70 -> 0.63 | 10% |
+| 632800 | 47 | 0.76 -> 0.67 | 12% |
+| 632873 | 116 | 0.35 -> 0.24 | 31% |
+
+So for a well-developed front the metric is nearly threshold-free — the slip
+profile is steep there. The threshold does real work only on marginal runs whose
+front is a thin ring. A dc sweep is still worth running, but now with a known
+noise floor: anything under ~12% is not physics.
+
+## 2. Friction has never been swept, in any run
+
+| parameter | across all 723 decks |
+|---|---|
+| `f0` | **0.6 in every single one** |
+| `a` / `b` | 0.015 / 0.012 in 721 of 723 (the 2 others are 5-YEAR test decks) |
+| `dc` | 1e-4 in 64 of the grid; 1.53e-5 only in the Taiyi pair |
+| `muinit` | 19 distinct values |
+
+Every "friction sweep" in this project was a sweep of initial shear stress.
+`muinit` is an initial condition applied once (`main_LH.f90:861`); `f0` is a
+material parameter passed into `deriv()` every timestep (`main_LH.f90:1908`).
+
+An attempt to choose f0 values analytically **failed**, and the failure is worth
+recording. Under Mohr-Coulomb, f0_req = (tau_0 + dp(R_obs))/sigmabar_0. But
+**dp(417 m) is below 0.5 MPa in all 66 runs**; the maximum anywhere is 0.340 MPa
+(632875). So f0_req collapses onto `muinit`, exceeding it by at most +0.012
+across the entire grid, and the screen degenerates to "the fault must already be
+at failure with zero overpressure." That is a statement about the screen, not
+about f0 — HBI's regularised law has no threshold, and importing one has already
+produced a wrong conclusion in this project once. See `f0_required.py`.
+
+What the screen *did* establish: pressure falls by a factor of **56** between the
+well and 417 m in the best run. So in 632875, which fits the front, the front
+sits beyond both the Delta-tau_c contour (365 m) and any meaningful pressure. It
+is carried by **elastic stress transfer from the slipping patch**, not by
+pressure at the front.
+
+## 3. The Taiyi reference runs: HBI reproduces his wellhead, not his front
+
+First time in the project that HBI has been run on Wang & Dunham's own inputs.
+
+| run | dc | reached | wellhead | slip front | Delta-p contour |
+|---|---|---|---|---|---|
+| 632880 | 1.53e-5 | **0.88 d** | +11.1% | 0.14 | 0.75x @ 0.88 d |
+| 632881 | 1e-4 | 5.00 d | **+8.2%** | **0.22** | **0.68x** |
+
+632880 stopped on HBI's own termination — `Slip rate below vmin at time step 348`
+— not a crash or a step limit. The fault arrested at 0.88 d, just before the
+first wellhead peak at 0.95 d.
+
+632881's wellhead is **inside the +/-15% band**. Its slip front is 80 m against
+an observed 417 m. Measured as a Delta-p = Delta-tau_c contour instead, the same
+run reaches **380 m, or 91% of the observed radius**.
+
+Both numbers are on a common window with lambda_obs refit on it; comparing a
+0.88 d fit against a 0-5 d lambda_obs inflates 632880's contour score from 0.75
+to 1.27, which is a window artifact and not a result.
+
+## 4. What Wang & Dunham's model actually is, and why the comparison is delicate
+
+His code is **two layers**, which is not documented anywhere else in this repo:
+
+| | a - b | role |
+|---|---|---|
+| main fault, 215x215 over +/-10 km (**93.5 m cells**) | 0.015 - 0.012 = **+0.003** | velocity-strengthening, slips aseismically, cannot nucleate |
+| **1000 off-fault spring sliders**, 20x20 m | 0.015 - 0.018 = **-0.003** | velocity-**weakening**; these are the earthquakes |
+
+`seismicity.m` gives each slider its own rate-and-state solve driven by pore
+pressure interpolated from the main fault **plus** elastic stress transfer from
+main-fault slip (`dtaux = M_as_ss{1} * Dx_as`), with radiation damping.
+`find_quakes.m` calls an event a slip-velocity peak of prominence >= 0.1 m/s. He
+then classifies each event by which mechanism dominated — pressure weakening
+(`wk_trigger`) versus aseismic loading (`as_trigger`) — and that classification
+is the substance of his seismicity figure. `cmp_seis_extent.m` is an analytical
+envelope plotted alongside, not the model output.
+
+**HBI's fault is his main fault** — a - b = +0.003, identical, velocity-
+strengthening. HBI has no spring-slider layer.
+
+This project's working assumption is that the slip front does not care whether
+the slip was seismic, so HBI's total slip front is the right thing to compare
+against the catalogue. That assumption is what makes the comparison legitimate;
+it should be stated explicitly wherever the comparison is made, because in his
+model the seismicity front and the main-fault aseismic front are different
+objects joined by a layer HBI does not have.
+
+## 5. Resolution is NOT constant across the grid, and it is not a small difference
+
+| | cell size | 417 m front = |
+|---|---|---|
+| 62 grid runs | 5 m | 83 cells |
+| Taiyi pair (632880/632881) | **20 m** | 21 cells |
+| Wang & Dunham's own main fault | **93.5 m** | 4.5 cells |
+
+The Taiyi pair needs the wider box: their far-field k gives D = 4.49 m^2/s, so
+the 5 d diffusion length is 2.79 km, against a half-domain of only 1.5 km at
+ds 5 m on a 601 grid.
+
+**Consequence: 632875 (lambda 1.03, ds 5 m) and 632881 (lambda 0.22, ds 20 m) are
+not resolution-comparable at face value.** Part of that gap may be a 4x cell-size
+difference rather than parameters. This is untested and is the cheapest
+outstanding check: rerun 632875's configuration at ds 10 and 20 m — coarser means
+a *bigger* domain for that config, since its kpmin is 1e-15.
+
+## Where the grid stands, as a census rather than a claim
+
+| | count of 68 |
+|---|---|
+| wellhead inside +/-15% | **27** — but **25 of them produce no slip at all** (pk/dc exactly 0) |
+| wellhead matched AND slipping | **2** — 632880, 632881, the Taiyi pair, both `permev F` |
+| slip front inside 0.85-1.15 | **1** — 632875, wellhead +80% |
+| **both** | **none**; closest is 632867 at 4.4x the band width |
+
+The muinit sweep is exhausted. tau_0 moves the front **without moving the
+wellhead at all** (flat to +/-0.1% across all 36 Stage-3 runs), so it is a
+genuinely orthogonal lever — but it saturates at lambda 0.34 by tau_0 = 15.0, and
+tau_0 cannot exceed **f0*sigmabar_0 = 16.79 MPa** without the fault being past its
+own strength at zero overpressure. At that hard ceiling the front reaches ~0.48.
+
+## Stage 6, submitted today
+
+632884 <- 632880 and 632885 <- 632881, each differing from its parent in exactly
+four keys: `filenumber`, `permev` F -> T, `kpmax` 1.1e-12, `kpmin` 4e-13.
+
+The Taiyi pair is the **only** base that matches the wellhead and also slips, and
+both have enhancement **off**. So the hypothesis this project rests on — that
+permeability enhancement plus a nonuniform initial permeability reaches the match
+where Wang & Dunham could not — has never been tested on the one configuration
+that matches the wellhead. 632881 needs its front to grow 4.5x; the alternative
+base, 632875, needs its overshoot cut 5.3x against a direct measurement.
+
+Bounds were read from the map, not typed: `perm_taiyi_601_ds20.txt` verified as
+177 cells at 1.1e-12 (equivalent radius 150 m) and 361024 at 4e-13 — the paper's
+Table 1 values — with the parents already carrying `kp 4e-13`. eta stays at
+Taiyi's 0.89e-3 deliberately, so exactly one thing changes and the result is
+attributable; an eta = 1.27e-4 variant is the follow-up, not a substitute.
+
+Falsification conditions stated in advance: if the front stays near 0.22,
+enhancement is not the missing ingredient at a wellhead-matching pressure. If the
+front grows but the wellhead leaves the band, enhancement is on the same
+trade-off line as porosity grading, map contrast and fluid storage, and does not
+span the plane either.
+
+## Two unflagged bad figures found while auditing
+
+`BOUNDS_AUDIT.md` now labels the 90 pre-grid folders in this directory: 48
+MISCONFIGURED, 16 VALID, 26 NOT APPLICABLE (`permev F`). Cross-referencing that
+against `make_sweep_figures.py` turned up three sweep figures built on
+misconfigured runs, of which only one was flagged:
+
+| figure | bad runs | was it flagged |
+|---|---|---|
+| `sweep_kpmax.png` | 3 of 4 | SUPERSEDED |
+| `sweep_muinit_permevT.png` | **3 of 3**, kpmax 18x the map max | **no — and not even listed in its README table** |
+| `sweep_muinit_permevT_kmax1e-10.png` | **3 of 3**, kpmax 91x | **no** |
+
+Both unflagged figures show mu_0 with enhancement ON producing almost no slip,
+which is the misconfiguration rather than a property of enhancement — with
+consistent bounds the same lineage reaches lambda/lambda_obs 0.97-0.99. They are
+exactly the figures that would support the retracted claim that enhancement kills
+slip. Now marked SUPERSEDED with their ratios and an explicit instruction not to
+cite them as evidence about enhancement.
