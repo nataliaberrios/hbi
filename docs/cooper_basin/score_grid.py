@@ -60,7 +60,8 @@ sf = iu.module_from_spec(_spec)
 _spec.loader.exec_module(sf)
 
 STAGES = {1: list(range(632800, 632808)), 2: list(range(632810, 632822)),
-          3: list(range(632830, 632848)) + list(range(632850, 632868))}
+          3: list(range(632830, 632848)) + list(range(632850, 632868)),
+          4: list(range(632870, 632876))}
 EXTRA_STAGE2 = [632522, 632523, 632524, 632525]
 
 
@@ -96,6 +97,12 @@ def bounds_ok(dk):
     if not pf or not (IN / pf).exists() or None in (kx, km):
         return None
     k = np.loadtxt(IN / pf, skiprows=1)
+    # A multi-column parameter file holds kp in column 0 and other fields (phi)
+    # after it. Taking max() over the whole array compares kpmax against a
+    # POROSITY of 0.02 and reports every graded-phi run as BAD.
+    if k.ndim > 1:
+        names = Path(IN / pf).read_text().split("\n", 1)[0].split()
+        k = k[:, names.index("kp")] if "kp" in names else k[:, 0]
     return bool(abs(k.max() - kx) / kx < 0.01 and abs(k.min() - km) / km < 0.01)
 
 

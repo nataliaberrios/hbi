@@ -392,3 +392,89 @@ the graded problem has no closed form. That is what these runs test.
    make the comparison like-for-like instead of aseismic-front-vs-seismicity-front.
 4. **Leakoff** — for correctness, expecting a worse front.
 5. **Hydraulic fracturing** — only meaningful alongside a large stress revision.
+
+---
+
+# STAGE 4 RESULT: the control disproved the mechanism, and the search closes
+
+All six graded-porosity runs completed, 5.00 d, fixed code, bounds verified.
+
+| run | grading (phi near / far) | front lam/lam_obs | wellhead |
+|---|---|---|---|
+| **632875** | **G3 INVERSE 0.005 / 0.020** | **1.03** | +80.0% |
+| 632874 | G2 0.010 / 0.005 | 0.68 | +70.2% |
+| 632873 | G1 0.020 / 0.005 | 0.29 | +60.5% |
+| *632812 base* | *uniform 0.01* | *0.70* | *+70.7%* |
+| 632870-872 | all three, on the 632810 base | no slip | -2.6 to +3.9% |
+
+## The control failed, and that is the useful part
+
+G3 was included as a control that should make the front WORSE. It produced
+**lam/lam_obs = 1.03, the best front in the entire 66-run project.** G1, the
+grading argued to help, made it worse (0.29 against a base of 0.70).
+
+The mechanism reasoning behind Stage 4 was therefore wrong. The claim was that
+the front is limited by pressure REACHING far out, so lowering far-field porosity
+would raise diffusivity there and extend it. In fact the front is limited by
+pressure AMPLITUDE near the well: G3 lowers porosity near the well, which lowers
+near-well storage and raises the near-well pressure, and that drives the slip.
+
+This was already visible in data collected earlier and not connected: the slip
+front TRAILS the pressure front (255 m against 385 m at 5 d). Pressure reach was
+never the binding constraint.
+
+Recorded plainly because it matters for how much weight the rest of this document
+should carry: the mechanistic reasoning in this project failed three separate
+tests (a Coulomb threshold that does not exist in rate-and-state, a
+diffusion-length argument, and an elastic-amplification story), and each time it
+was a measurement rather than an argument that caught it. The control is the only
+reason the Stage 4 error was found.
+
+## Why the search now closes, quantitatively
+
+Graded porosity is a real lever -- it moved the front from 0.70 to 1.03 at fixed
+permeability, fixed stress and fixed friction, and it is the FIRST parameter to
+reach the front target at the measured stress state. But it buys the front the
+same way everything else does, by over-pressurising.
+
+Measured exchange rates, front gained per point of wellhead error:
+
+| lever | lam per % |
+|---|---|
+| porosity grading | 0.0361 |
+| map contrast (50x -> 250x) | 0.0182 |
+| fluid / storage | 0.0098 |
+
+632875 sits at lam 1.03, +80.0%. To enter both bands it must shed 65 points of
+pressure while losing no more than 0.18 in lam -- a **required rate of 0.0028**.
+
+The cheapest lever available is **0.0098, three and a half times too expensive.**
+All three trade in the same direction (more pressure gives more front) and none is
+flat enough to cut pressure without handing the front back. So no combination of
+them reaches the target; they span a line, not the plane.
+
+That is a stronger closing statement than "60-plus runs failed to find a match":
+the levers are characterised, their exchange rates are measured, and the gap to
+the target is a factor of 3.5 in a quantity that can be stated.
+
+## What would still be worth doing, and why it is not more of the same
+
+Nothing in the remaining list is another point in this family. Each changes the
+structure of the problem rather than moving along the trade-off:
+
+1. **a, b, dc and the state evolution law** -- never varied in any of the 66 runs
+   (all use a 0.015 / b 0.012 / dc 1e-4). dc alone is worth ~1.6x in lambda and,
+   unlike every lever above, it changes the front WITHOUT touching the pressure,
+   so its exchange rate is not on the line at all. This is the most promising
+   remaining direction and it is cheap.
+2. **A velocity-weakening patch** -- would let the model generate seismicity and
+   make the comparison like-for-like, instead of an aseismic slip front against a
+   seismicity front.
+3. **Leakoff** -- for correctness, expecting a worse front.
+4. **Hydraulic fracturing** -- only meaningful alongside a stress revision of
+   ~17 MPa, larger than the ~6 MPa that would fix the front unaided.
+
+Point 1 deserves emphasis: dc sets the front CONTOUR as well as the friction
+length scale, so it moves lambda without moving the wellhead at all. Every lever
+measured above has a positive exchange rate; dc's is effectively infinite. It was
+on the "not yet swept" list from the very beginning and never got swept.

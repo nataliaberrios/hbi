@@ -1,0 +1,16 @@
+window 0-5 d   lambda_obs = 0.1866   peak measured overpressure 10.92 MPa
+
+    run  sigma     mu   tau0      eta       beta  permev                           perm  reach  lam/obs      p %    RMS   pk/dc   code  bnds
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ 632870  30.00  0.370  11.10 1.27e-04  1.577e-07       T permphi_2zone_601_ds5_kmax2.5e   5.00  no slip     -2.6    2.0       0  fixed    ok
+ 632871  30.00  0.370  11.10 1.27e-04  1.577e-07       T permphi_2zone_601_ds5_kmax2.5e   5.00  no slip     -0.7    1.5       0  fixed    ok
+ 632872  30.00  0.370  11.10 1.27e-04  1.577e-07       T permphi_2zone_601_ds5_kmax2.5e   5.00  no slip     +3.9    1.9       0  fixed    ok
+ 632873  27.99  0.370  10.36 8.90e-04  2.250e-08       T permphi_2zone_601_ds5_kmax2.5e   5.00     0.29    +60.5   24.9     116  fixed    ok
+ 632874  27.99  0.370  10.36 8.90e-04  2.250e-08       T permphi_2zone_601_ds5_kmax2.5e   5.00     0.68    +70.2   28.8     271  fixed    ok
+ 632875  27.99  0.370  10.36 8.90e-04  2.250e-08       T permphi_2zone_601_ds5_kmax2.5e   5.00     1.03    +80.0   32.9     605  fixed    ok
+
+6/6 usable (fixed code, bounds match the map, reached >=4.75 d)
+
+nothing inside both bands yet
+
+wrote /home/users/nberrios/3dhbi/hbi_git/docs/figs/cooper_grid/grid_scores.json  (6 scored this run, 66 total)
