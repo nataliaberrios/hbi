@@ -93,8 +93,33 @@ def audit(n):
         return dict(n=n, verdict=NA, hdr=hdr,
                     note="permev F — permeability is fixed, so kpmax/kpmin are "
                          "never used and the rule does not apply")
-    mx, mn = map_bounds(d)
+    nonuniform = d.get("parameterfromfile", "F").upper() in ("T", "TRUE", ".TRUE.")
     kx, km = ff(d.get("kpmax")), ff(d.get("kpmin"))
+
+    # A UNIFORM initial field with permev T is not subject to the near-well-disc
+    # rule -- there is no disc to be inconsistent with. The requirement there is
+    # only that the field starts at the FLOOR (kp == kpmin) and grows toward
+    # kpmax; kpmax deliberately exceeds kp, that being the point of enhancement.
+    # Requiring kpmax == kp would misflag every legitimate uniform-enhancement
+    # run, e.g. res911.in (kp = kpmin = 1e-15, kpmax = 2.5e-13). This matches
+    # bounds_ok() in score_grid.py. No folder currently audited is of this kind,
+    # so no verdict was affected, but the logic was wrong.
+    if not nonuniform:
+        kp = ff(d.get("kp"))
+        if kp is None or km is None:
+            return dict(n=n, verdict=BAD, hdr=hdr,
+                        note="permev T, uniform field, but kp or kpmin missing")
+        if abs(km - kp) / kp < 1e-6:
+            return dict(n=n, verdict=OK, hdr=hdr,
+                        note=f"uniform field starting at the floor: kp == kpmin "
+                             f"== {kp:.3e}, growing toward kpmax {kx:.3e}. The "
+                             f"near-well-disc rule does not apply to a uniform "
+                             f"initial field.")
+        return dict(n=n, verdict=BAD, hdr=hdr,
+                    note=f"uniform field but kp {kp:.2e} != kpmin {km:.2e}, so it "
+                         f"does not start at the floor")
+
+    mx, mn = map_bounds(d)
     if mx is None:
         return dict(n=n, verdict=BAD, hdr=hdr,
                     note="permev T but the permeability field cannot be resolved")
