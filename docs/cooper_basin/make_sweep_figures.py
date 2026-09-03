@@ -55,6 +55,16 @@ IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 RHO, G, HW, DW, FD, P0, W = 1000.0, 9.81, 4077.0, 0.178, 0.015, 73.8, 6.0
 TAU0_TAIYI = 15.0        # Wang & Dunham's initial shear stress; "understressed" is below this
 
+# Front threshold, FIXED for every run -- see run_data(). It must not be each run's
+# own dc: dc is being swept, and it enters the front metric twice with the SAME sign.
+# Lowering dc lowers the contour level (more cells counted as slipped -> bigger
+# front) AND shrinks the nucleation size (easier to nucleate -> bigger front), so a
+# dc sweep scored at each run's own dc cannot separate the measurement artifact from
+# the physics. 1e-4 m is the value 64 of the 66 grid decks use as dc, so fixing the
+# threshold here leaves every existing score numerically unchanged while making the
+# two Taiyi-parameter runs (dc = 1.53e-5) comparable to them.
+FRONT_THR = 1e-4
+
 # validated with scripts/validate_palette.js --mode light: all six checks PASS
 OBSC, MEAS = "#a8071a", "#6b6b66"
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
@@ -237,8 +247,13 @@ def observed():
                 cumvol=cumtrapz(q, ti * 86400.0, initial=0.0))
 
 
-def run_data(n, dk):
-    """Front (downdip) and wellhead pressure, using this run's own dc as threshold."""
+def run_data(n, dk, thr=None):
+    """Front (downdip) and wellhead pressure at a FIXED slip threshold.
+
+    thr defaults to FRONT_THR (1e-4 m), identical for every run. Pass
+    thr=ffloat(dk["dc"]) to reproduce the old per-run-dc behaviour, which is only
+    useful for measuring how large that artifact was.
+    """
     g = (glob.glob(f"/scratch/users/nberrios/3dhbi/runs/*/output/slip{n}.dat")
          + glob.glob(f"/scratch/users/nberrios/3dhbi/output/{n}/slip{n}.dat")
          + glob.glob(f"/oak/stanford/groups/edunham/nberrios/3doutput/{n}/slip{n}.dat"))
@@ -251,7 +266,7 @@ def run_data(n, dk):
     nt = min(os.path.getsize(p) // (8 * NC), len(t))
     if nt < 5:
         return None
-    thr = ffloat(dk["dc"])
+    thr = FRONT_THR if thr is None else thr
     s = np.memmap(p, np.float64, "r", shape=(nt, NC))
     cs = np.array([np.asarray(s[k]).reshape(IM, JM)[:, int(JM / 2)]
                    for k in range(nt)]).T
@@ -389,7 +404,7 @@ def make(sw, obs):
         ax.legend(frameon=False, labelcolor=INK, loc="upper left")
 
     sub = (f"{sw['fixed']}\nall fits on 0–{tcut:.2f} d, observed front refit on the "
-           f"same window; front threshold = each run's own dc")
+           f"same window; front threshold = {FRONT_THR:.0e} m, fixed for every run")
     if dropped:
         sub += (f"\nexcluded (has not reached {tcut:.2f} d yet): "
                 + ", ".join(str(x) for x in dropped))

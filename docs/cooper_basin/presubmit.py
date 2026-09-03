@@ -52,6 +52,22 @@ STAGES = {
                      for n in range(632810, 632822)},
             title="Stage 2 — two-zone initial perm, consistent bounds, the 12 cells "
                   "missing from the 16-cell slice"),
+    # Parents below are read off each deck's own "Built from resNNNNNN.in" header
+    # rather than reconstructed from the build scripts, so they cannot drift.
+    3: dict(runs=list(range(632830, 632848)) + list(range(632850, 632868)),
+            parents={**{n: 632814 for n in range(632830, 632848)},
+                     **{n: 632820 for n in range(632850, 632868)}},
+            title="Stage 3 — tau_0 sweep, 11.0 to 15.0 MPa in 0.5 MPa steps, at "
+                  "both sigmabar_0 and both map contrasts (36 runs)"),
+    4: dict(runs=list(range(632870, 632876)),
+            parents={**{n: 632810 for n in range(632870, 632873)},
+                     **{n: 632812 for n in range(632873, 632876)}},
+            title="Stage 4 — spatially graded porosity, two bases x three "
+                  "gradings (6 runs)"),
+    5: dict(runs=[632880, 632881],
+            parents={632880: 632520, 632881: 632520},
+            title="Taiyi reference — Wang & Dunham's published parameters "
+                  "verbatim, dc 1.53e-5 and 1e-4"),
 }
 
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
@@ -253,7 +269,14 @@ def perm_plot(stage, runs, out):
             im = int(dk["imax"])
             ds = ff(dk["ds"])
             if pf:
-                k = np.loadtxt(IN / pf, skiprows=1).reshape(im, im)
+                # Stage 4 parameter files are multi-column ("kp phi"), so a bare
+                # reshape fails and a bare max() would compare kpmax against a
+                # porosity. Pick the kp column by NAME from the header line.
+                k = np.loadtxt(IN / pf, skiprows=1)
+                if k.ndim > 1:
+                    names = (IN / pf).read_text().split("\n", 1)[0].split()
+                    k = k[:, names.index("kp")] if "kp" in names else k[:, 0]
+                k = k.reshape(im, im)
             else:
                 k = np.full((im, im), near)
             fields.append((key, k, ds, near, far, [n]))

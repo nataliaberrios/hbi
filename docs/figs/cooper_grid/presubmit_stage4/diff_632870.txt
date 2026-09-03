@@ -1,0 +1,13 @@
+res632810.in  ->  res632870.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632810
+---
+> filenumber 632870
+12,13c12,13
+< parameter_file "perm_2zone_601_ds5_kmax2.5e-13.txt"
+< parameter_file_ncol 1
+---
+> parameter_file "permphi_2zone_601_ds5_kmax2.5e-13_G1.txt"
+> parameter_file_ncol 2
+

@@ -1,0 +1,13 @@
+res632820.in  ->  res632856.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632820
+---
+> filenumber 632856
+20,21c20,21
+< muinit 0.37
+< sigmainit 27.99
+---
+> muinit 0.4667
+> sigmainit 30.0
+

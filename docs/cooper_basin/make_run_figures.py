@@ -13,9 +13,20 @@ Front and observed-data machinery is copied verbatim from
 cooper_basin_validation_stage_june15.ipynb (cells 10, 14, 74-77, 80, 81).
 
 Two things this gets right that the overlay figures did not:
-  - the front threshold is each run's OWN dc, since dc sets both the rate-and-state
-    length scale and the front definition, so using a single hard-coded 1e-4 for a
-    run with dc 1.53e-5 is inconsistent.
+  - the front threshold is FIXED at FRONT_THR = 1e-4 m for every run. An earlier
+    version of this file used each run's own dc and justified it on the grounds that
+    dc sets both the rate-and-state length scale and the front definition. That
+    double role is precisely the reason NOT to use it: both effects have the same
+    sign, so a lower dc lowers the contour level (more cells counted as slipped)
+    AND shrinks the nucleation size (slip propagates further), and a run scored at
+    its own dc cannot separate the measurement artifact from the physics.
+    Per-run dc is the right normalisation for "did this patch weaken at all" --
+    that question is answered separately by peak_slip/dc in score_grid.py. It is
+    the wrong normalisation for "how far did the front get relative to the data",
+    which is a cross-run comparison against a single observed lambda and therefore
+    needs one threshold for everybody. 64 of the 66 grid decks have dc = 1e-4, so
+    this leaves their scores unchanged and makes the dc = 1.53e-5 Taiyi runs
+    comparable rather than flattered.
   - the pressure metric is reported on FLOWING periods. During shut-ins the surface
     gauge reads a closed or bled well, which p_wh = p_downhole - rho g H + p_pipe
     cannot represent because it assumes flow. Including those windows inflated the
@@ -48,6 +59,7 @@ H = Path("/home/users/nberrios/3dhbi/hbi_analysis")
 FIG = H / "figures"
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 RHO, G, HW, DW, FD, P0, W = 1000.0, 9.81, 4077.0, 0.178, 0.015, 73.8, 6.0
+FRONT_THR = 1e-4         # fixed slip threshold for the front, all runs -- see docstring
 
 # validated with scripts/validate_palette.js --mode light: all six checks PASS
 SIM, OBSC, MEAS = "#0072BD", "#a8071a", "#6b6b66"
@@ -142,7 +154,7 @@ def fit(x, R):
     return float(np.sum(b * R) / np.sum(b ** 2))
 
 
-def run_data(n, dk):
+def run_data(n, dk, thr=None):
     g = (glob.glob(f"/scratch/users/nberrios/3dhbi/runs/*/output/slip{n}.dat")
          + glob.glob(f"/scratch/users/nberrios/3dhbi/output/{n}/slip{n}.dat"))
     if not g:
@@ -154,7 +166,7 @@ def run_data(n, dk):
     nt = min(os.path.getsize(p) // (8 * NC), len(t))
     if nt < 5:
         return None
-    thr = ffloat(dk["dc"])
+    thr = FRONT_THR if thr is None else thr
     s = np.memmap(p, np.float64, "r", shape=(nt, NC))
     out = {}
     for axis in ("downdip", "perpendicular"):
@@ -216,8 +228,18 @@ def main():
             rms = np.sqrt(np.mean((ps[fl] - ob[fl]) ** 2)) if fl.sum() > 30 else np.nan
             ax.set(xlabel="days since injection began",
                    ylabel="absolute wellhead pressure (MPa)", xlim=(0, hi * 1.02))
-            ax.set_title(f"{lab}\nflowing-period ratio {r:.2f}, RMS {rms:.2f} MPa",
-                         fontsize=10)
+            # The measured wellhead record is the JUNE 2012 stage. A run driven by
+            # a different injection file (the 1807/1808 family uses April) cannot
+            # be scored against it -- say so on the figure instead of printing a
+            # ratio that compares two different stimulations.
+            inj = dk.get("injection_file", "?")
+            if inj != "june_clean.txt":
+                ax.set_title(f"{lab}\nNOT COMPARABLE: this run is driven by {inj}, "
+                             f"the measured curve is the June 2012 stage",
+                             fontsize=10, color=OBSC)
+            else:
+                ax.set_title(f"{lab}\nflowing-period ratio {r:.2f} "
+                             f"({100*(r-1):+.1f}%), RMS {rms:.2f} MPa", fontsize=10)
             style(ax).legend(frameon=False, fontsize=9, labelcolor=INK)
             for e in ("png", "pdf"):
                 fig.savefig(folder / f"pressure_{n}.{e}", dpi=200, bbox_inches="tight")
@@ -252,7 +274,7 @@ def main():
                         label=rf"simulated fit $\lambda$={ls_:.3f}  "
                               rf"({ls_/lo_:.2f}$\times$ observed)")
             ax.set(xlabel=xlab, ylabel="distance from injector (km)")
-            ax.set_title(f"{lab}\nfront threshold = this run's dc = {d['thr']:.2e} m; "
+            ax.set_title(f"{lab}\nfront threshold = {d['thr']:.2e} m (fixed, all runs); "
                          f"fits on 0–{tcut:.2f} d", fontsize=10)
             style(ax).legend(frameon=False, fontsize=8.5, labelcolor=INK, loc="upper left")
             for e in ("png", "pdf"):
