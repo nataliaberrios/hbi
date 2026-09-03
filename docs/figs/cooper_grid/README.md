@@ -6,10 +6,16 @@ Branch `cooper-grid-search`, off `limitsigma-bug-notes` (which is where the
 Everything in *this* directory has been checked. The older
 `docs/figs/cooper_basin_calibration/` is left in place but is **not** to be
 trusted: 77 of its 112 enhancement runs had `kpmax` set above anything present in
-their permeability map, and two of its sweep figures are marked SUPERSEDED for
+their permeability map, and four of its sweep figures are marked SUPERSEDED for
 that reason.
 
 ## Start here
+
+**[`BOUNDS_AUDIT.md`](BOUNDS_AUDIT.md)** — the 90 folders here that predate
+the grid, each labelled VALID / MISCONFIGURED / NOT APPLICABLE. 48 are
+misconfigured and must not be read as results; 26 are `permev F` so the rule
+does not apply; several are provenance for current work. Every one of those
+folders also carries its own `README.md` with its verdict.
 
 **[`RUN_KEY.md`](RUN_KEY.md)** — one row per run for all 68 simulations:
 what each block was testing, what varies, and the two scores. Generated

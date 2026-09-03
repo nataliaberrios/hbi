@@ -18,6 +18,8 @@ numbers so the plot can be checked.
 | `sweeps/sweep_storage_mu050.png` | Same sweep at μ₀=0.50 (τ₀ 14.0 MPa) — λ/λ_obs 0.74 → 1.37, so the target is crossed at a *larger* φβ. Strength and storage trade off against each other. |
 | `sweeps/sweep_enhancement.png` | **SUPERSEDED — these runs are misconfigured.** See "The consistency requirement" below. permev T lowers the wellhead pressure and the fault never slips, but every permev T run here has `kpmax` 2e-11 against a map whose near-well value is 1.1e-12, so slip drives permeability 18× above anything the initial condition contains. |
 | `sweeps/sweep_kpmax.png` | **SUPERSEDED, same reason.** kpmax swept 1.1e-12 → 1e-10 against a map topping out at 1.1e-12. |
+| `sweeps/sweep_muinit_permevT.png` | **SUPERSEDED, same reason.** All three runs (632568, 632580, 632592) have `kpmax` 2.0e-11 against a map max of 1.1e-12 — **18× above it**. This figure was in `sweeps/` but was never listed in this table, so it carried no warning at all. It shows μ₀ with enhancement ON producing almost no slip, which is the misconfiguration and not a property of enhancement: with consistent bounds the same lineage reaches λ/λ_obs 0.97–0.99. Do not cite it as evidence about enhancement. |
+| `sweeps/sweep_muinit_permevT_kmax1e-10.png` | **SUPERSEDED, same reason and worse.** All three runs (632570, 632582, 632594) have `kpmax` 1.0e-10 against a map max of 1.1e-12 — **91× above it**. Also previously unlisted. |
 
 ## The consistency requirement
 

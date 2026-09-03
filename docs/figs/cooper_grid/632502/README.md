@@ -1,0 +1,9 @@
+> # Bounds valid
+>
+> `permev T`, `kpmax` == map max and `kpmin` == map min.
+
+# Run 632502
+
+**Verdict: VALID** — kpmax 1.100e-12 == map max, kpmin 4.000e-13 == map min
+
+This folder predates the grid search and is **not** one of the 68 scored runs. See [`../BOUNDS_AUDIT.md`](../BOUNDS_AUDIT.md) for the full audit and [`../RUN_KEY.md`](../RUN_KEY.md) for the runs that are scored.
