@@ -17,10 +17,23 @@ because getting it wrong has already produced a wrong answer once:
     is only ~14% of a 5 d window -- most of it is the 1.58-3.56 d shut-in, which
     HBI cannot follow at all because it has no wellbore bleed-off.
 
-  PEAK SLIP / dc  reported alongside lambda. The front is the dc contour, so a
-    run whose peak slip is only ~1.6x dc has a razor-thin ring and its lambda is
-    near-noise. Below 1.0 there is no front at all -- reported as "no slip",
-    which is a result, not missing data.
+  FRONT THRESHOLD  FIXED at sf.FRONT_THR = 1e-4 m for every run, NOT each run's
+    own dc. dc enters the front metric twice with the same sign -- it sets the
+    contour level (lower dc -> more cells counted as slipped -> bigger front) and
+    the nucleation size (lower dc -> slip propagates further -> bigger front) --
+    so a run scored at its own dc cannot separate artifact from physics, and a dc
+    sweep scored that way is uninterpretable. 64 of the 66 grid decks have
+    dc = 1e-4, so fixing the threshold leaves their scores unchanged; the two
+    Taiyi-parameter decks (dc = 1.53e-5) would otherwise have had a threshold 6.5x
+    lower than everything they are compared against. Runs whose dc differs from
+    the threshold also get lam_at_own_dc, so the artifact is measured.
+
+  PEAK SLIP / dc  reported alongside lambda, and this one DOES use each run's own
+    dc, because it asks a different question: did slip exceed the weakening
+    distance, i.e. did the patch actually weaken. A run whose peak slip is only
+    ~1.6x dc has a razor-thin ring and its lambda is near-noise. Below 1.0 there
+    is no front at all -- reported as "no slip", which is a result, not missing
+    data.
 
   CODE CHECK  max(maxnorm)/maxnorm[0] from monitor column 6 must be 1. Anything
     above means the run used the pre-fix limitsigma ratchet. bool() matters:
@@ -141,15 +154,30 @@ def score(n, obs, lam_obs):
     if d is None:
         return r
     r["reached"] = float(d["t_end"])
+    r["front_thr"] = float(d["thr"])
+    dc = sf.ffloat(dk["dc"])
+    r["dc"] = dc
     pk = peak_slip(n, base, dk)
     if pk is not None:
-        r["peak_over_dc"] = pk / sf.ffloat(dk["dc"])
+        r["peak_over_dc"] = pk / dc
     m = d["T"] <= WINDOW_D
     if m.sum() >= 2:
         lam = sf.fit(d["T"][m], d["R"][m])
         if np.isfinite(lam):
             r["lam"] = float(lam)
             r["lam_ratio"] = float(lam / lam_obs)
+    # For any run whose dc differs from the fixed threshold, also score it the OLD
+    # way (contour at its own dc) so the size of the artifact is measured, not
+    # assumed. For the 64 decks with dc == FRONT_THR this is a no-op by construction.
+    if abs(dc - d["thr"]) / d["thr"] > 1e-9:
+        dd = sf.run_data(n, dk, thr=dc)
+        if dd is not None:
+            mm = dd["T"] <= WINDOW_D
+            if mm.sum() >= 2:
+                lo = sf.fit(dd["T"][mm], dd["R"][mm])
+                if np.isfinite(lo):
+                    r["lam_at_own_dc"] = float(lo)
+                    r["lam_ratio_at_own_dc"] = float(lo / lam_obs)
     if d["tpw"] is not None and dk.get("injection_file") == "june_clean.txt":
         hi = min(d["tpw"][-1], obs["tp"].max(), WINDOW_D)
         if hi > 0.2:
