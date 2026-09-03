@@ -68,6 +68,11 @@ STAGES = {
             parents={632880: 632520, 632881: 632520},
             title="Taiyi reference — Wang & Dunham's published parameters "
                   "verbatim, dc 1.53e-5 and 1e-4"),
+    6: dict(runs=[632884, 632885],
+            parents={632884: 632880, 632885: 632881},
+            title="Stage 6 — permeability enhancement ON, on the Taiyi "
+                  "configuration: the only base that matches the wellhead AND "
+                  "slips (2 runs)"),
 }
 
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
@@ -247,12 +252,29 @@ def feasibility(rows):
               "with no simulation involved. The lower σ̄₀ is also the "
               "measurement-derived one, so it is both the more defensible choice and "
               "the more permissive one."]
-    L += ["", "The μ₀ = 0.37 runs at σ̄₀ = 30.0 are therefore expected to slip only by "
-          "over-pressurising — which is precisely the 1807/1808 behaviour being "
-          "characterised (their wellhead runs +67% to +280%). Their σ̄₀ = 27.99 twins "
-          "sit just below the threshold and should be able to slip at the observed "
-          "pressure, by 0.19 MPa. That margin is thin enough that the twins may "
-          "differ qualitatively, not just quantitatively."]
+    # This closing paragraph was written for the mu0 = 0.37 stages and is FALSE
+    # for any stage that does not contain them -- stage 6 is mu0 = 0.5359, where
+    # it read as a claim about runs that are not in the package. Emit it only
+    # when the stage actually has such runs.
+    mus = {ff(dk["muinit"]) for _, _, dk, _ in rows}
+    if any(abs(m - 0.37) < 0.02 for m in mus) and any(abs(s - 30.0) < 1e-9
+                                                      for s in sigs):
+        L += ["", "The μ₀ = 0.37 runs at σ̄₀ = 30.0 are therefore expected to slip "
+              "only by over-pressurising — which is precisely the 1807/1808 "
+              "behaviour being characterised (their wellhead runs +67% to +280%). "
+              "Their σ̄₀ = 27.99 twins sit just below the threshold and should be "
+              "able to slip at the observed pressure, by 0.19 MPa. That margin is "
+              "thin enough that the twins may differ qualitatively, not just "
+              "quantitatively."]
+    else:
+        m = ", ".join(f"{x:.4f}" for x in sorted(mus))
+        L += ["", f"This stage runs μ₀ = {m}, comfortably above the floor above, so "
+              "the fault can reach failure at the measured pressure without "
+              "over-pressurising. Whether it then accumulates enough slip to build "
+              "a front is a separate question that the friction law, not this "
+              "inequality, decides — HBI's regularised rate-and-state law has no "
+              "failure threshold, so Δp_crit is an orientation number here and not "
+              "a prediction."]
     return L
 
 

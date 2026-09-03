@@ -1,0 +1,13 @@
+res632880.in  ->  res632884.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632880
+---
+> filenumber 632884
+27c27,29
+< permev F
+---
+> permev T
+> kpmax 1.1000e-12
+> kpmin 4.0000e-13
+

@@ -1,0 +1,78 @@
+filenumber 632884
+! STAGE 6 -- permeability enhancement ON, on the Taiyi configuration.
+! Built from res632880.in; permev F -> T plus the two bounds. Nothing else.
+!
+! WHY. Of 68 runs, 27 match the wellhead within 15% and 25 of those
+! produce NO slip at all (pk/dc exactly 0). Only two match the wellhead
+! and also slip -- 632881 (+8.2%, front 0.22) and 632880 (+11.1%, front
+! 0.14) -- and both have permev F. Exactly one run matches the front,
+! 632875 at 1.03, but its wellhead is +80%. So the wellhead-matching
+! base needs its front to grow 4.5x, while the front-matching base needs
+! its overshoot cut 5.3x against a direct measurement. This pair tests
+! enhancement -- the project's central hypothesis -- on the base that
+! already matches the wellhead, which has never been done.
+!
+! BOUNDS. kpmax is the ceiling, kp = kpmin the floor and initial value;
+! the near-well disc IS kpmax and the background IS kpmin. Verified from
+! perm_taiyi_601_ds20.txt: 177 cells at 1.1000e-12 (equivalent radius 150 m),
+! the rest at 4.0000e-13, which are the paper's Table 1 values. The
+! parent already carries kp 4e-13, so nothing is invented here.
+!
+! DOMAIN. Enhancement raises k only where slip occurs (<= ~80 m in the
+! parents), so the far field stays at kpmin and D stays 4.49 m^2/s. The
+! 5 d diffusion length is 2.79 km against a 6.01 km half-domain (46%),
+! unchanged from the parent. ds is 20 m rather than the 5 m used by the
+! other 66 runs precisely for this reason: at ds 5 m the half-domain is
+! only 1.5 km and 2.79 km would run off the edge.
+!
+! dc 1.53e-5 -- inherited from the parent, so this run is directly
+! comparable to res632880.in and differs from it in permeability
+! evolution alone.
+problem 3dp
+imax 601
+jmax 601
+ds 0.020
+interval 30
+nstep 400000
+tmax 0.01369863
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_taiyi_601_ds20.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1.53e-5
+f0 0.6
+muinit 0.5359
+sigmainit 27.99
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 1.1000e-12
+kpmin 4.0000e-13
+kp 4e-13
+phi 0.01
+beta 1e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2
