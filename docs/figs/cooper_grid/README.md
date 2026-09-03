@@ -9,6 +9,12 @@ trusted: 77 of its 112 enhancement runs had `kpmax` set above anything present i
 their permeability map, and two of its sweep figures are marked SUPERSEDED for
 that reason.
 
+## Start here
+
+**[`RUN_KEY.md`](RUN_KEY.md)** — one row per run for all 68 simulations:
+what each block was testing, what varies, and the two scores. Generated
+from the decks by `docs/cooper_basin/make_run_key.py`, so it cannot drift.
+
 ## Goal
 
 Match the Cooper Basin wellhead pressure **and** the slip front with an
