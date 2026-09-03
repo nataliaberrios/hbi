@@ -68,6 +68,10 @@ STAGES = {
             parents={632880: 632520, 632881: 632520},
             title="Taiyi reference — Wang & Dunham's published parameters "
                   "verbatim, dc 1.53e-5 and 1e-4"),
+    7: dict(runs=[632886, 632887],
+            parents={632886: 911, 632887: 911},
+            title="Stage 7 — CONSTANT-RATE injection on corrected code, for "
+                  "comparison against an analytical solution (2 runs)"),
     6: dict(runs=[632884, 632885],
             parents={632884: 632880, 632885: 632881},
             title="Stage 6 — permeability enhancement ON, on the Taiyi "
@@ -389,16 +393,23 @@ def main():
     L = [f"# {cfg['title']}", "",
          "**Nothing here has been submitted.** This is the pre-submittal check.",
          "", "## Decks", "",
-         "| run | parent | **sigmabar_0** | eta Pa·s | beta 1/Pa | phi | phi*beta | "
-         "kpmax | kp=kpmin | perm field | muinit | tau0 MPa | dp_crit MPa | tmax d |",
-         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+         "| run | parent | **permev** | **sigmabar_0** | eta Pa·s | beta 1/Pa | "
+         "phi | phi*beta | kpmax | kp=kpmin | perm field | injection | muinit | "
+         "tau0 MPa | dp_crit MPa | tmax d |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for n, parent, dk, o in rows:
         field = ("uniform" if o["map"] is None
                  else f"{o['map']} ({o['near']/o['far']:.0f}x)")
-        L.append(f"| [{n}](params_{n}.txt) | {parent} | **{dk['sigmainit']}** | "
-                 f"{dk['eta']} | {dk['beta']} | "
+        # permev and the injection record belong in the table: Stage 7's two runs
+        # differ ONLY in permev, and Stage 6's differ from their parents only in
+        # permev too, so a table without it renders those rows identical.
+        inj = (dk.get("injection_file", "—")
+               if dk.get("injectionfromfile", "F").upper() in ("T", "TRUE", ".TRUE.")
+               else f"{dk.get('injection','—')} qinj={dk.get('qinj','—')}")
+        L.append(f"| [{n}](params_{n}.txt) | {parent} | **{dk.get('permev','F')}** | "
+                 f"**{dk['sigmainit']}** | {dk['eta']} | {dk['beta']} | "
                  f"{dk['phi']} | {o['phibeta']:.3e} | {dk.get('kpmax','—')} | "
-                 f"{dk.get('kpmin','—')} | {field} | {dk['muinit']} | "
+                 f"{dk.get('kpmin','—')} | {field} | `{inj}` | {dk['muinit']} | "
                  f"{o['tau0']:.2f} | {o['dp_crit']:.2f} | {o['tmax_d']:.2f} |")
     L += ["", "## Derived hydraulics", "",
           "| run | D near m²/s | D far m²/s | str=beta*phi | T at kpmin | T at kpmax | "

@@ -4,10 +4,10 @@
 
 ## Decks
 
-| run | parent | **sigmabar_0** | eta Pa·s | beta 1/Pa | phi | phi*beta | kpmax | kp=kpmin | perm field | muinit | tau0 MPa | dp_crit MPa | tmax d |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| [632880](params_632880.txt) | 632520 | **27.99** | 0.89e-3 | 1e-8 | 0.01 | 1.000e-10 | — | — | perm_taiyi_601_ds20.txt (3x) | 0.5359 | 15.00 | 2.99 | 5.00 |
-| [632881](params_632881.txt) | 632520 | **27.99** | 0.89e-3 | 1e-8 | 0.01 | 1.000e-10 | — | — | perm_taiyi_601_ds20.txt (3x) | 0.5359 | 15.00 | 2.99 | 5.00 |
+| run | parent | **permev** | **sigmabar_0** | eta Pa·s | beta 1/Pa | phi | phi*beta | kpmax | kp=kpmin | perm field | injection | muinit | tau0 MPa | dp_crit MPa | tmax d |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [632880](params_632880.txt) | 632520 | **F** | **27.99** | 0.89e-3 | 1e-8 | 0.01 | 1.000e-10 | — | — | perm_taiyi_601_ds20.txt (3x) | `june_clean.txt` | 0.5359 | 15.00 | 2.99 | 5.00 |
+| [632881](params_632881.txt) | 632520 | **F** | **27.99** | 0.89e-3 | 1e-8 | 0.01 | 1.000e-10 | — | — | perm_taiyi_601_ds20.txt (3x) | `june_clean.txt` | 0.5359 | 15.00 | 2.99 | 5.00 |
 
 ## Derived hydraulics
 

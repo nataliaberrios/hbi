@@ -1,0 +1,86 @@
+filenumber 632887
+! STAGE 7 -- CONSTANT-RATE injection on corrected code.
+! The run res911.in was meant to be. res911.in has three
+! silent defects and cannot just be rerun:
+!
+!  1. IT NEVER INJECTED. injectionfromfile F + problem 3dp routes to
+!     Beuler2d, whose constant-rate branch is commented out and marked
+!     "No longer correct!" (m_diffusion.f90:677-680). Only the 1D
+!     solvers still have it (:234, :347). No source term at all.
+!  2. shear_mod is not a recognised key -- read_inputfile has only
+!     case('rigid') (main_LH.f90:2695) -- so it ran at the default
+!     rigid = 32.04 (m_const.f90:5), not the 24 it asked for.
+!  3. Sw_fwid was absent and defaults to 1.0 (main_LH.f90:180) against
+!     the 7.4e-9 in use, eight orders out. It sets the wellbore
+!     coupling gamma (m_diffusion.f90:671) and divides the injection
+!     term (:675, :763).
+!
+! Constant rate is delivered through the injection FILE path instead,
+! which is tested and carries the Peaceman well model: const_rate_5.0e-03.txt holds
+! two points with equal rates, and the interpolation holds the last
+! value beyond the end (m_diffusion.f90:650-660), so the rate is
+! exactly 5.0000e-03 throughout. june_clean.txt is untouched.
+!
+! imax/jmax 600 -> 601 so there IS an exact centre cell for the well;
+! an even grid has no centre, which matters for comparison against an
+! axisymmetric analytical solution.
+!
+! permev T -- res911.in's own setting, kp = kpmin growing toward
+! kpmax. Paired with res632886.in so the effect of enhancement on the
+! clean constant-rate problem is isolated. NOT the analytical case.
+!
+! CAVEAT ON kp 1e-15, kept from the parent: it is very tight, and this
+! lineage is on record producing 144 MPa of injector overpressure
+! against sigmainit 30 (632510). limitsigma T / minsig 1 will then clamp
+! the effective normal stress -- a nonlinearity no linear-diffusion
+! solution contains. If the comparison must stay linear, raise kp to
+! 4e-13 (the paper's far-field value); only that one line need change.
+!
+! Domain: D = kp/(eta*phi*beta) = 4.99e-3 m^2/s, so the 30.66 d
+! diffusion length is 230 m against a 1.5 km half-domain (15%).
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 400000
+tmax 0.08400000
+dtmax 43200
+dtout 0.0002
+parameterfromfile F
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 30.0
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 2.5e-13
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 2.25e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "const_rate_5.0e-03.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2
