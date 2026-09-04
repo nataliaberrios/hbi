@@ -69,8 +69,24 @@ def gc_solution(t_sec, n=200):
             np.concatenate([slip, slip[::-1]]), lam, R_t, T_final)
 
 
-def sim_curve(job, days):
-    """The along-strike line through the injector -- what the figure plots."""
+def sim_curve(job, days, how="azimuthal"):
+    """Radial slip profile. how = "azimuthal" | "strike" | "dip".
+
+    WHICH INDEX IS WHICH. coordinate3ddip (main_LH.f90:1577) fills
+        do i=1,imax; do j=1,jmax; k=k+1
+          xcol(k)=(i-imax/2-0.5)*ds0        <- x depends on i alone
+          ycol(k),zcol(k) from yr(j),zr(j)  <- y,z depend on j alone, down-dip
+    with j innermost, so reshape(IM,JM)[a,b] has a = i = STRIKE and
+    b = j = DIP. frame[c,:] is therefore along DIP, and frame[:,c] along
+    STRIKE. An earlier version of this script plotted frame[c,:] and labelled
+    the axis "along-strike", which was backwards, and make_slip_figures.py has
+    the same two labels swapped.
+
+    It is not a cosmetic mislabel: the crack is elliptical, 875 m along strike
+    against 810 m along dip at 17 d, so the two directions give lambda 0.3229
+    and 0.2989. The azimuthal mean, 0.3192, is the right comparison for an
+    axisymmetric solution and is the default here.
+    """
     d = {}
     for line in open(f"{DECKS}/res{job}.in"):
         if line.startswith("!") or not line.strip():
@@ -87,8 +103,23 @@ def sim_curve(job, days):
     arr = np.memmap(p, np.float64, "r", shape=(nt, NC))
     c = (IM - 1) // 2
     k = int(np.argmin(np.abs(t[:nt] - days)))
-    prof = np.asarray(arr[k]).reshape(IM, JM)[c, :]
-    return (np.arange(IM) - c) * ds_m, prof, float(t[k])
+    frame = np.asarray(arr[k]).reshape(IM, JM)
+    if how == "strike":
+        half = frame[c:, c]
+    elif how == "dip":
+        half = frame[c, c:]
+    elif how == "azimuthal":
+        ii, jj = np.mgrid[0:IM, 0:JM]
+        idx = np.hypot(ii - c, jj - c).astype(int)
+        nb = idx.max() + 1
+        cnt = np.bincount(idx.ravel(), minlength=nb).astype(float)
+        half = (np.bincount(idx.ravel(), weights=frame.ravel(), minlength=nb)
+                / np.maximum(cnt, 1))
+    else:
+        raise ValueError(how)
+    r_half = np.arange(len(half)) * ds_m
+    return (np.concatenate([-r_half[::-1], r_half]),
+            np.concatenate([half[::-1], half]), float(t[k]))
 
 
 def main():
@@ -99,17 +130,26 @@ def main():
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
-    r_sim, slip_sim, t_act = sim_curve(a.job, a.days)
     r_gc, slip_gc, lam, R_t, T_final = gc_solution(a.days * 86400.0, a.n)
+    curves = {h: sim_curve(a.job, a.days, h) for h in ("azimuthal", "strike", "dip")}
+    r_sim, slip_sim, t_act = curves["azimuthal"]
 
     fig, ax = plt.subplots(figsize=(9.0, 5.2), dpi=150, constrained_layout=True)
+    # strike and dip bracket the azimuthal mean: the crack is elliptical, so
+    # showing only one direction hides a 1.9%/-5.7% spread in lambda.
+    ax.fill_between(curves["strike"][0] / 1000.0,
+                    np.interp(curves["strike"][0], curves["dip"][0],
+                              curves["dip"][1]) * 100.0,
+                    curves["strike"][1] * 100.0,
+                    color="#1a1a19", alpha=0.15, lw=0,
+                    label="HBI, along-strike to along-dip")
     ax.plot(r_sim / 1000.0, slip_sim * 100.0, "-", color="#1a1a19", lw=2.2,
-            label=f"HBI simulation {a.job}, t = {t_act:.2f} d")
+            label=f"HBI {a.job}, azimuthal mean, t = {t_act:.2f} d")
     ax.scatter(r_gc / 1000.0, slip_gc * 100.0, s=13, facecolors="#a8071a",
                edgecolors="none", zorder=3,
                label=f"GC analytical, $\\lambda$ = {lam:.4f}")
     ax.axvline(0, color="b", ls="--", lw=1, label="injection point")
-    ax.set(xlabel="Distance along-strike (km)", ylabel="Cumulative Slip (cm)",
+    ax.set(xlabel="Distance from injector (km)", ylabel="Cumulative Slip (cm)",
            xlim=(-1.5, 1.5))
     ax.set_ylim(bottom=0)
     ax.set_title(f"GC analytical solution vs HBI {a.job} at t = {a.days:g} days\n"
@@ -125,16 +165,21 @@ def main():
     pk_s, pk_g = slip_sim.max() * 100, np.nanmax(slip_gc) * 100
     # crack radius: GC's is R_t by construction; the sim's is where the plotted
     # line falls below a threshold, reported at two so it is not hidden
-    def R_sim(thr):
-        h = np.where(slip_sim[len(slip_sim) // 2:] < thr)[0]
-        return (h[0] * (r_sim[1] - r_sim[0])) if len(h) else abs(r_sim[-1])
     print(f"wrote {OUT}/gc_vs_sim_{a.job}_{a.days:g}d.png")
-    print(f"  t actual            {t_act:.4f} d")
-    print(f"  peak slip   sim     {pk_s:.4f} cm")
-    print(f"              GC      {pk_g:.4f} cm      sim/GC {pk_s/pk_g:.4f}")
-    print(f"  radius      GC R_t  {R_t:.0f} m")
-    print(f"              sim     {R_sim(1e-4):.0f} m (thr 1e-4), "
-          f"{R_sim(1e-6):.0f} m (thr 1e-6)")
+    print(f"  t actual        {t_act:.4f} d")
+    print(f"  peak slip  sim  {pk_s:.4f} cm   GC {pk_g:.4f} cm   "
+          f"sim/GC {pk_s/pk_g:.4f}")
+    print(f"  GC   lambda {lam:.4f}   R_t {R_t:.0f} m")
+    al = 1.25
+    for h in ("strike", "azimuthal", "dip"):
+        rr, sl, _ = curves[h]
+        half = sl[len(sl) // 2:]
+        rh = rr[len(rr) // 2:]
+        b = np.where(half < 1e-4)[0]
+        R = rh[b[0]] if len(b) else rh[-1]
+        lm = R / np.sqrt(4 * al * t_act * 86400)
+        print(f"  sim  {h:<10s} R {R:>4.0f} m  lambda {lm:.4f}  "
+              f"lam/GC {lm/lam:.4f}")
 
 
 if __name__ == "__main__":
