@@ -1,4 +1,22 @@
 filenumber 632887
+! ===================================================================
+! DO NOT RUN -- COMPUTATIONALLY INFEASIBLE. Submitted and cancelled.
+!
+! Submitted 2026-09-03 as jobs 41922772/41922776 and cancelled at step
+! 240. kp = 1e-15 (inherited from res911.in) drove the adaptive timestep
+! to 0.01 s and held it there -- it was SHRINKING, not a startup
+! transient:
+!     step  60->90    dt 1.59 s
+!     step  90->120   dt 1.19 s
+!     step 120->150   dt 0.20 s
+!     step 150->240   dt 0.01 s
+! Reaching tmax would need 252 MILLION steps against nstep 400000,
+! stopping at 0.05 d of 30.66 -- 0.16% of the run.
+!
+! Kept as the record of why kp had to be raised. Use res632888.in
+! (permev F) and res632889.in (permev T) instead: kp 1e-13, ds 20 m,
+! same 30.66 d, both completed.
+! ===================================================================
 ! STAGE 7 -- CONSTANT-RATE injection on corrected code.
 ! The run res911.in was meant to be. res911.in has three
 ! silent defects and cannot just be rerun:
