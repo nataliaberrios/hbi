@@ -73,11 +73,23 @@ def main():
         # Full along-strike line through the injector, both sides, in km.
         xs = (np.arange(IM) - c) * ds_m / 1000.0
 
-        avail = [td for td in TIMES_D if td <= t[nt - 1] + 1e-9]
+        # Accept a reference time if some snapshot lands within half an output
+        # interval of it. A bare `td <= t[-1] + 1e-9` silently DROPPED the 17 d
+        # curve here: the run ends at 16.999999100694446 d, which is 9e-7 d
+        # (0.08 s) short of 17, six orders outside a 1e-9 tolerance. The figure
+        # then looked complete while missing its most important curve.
+        dtout_d = sf.ffloat(dk.get("dtout", "0.0002")) * 365.0
+        tol = max(0.5 * dtout_d, 1e-6)
+        avail = [td for td in TIMES_D
+                 if np.min(np.abs(t[:nt] - td)) <= tol]
         if not avail:
             print(f"  {n}: reached only {t[nt-1]:.2f} d, before the first "
                   f"reference time {TIMES_D[0]} d")
             continue
+        dropped = [td for td in TIMES_D if td not in avail]
+        if dropped:
+            print(f"  {n}: reference times not reached: {dropped} "
+                  f"(run ends at {t[nt-1]:.4f} d)")
 
         cmap = plt.get_cmap("viridis")
         cols = [cmap(v) for v in np.linspace(0.0, 0.95, len(avail))]
