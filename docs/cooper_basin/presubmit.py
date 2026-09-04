@@ -68,8 +68,8 @@ STAGES = {
             parents={632880: 632520, 632881: 632520},
             title="Taiyi reference — Wang & Dunham's published parameters "
                   "verbatim, dc 1.53e-5 and 1e-4"),
-    7: dict(runs=[632886, 632887],
-            parents={632886: 911, 632887: 911},
+    7: dict(runs=[632888, 632889],
+            parents={632888: 911, 632889: 911},
             title="Stage 7 — CONSTANT-RATE injection on corrected code, for "
                   "comparison against an analytical solution (2 runs)"),
     6: dict(runs=[632884, 632885],

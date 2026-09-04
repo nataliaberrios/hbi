@@ -1,0 +1,70 @@
+run 632889
+==================================================================
+
+DERIVED — what the solver responds to, not stated in the deck
+------------------------------------------------------------------
+  tau0 = muinit*sigmainit        11.100 MPa   (understressed vs Taiyi 15.0)
+  dp_crit = sigmainit(1-mu/f0)   11.500 MPa   (overpressure needed to fail)
+  tmax                           30.6600 d  (HBI year = 365 d)
+  permeability field             UNIFORM 1.000e-13 m^2 (parameterfromfile F)
+  D near-well                    4.9938e-01 m^2/s
+  D far-field                    4.9938e-01 m^2/s
+  str = beta*phi                 2.2500e-10 1/Pa   (m_diffusion.f90:444)
+  Peaceman log(0.2*ds/rw)+skin   3.8054
+  T_at_kpmin                     1.8552e-10   (m_diffusion.f90:669)
+  T_at_kpmax                     4.6380e-10   (m_diffusion.f90:669)
+  wellbore coupling gamma = (Sw_fwid/h)/((Sw_fwid/h)+T), m_diffusion.f90:671
+    h600_kpmax               0.0259
+    h600_kpmin               0.0623
+    h60_kpmax                0.2101
+    h60_kpmin                0.3993
+
+FULL DECK, verbatim (parent: res911.in)
+------------------------------------------------------------------
+  filenumber             632889
+  problem                3dp
+  imax                   601
+  jmax                   601
+  ds                     0.02
+  interval               30
+  nstep                  400000
+  tmax                   0.08400000
+  dtmax                  43200
+  dtout                  0.0002
+  parameterfromfile      F
+  backslip               T
+  vpl                    0d0
+  a                      0.015
+  b                      0.012
+  dc                     1e-4
+  f0                     0.6
+  muinit                 0.37
+  sigmainit              30.0
+  velinit                1d-12
+  limitsigma             T
+  minsig                 1
+  velmin                 1d-20
+  pressurediffusion      T
+  permev                 T
+  kpmax                  2.5e-13
+  kpmin                  1.0e-13
+  kp                     1.0e-13
+  phi                    0.01
+  beta                   2.25e-8
+  eta                    0.89e-3
+  kL                     1e-3
+  kT                     1e15
+  pfinit                 0d0
+  bcl                    Dirichlet
+  bcr                    Dirichlet
+  bct                    Dirichlet
+  bcb                    Dirichlet
+  pbcl                   0d0
+  pbcr                   0d0
+  pbct                   0d0
+  pbcb                   0d0
+  injectionfromfile      T
+  injection_file         const_rate_5.0e-03.txt
+  rigid                  24
+  Sw_fwid                7.4e-9
+  rw                     8.9e-2

@@ -1,0 +1,94 @@
+filenumber 632888
+! STAGE 7 -- CONSTANT-RATE injection on corrected code.
+! The run res911.in was meant to be. res911.in has three
+! silent defects and cannot just be rerun:
+!
+!  1. IT NEVER INJECTED. injectionfromfile F + problem 3dp routes to
+!     Beuler2d, whose constant-rate branch is commented out and marked
+!     "No longer correct!" (m_diffusion.f90:677-680). Only the 1D
+!     solvers still have it (:234, :347). No source term at all.
+!  2. shear_mod is not a recognised key -- read_inputfile has only
+!     case('rigid') (main_LH.f90:2695) -- so it ran at the default
+!     rigid = 32.04 (m_const.f90:5), not the 24 it asked for.
+!  3. Sw_fwid was absent and defaults to 1.0 (main_LH.f90:180) against
+!     the 7.4e-9 in use, eight orders out. It sets the wellbore
+!     coupling gamma (m_diffusion.f90:671) and divides the injection
+!     term (:675, :763).
+!
+! Constant rate is delivered through the injection FILE path instead,
+! which is tested and carries the Peaceman well model: const_rate_5.0e-03.txt holds
+! two points with equal rates, and the interpolation holds the last
+! value beyond the end (m_diffusion.f90:650-660), so the rate is
+! exactly 5.0000e-03 throughout. june_clean.txt is untouched.
+!
+! imax/jmax 600 -> 601 so there IS an exact centre cell for the well;
+! an even grid has no centre, which matters for comparison against an
+! axisymmetric analytical solution.
+!
+! permev F -- CONSTANT permeability, so this is LINEAR diffusion and
+! the run maps onto a closed-form solution. This is the primary run
+! for the analytical comparison; with permev T the diffusivity
+! evolves with slip and no analytical form applies.
+!
+! kp RAISED from the parent's 1e-15 to 1.0e-13, and ds from 5 m to
+! 20 m. This is not a preference -- the parent's value is
+! COMPUTATIONALLY INFEASIBLE. Submitted verbatim as 632886/632887 it drove
+! the adaptive timestep to 0.01 s and held it there: 252 million steps
+! would have been needed to reach tmax against an nstep budget of 400000,
+! stopping at 0.05 d of 30.66. Both were cancelled at step 240. A nearly
+! impermeable medium under constant injection builds well pressure faster
+! than the integrator can follow. The same tightness is on record giving
+! 144 MPa of injector overpressure against sigmainit 30 (632510), which
+! limitsigma T / minsig 1 would then clamp -- a nonlinearity no
+! linear-diffusion solution contains.
+!
+! Domain: D = kp/(eta*phi*beta) = 0.4994 m^2/s, so the 30.66 d
+! diffusion length is 2.30 km against a 6.010 km
+! half-domain = 38%. At ds 5 m the half-domain would
+! be 1.50 km and this would be 153% -- off the edge.
+problem 3dp
+imax 601
+jmax 601
+ds 0.02
+interval 30
+nstep 400000
+tmax 0.08400000
+dtmax 43200
+dtout 0.0002
+parameterfromfile F
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 30.0
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev F
+kpmax 2.5e-13
+kpmin 1.0e-13
+kp 1.0e-13
+phi 0.01
+beta 2.25e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "const_rate_5.0e-03.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2

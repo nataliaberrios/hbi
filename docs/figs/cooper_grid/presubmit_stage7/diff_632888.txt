@@ -1,0 +1,46 @@
+res911.in  ->  res632888.in   (comments stripped)
+============================================================
+1c1
+< filenumber 911
+---
+> filenumber 632888
+3,5c3,5
+< imax 600
+< jmax 600
+< ds 0.005
+---
+> imax 601
+> jmax 601
+> ds 0.02
+7,8c7,8
+< nstep 40000
+< tmax 0.084
+---
+> nstep 400000
+> tmax 0.08400000
+10c10
+< dtout 0.001
+---
+> dtout 0.0002
+25c25
+< permev T
+---
+> permev F
+27,28c27,28
+< kpmin 1e-15
+< kp 1e-15
+---
+> kpmin 1.0e-13
+> kp 1.0e-13
+43,46c43,47
+< injectionfromfile F
+< injection  flowrate
+< qinj 4.2e-3
+< shear_mod 24
+---
+> injectionfromfile T
+> injection_file "const_rate_5.0e-03.txt"
+> rigid 24
+> Sw_fwid 7.4e-9
+> rw 8.9e-2
+

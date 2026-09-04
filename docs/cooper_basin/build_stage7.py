@@ -53,21 +53,26 @@ WHY TWO RUNS.
   permev T  res911.in's own setting, so the pair isolates what enhancement does
             to the clean constant-rate problem.
 
-A CAVEAT ON kp = 1e-15, which is res911.in's value and is kept here for
-faithfulness. It is very tight, and this lineage is on record producing an
-injector overpressure of 144 MPa against sigmainit 30 (documented for 632510,
-traced to kpmin sitting 20-1100x below the paper's calibration). With
-`limitsigma T` and `minsig 1` the effective normal stress will clamp, which is a
-nonlinearity a linear-diffusion analytical solution does not contain. If the
-comparison needs to stay in the linear regime, rerun at a larger kp -- 4e-13, the
-paper's far-field value, is the obvious choice, and needs only the kp line
-changed.
+kp CANNOT STAY AT res911.in's 1e-15 -- established empirically, not argued.
+Built verbatim and submitted as 632886/632887, it drove the adaptive timestep down
+to 0.01 s and held it there. Reaching tmax would have taken 252 MILLION steps
+against an nstep budget of 400000, stopping at 0.05 d of 30.66. Both were
+cancelled at step 240. A nearly impermeable medium under constant injection builds
+well pressure faster than the integrator can follow. The same tightness is
+separately on record producing 144 MPa of injector overpressure against
+sigmainit 30 (632510, traced to kpmin sitting 20-1100x below the paper's
+calibration), which limitsigma T / minsig 1 would then clamp -- a nonlinearity no
+linear-diffusion solution contains.
 
-Domain is safe either way: at kp 1e-15, D = kp/(eta*phi*beta) = 4.99e-3 m^2/s, so
-the 30.66 d diffusion length is 230 m against a 1.5 km half-domain (15%). Under
-enhancement the far field stays at kpmin, so it does not move.
+So kp is raised 100x to 1e-13 and ds from 5 m to 20 m. Both are forced by the
+same arithmetic: at kp 1e-13, D = kp/(eta*phi*beta) = 0.499 m^2/s, so the 30.66 d
+diffusion length is 2.30 km -- 38% of the 6.01 km half-domain at ds 20 m, but 153%
+of the 1.50 km half-domain at ds 5 m. The script ASSERTS L/half < 0.8, so a
+combination that would run off the edge fails loudly instead of producing a
+boundary-contaminated result.
 
-Usage:  python build_stage7.py [--rate 5.0e-3] [--write]
+Usage:  python build_stage7.py [--kp 1e-13] [--ds 0.020] [--days 30.66]
+                              [--rate 5.0e-3] [--start 632888] [--write]
 """
 import argparse
 import sys
@@ -75,9 +80,21 @@ from pathlib import Path
 
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 PARENT = 911
-DAYS = 30.66                     # res911.in's tmax 0.084 yr, HBI's year = 365 d
 IWELL = JWELL = 301              # exact centre of a 601 grid; res911.in used 600,
                                  # which has no centre cell -- see below
+
+# res911.in's kp = 1e-15 is COMPUTATIONALLY INFEASIBLE here, not merely a
+# linearity concern. Submitted as 632886/632887 it drove the adaptive timestep
+# down to 0.01 s and held it there: 252 MILLION steps would have been needed to
+# reach tmax against an nstep budget of 400000, stopping at 0.05 d of 30.66.
+# Both were cancelled at step 240. A nearly impermeable medium under constant
+# injection builds well pressure faster than the integrator can follow.
+#
+# kp is therefore raised 100x to 1e-13, which is still a low permeability and
+# keeps 911's full duration inside a safe domain. Grid moves to ds 20 m for the
+# same reason: at kp 1e-13, D = kp/(eta*phi*beta) = 0.499 m^2/s, so the 30.66 d
+# diffusion length is 2.30 km -- 38% of a 6.01 km half-domain at ds 20 m, but
+# 153% of the 1.50 km half-domain at ds 5 m.
 
 
 def read_deck(p):
@@ -97,17 +114,40 @@ def main():
                     help="constant rate in june_clean.txt's units (per unit fault "
                          "width). Default 5.0e-3 ~ the measured record's mean of "
                          "4.937e-3, so magnitudes stay comparable to the grid.")
+    ap.add_argument("--kp", type=float, default=1e-13,
+                    help="uniform initial permeability, m^2. Default 1e-13; "
+                         "res911.in's 1e-15 is infeasible, see the note above.")
+    ap.add_argument("--ds", type=float, default=0.020, help="cell size, km")
+    ap.add_argument("--days", type=float, default=30.66,
+                    help="run duration; res911.in's tmax 0.084 yr is 30.66 d")
+    ap.add_argument("--start", type=int, default=632888)
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
 
+    DAYS = a.days
     tmax_s = DAYS * 86400.0
     qfile = f"const_rate_{a.rate:.1e}.txt"
     tmax_yr = DAYS / 365.0
 
-    print(f"parent res{PARENT}.in -> res632886 (permev F) and res632887 (permev T)")
+    print(f"parent res{PARENT}.in -> res{a.start} (permev F) and res{a.start+1} (permev T)")
     print(f"constant rate {a.rate:.4e} for {DAYS:.2f} d "
           f"(tmax {tmax_yr:.8f} yr), well at ({IWELL},{JWELL})")
     print(f"injection file: {qfile}")
+
+    pairs = read_deck(IN / f"res{PARENT}.in")
+    base = dict(pairs)
+    assert base["injectionfromfile"].upper() == "F", "parent already uses a file"
+    assert base["imax"] == "600", f"parent imax is {base['imax']}, expected 600"
+    eta, phi, beta = (float(base[k].replace("d", "e")) for k in ("eta", "phi", "beta"))
+    D = a.kp / (eta * phi * beta)
+    half_km = a.ds * 601 / 2.0
+    L_km = (4 * D * tmax_s) ** 0.5 / 1000.0
+    print(f"kp {a.kp:.0e} -> D {D:.4f} m^2/s;  L({DAYS:.2f} d) = {L_km:.2f} km "
+          f"vs half-domain {half_km:.3f} km  = {L_km/half_km:.2f}")
+    assert L_km / half_km < 0.8, (
+        f"domain too small: L/half = {L_km/half_km:.2f}. Raise --ds or lower "
+        f"--kp/--days.")
+
     if not a.write:
         print("\ndry run -- nothing written. re-run with --write")
         return
@@ -121,16 +161,14 @@ def main():
         f"{a.rate:.8f} {a.rate:.8f}\n")
     print(f"wrote {IN / qfile}")
 
-    pairs = read_deck(IN / f"res{PARENT}.in")
-    base = dict(pairs)
-    assert base["injectionfromfile"].upper() == "F", "parent already uses a file"
-    assert base["imax"] == "600", f"parent imax is {base['imax']}, expected 600"
-
     common = {
         "imax": "601", "jmax": "601",       # 601 gives an exact centre cell
+        "ds": f"{a.ds:g}",
+        "kp": f"{a.kp:.1e}",
+        "kpmin": f"{a.kp:.1e}",             # uniform field starts AT the floor
         "tmax": f"{tmax_yr:.8f}",
         "dtout": "0.0002",                  # ~1.75 h, as the grid uses
-        "nstep": "400000",                  # headroom for 30.66 d
+        "nstep": "400000",
         "injectionfromfile": "T",
         "injection_file": f'"{qfile}"',
         "rigid": "24",                      # replaces the ignored shear_mod
@@ -140,7 +178,7 @@ def main():
     drop = {"injection", "qinj", "shear_mod"}   # superseded by the file path
 
     made = []
-    for n, pev in ((632886, "F"), (632887, "T")):
+    for n, pev in ((a.start, "F"), (a.start + 1, "T")):
         hdr = [
             "! STAGE 7 -- CONSTANT-RATE injection on corrected code.",
             f"! The run res{PARENT}.in was meant to be. res{PARENT}.in has three",
@@ -179,20 +217,27 @@ def main():
         else:
             hdr += [
                 f"! permev T -- res{PARENT}.in's own setting, kp = kpmin growing toward",
-                "! kpmax. Paired with res632886.in so the effect of enhancement on the",
+                f"! kpmax. Paired with res{a.start}.in so the effect of enhancement on the",
                 "! clean constant-rate problem is isolated. NOT the analytical case.",
             ]
         hdr += [
             "!",
-            "! CAVEAT ON kp 1e-15, kept from the parent: it is very tight, and this",
-            "! lineage is on record producing 144 MPa of injector overpressure",
-            "! against sigmainit 30 (632510). limitsigma T / minsig 1 will then clamp",
-            "! the effective normal stress -- a nonlinearity no linear-diffusion",
-            "! solution contains. If the comparison must stay linear, raise kp to",
-            "! 4e-13 (the paper's far-field value); only that one line need change.",
+            f"! kp RAISED from the parent's 1e-15 to {a.kp:.1e}, and ds from 5 m to",
+            f"! {a.ds*1000:.0f} m. This is not a preference -- the parent's value is",
+            "! COMPUTATIONALLY INFEASIBLE. Submitted verbatim as 632886/632887 it drove",
+            "! the adaptive timestep to 0.01 s and held it there: 252 million steps",
+            "! would have been needed to reach tmax against an nstep budget of 400000,",
+            "! stopping at 0.05 d of 30.66. Both were cancelled at step 240. A nearly",
+            "! impermeable medium under constant injection builds well pressure faster",
+            "! than the integrator can follow. The same tightness is on record giving",
+            "! 144 MPa of injector overpressure against sigmainit 30 (632510), which",
+            "! limitsigma T / minsig 1 would then clamp -- a nonlinearity no",
+            "! linear-diffusion solution contains.",
             "!",
-            f"! Domain: D = kp/(eta*phi*beta) = 4.99e-3 m^2/s, so the {DAYS:.2f} d",
-            "! diffusion length is 230 m against a 1.5 km half-domain (15%).",
+            f"! Domain: D = kp/(eta*phi*beta) = {D:.4f} m^2/s, so the {DAYS:.2f} d",
+            f"! diffusion length is {L_km:.2f} km against a {half_km:.3f} km",
+            f"! half-domain = {100*L_km/half_km:.0f}%. At ds 5 m the half-domain would",
+            f"! be 1.50 km and this would be {100*L_km/1.5025:.0f}% -- off the edge.",
         ]
         lines = [f"filenumber {n}"] + hdr
         seen = set()
@@ -223,11 +268,23 @@ def main():
             "rigid 24": d.get("rigid") == "24",
             "Sw_fwid": d.get("Sw_fwid") == "7.4e-9",
             "imax 601": d.get("imax") == "601" and d.get("jmax") == "601",
-            "physics == parent": all(
+            # kp, kpmin and ds are DELIBERATELY different from the parent -- the
+            # parent's kp = 1e-15 is infeasible and forces ds too. Assert the new
+            # values instead of exempting them, and assert they really did move,
+            # so a silently-unchanged kp cannot slip through as "clean".
+            "kp == kpmin == requested": (
+                float(d.get("kp", "nan")) == a.kp
+                and float(d.get("kpmin", "nan")) == a.kp),
+            "kp actually raised from parent": (
+                float(d.get("kp", "nan")) > float(base["kp"].replace("d", "e"))),
+            "ds as requested": float(d.get("ds", "nan")) == a.ds,
+            "everything else == parent": all(
                 d.get(k) == base.get(k) for k in
-                ("a", "b", "dc", "f0", "muinit", "sigmainit", "kp", "kpmax",
-                 "kpmin", "kL", "kT", "phi", "beta", "eta", "ds", "problem",
-                 "limitsigma", "minsig", "parameterfromfile")),
+                ("a", "b", "dc", "f0", "muinit", "sigmainit", "kpmax",
+                 "kL", "kT", "phi", "beta", "eta", "problem",
+                 "limitsigma", "minsig", "parameterfromfile", "backslip",
+                 "vpl", "velinit", "velmin", "pfinit", "pressurediffusion",
+                 "bcl", "bcr", "bct", "bcb", "pbcl", "pbcr", "pbct", "pbcb")),
         }
         ok = all(checks.values())
         bad += not ok
