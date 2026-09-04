@@ -131,55 +131,50 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
 
     r_gc, slip_gc, lam, R_t, T_final = gc_solution(a.days * 86400.0, a.n)
-    curves = {h: sim_curve(a.job, a.days, h) for h in ("azimuthal", "strike", "dip")}
-    r_sim, slip_sim, t_act = curves["azimuthal"]
+    pk_g = np.nanmax(slip_gc) * 100
 
-    fig, ax = plt.subplots(figsize=(9.0, 5.2), dpi=150, constrained_layout=True)
-    # strike and dip bracket the azimuthal mean: the crack is elliptical, so
-    # showing only one direction hides a 1.9%/-5.7% spread in lambda.
-    ax.fill_between(curves["strike"][0] / 1000.0,
-                    np.interp(curves["strike"][0], curves["dip"][0],
-                              curves["dip"][1]) * 100.0,
-                    curves["strike"][1] * 100.0,
-                    color="#1a1a19", alpha=0.15, lw=0,
-                    label="HBI, along-strike to along-dip")
-    ax.plot(r_sim / 1000.0, slip_sim * 100.0, "-", color="#1a1a19", lw=2.2,
-            label=f"HBI {a.job}, azimuthal mean, t = {t_act:.2f} d")
-    ax.scatter(r_gc / 1000.0, slip_gc * 100.0, s=13, facecolors="#a8071a",
-               edgecolors="none", zorder=3,
-               label=f"GC analytical, $\\lambda$ = {lam:.4f}")
-    ax.axvline(0, color="b", ls="--", lw=1, label="injection point")
-    ax.set(xlabel="Distance from injector (km)", ylabel="Cumulative Slip (cm)",
-           xlim=(-1.5, 1.5))
-    ax.set_ylim(bottom=0)
-    ax.set_title(f"GC analytical solution vs HBI {a.job} at t = {a.days:g} days\n"
-                 f"T = {T_final:.3f}, $\\lambda$ = {lam:.4f}, "
-                 f"$R_t$ = {R_t:.0f} m,  $\\alpha$ = {ALPHA}, "
-                 f"$\\Delta P$ = {DELTAP/1e6:g} MPa", fontsize=11)
-    ax.legend(frameon=True, fontsize=9.5)
-    for e in ("png", "pdf"):
-        fig.savefig(OUT / f"gc_vs_sim_{a.job}_{a.days:g}d.{e}",
-                    bbox_inches="tight")
-    plt.close(fig)
+    # One figure per direction, no averaging. The crack is elliptical -- slip is
+    # along dip on a reverse fault, so along-dip growth is mode II and
+    # along-strike is mode III, and those differ unless nu = 0. HBI runs at
+    # pois = 0.25 (m_const.f90:4) while the GC kernel has no nu, so the two
+    # directions bracket the analytical curve rather than matching it. Plotting
+    # them separately keeps that visible.
+    NOTE = {"strike": "along-strike (mode III, perpendicular to slip)",
+            "dip": "along-dip (mode II, the slip direction)"}
+    print(f"GC   lambda {lam:.4f}   R_t {R_t:.0f} m   peak {pk_g:.4f} cm")
+    for how in ("strike", "dip"):
+        r_sim, slip_sim, t_act = sim_curve(a.job, a.days, how)
+        fig, ax = plt.subplots(figsize=(9.0, 5.2), dpi=150,
+                               constrained_layout=True)
+        ax.plot(r_sim / 1000.0, slip_sim * 100.0, "-", color="#1a1a19", lw=2.2,
+                label=f"HBI {a.job}, {how}, t = {t_act:.2f} d")
+        ax.scatter(r_gc / 1000.0, slip_gc * 100.0, s=13, facecolors="#a8071a",
+                   edgecolors="none", zorder=3,
+                   label=f"GC analytical, $\\lambda$ = {lam:.4f}")
+        ax.axvline(0, color="b", ls="--", lw=1, label="injection point")
+        ax.set(xlabel=f"Distance {NOTE[how].split(' (')[0]} (km)",
+               ylabel="Cumulative Slip (cm)", xlim=(-1.5, 1.5))
+        ax.set_ylim(bottom=0)
+        ax.set_title(f"GC analytical vs HBI {a.job}, {NOTE[how]}, "
+                     f"t = {a.days:g} d\n"
+                     f"T = {T_final:.3f}, $\\lambda$ = {lam:.4f}, "
+                     f"$R_t$ = {R_t:.0f} m,  $\\alpha$ = {ALPHA}, "
+                     f"$\\Delta P$ = {DELTAP/1e6:g} MPa", fontsize=11)
+        ax.legend(frameon=True, fontsize=9.5)
+        for e in ("png", "pdf"):
+            fig.savefig(OUT / f"gc_vs_sim_{a.job}_{a.days:g}d_{how}.{e}",
+                        bbox_inches="tight")
+        plt.close(fig)
 
-    pk_s, pk_g = slip_sim.max() * 100, np.nanmax(slip_gc) * 100
-    # crack radius: GC's is R_t by construction; the sim's is where the plotted
-    # line falls below a threshold, reported at two so it is not hidden
-    print(f"wrote {OUT}/gc_vs_sim_{a.job}_{a.days:g}d.png")
-    print(f"  t actual        {t_act:.4f} d")
-    print(f"  peak slip  sim  {pk_s:.4f} cm   GC {pk_g:.4f} cm   "
-          f"sim/GC {pk_s/pk_g:.4f}")
-    print(f"  GC   lambda {lam:.4f}   R_t {R_t:.0f} m")
-    al = 1.25
-    for h in ("strike", "azimuthal", "dip"):
-        rr, sl, _ = curves[h]
-        half = sl[len(sl) // 2:]
-        rh = rr[len(rr) // 2:]
+        half, rh = slip_sim[len(slip_sim)//2:], r_sim[len(r_sim)//2:]
+        pk_s = half[0] * 100
         b = np.where(half < 1e-4)[0]
         R = rh[b[0]] if len(b) else rh[-1]
-        lm = R / np.sqrt(4 * al * t_act * 86400)
-        print(f"  sim  {h:<10s} R {R:>4.0f} m  lambda {lm:.4f}  "
-              f"lam/GC {lm/lam:.4f}")
+        lm = R / np.sqrt(4 * ALPHA * t_act * 86400)
+        print(f"\n{NOTE[how]}")
+        print(f"  wrote gc_vs_sim_{a.job}_{a.days:g}d_{how}.png")
+        print(f"  peak slip  {pk_s:.4f} cm   sim/GC {pk_s/pk_g:.4f}")
+        print(f"  R {R:.0f} m   lambda {lm:.4f}   lambda/GC {lm/lam:.4f}")
 
 
 if __name__ == "__main__":
