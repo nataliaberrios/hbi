@@ -10,9 +10,15 @@ that script does.
 
 Conventions worth knowing before comparing:
 
-  * Profiles are AZIMUTHALLY AVERAGED by default. The GC solution is a function
-    of r alone, so an azimuthal average is the right thing to compare, and the
-    spread across angle doubles as an axisymmetry check (return_std=True).
+  * DIRECTION MATTERS -- the crack is not axisymmetric. From coordinate3ddip
+    (main_LH.f90:1577) j is the innermost loop and controls y,z (down-dip), so
+    reshape(IM,JM)[a,b] has a = i = STRIKE and b = j = DIP. On a reverse fault
+    slip is along dip, so along-dip growth is mode II and along-strike is
+    mode III; those have equal stiffness only at nu = 0, and HBI defaults to
+    pois = 0.25 (m_const.f90:4). At 17 d run 632892 reaches 875 m along strike
+    against 810 m along dip -- lambda 0.3229 vs 0.2989, an 8% spread. Pass
+    how="strike" or how="dip" explicitly. The old azimuthal=False returned the
+    DIP profile while callers labelled it "strike"; that is why `how` exists.
   * The crack edge in the theory is where slip -> 0. Any finite threshold puts
     the measured edge INSIDE the true one and biases lambda low: for 632892 at
     17 d, lambda is 0.2954 at a 1e-3 m threshold, 0.2991 at 1e-4 and 0.3046 at
@@ -82,7 +88,17 @@ def sim_params(job):
     )
 
 
-def _load(job, field, t_days, azimuthal, return_std):
+def _resolve(how, azimuthal):
+    """`how` wins; `azimuthal` is the old two-way flag. azimuthal=False meant
+    frame[c,:], which is the DIP profile, so that is what it maps to."""
+    if how is not None:
+        if how not in ("azimuthal", "strike", "dip"):
+            raise ValueError(f"how must be azimuthal/strike/dip, got {how!r}")
+        return how
+    return "azimuthal" if azimuthal else "dip"
+
+
+def _load(job, field, t_days, how, return_std):
     d = _deck(job)
     IM, JM = int(d["imax"]), int(d["jmax"])
     ds_m = _ff(d["ds"]) * 1000.0
@@ -95,8 +111,11 @@ def _load(job, field, t_days, azimuthal, return_std):
     frame = np.asarray(arr[k]).reshape(IM, JM)
     c = (IM - 1) // 2
 
-    if not azimuthal:
+    if how == "dip":                      # j varies -> y,z vary -> down-dip
         prof = frame[c, c:]
+        return np.arange(len(prof)) * ds_m, prof, float(t[k]), None
+    if how == "strike":                   # i varies -> x varies -> along strike
+        prof = frame[c:, c]
         return np.arange(len(prof)) * ds_m, prof, float(t[k]), None
 
     ii, jj = np.mgrid[0:IM, 0:JM]
@@ -112,27 +131,32 @@ def _load(job, field, t_days, azimuthal, return_std):
     return np.arange(nb) * ds_m, mean, float(t[k]), std
 
 
-def load_slip(job, t_days, azimuthal=True, return_std=False):
-    """(r_m, slip_m, t_actual_days[, std_m]) at the snapshot nearest t_days."""
-    r, v, ta, sd = _load(job, "slip", t_days, azimuthal, return_std)
+def load_slip(job, t_days, how=None, azimuthal=True, return_std=False):
+    """(r_m, slip_m, t_actual_days[, std_m]) at the snapshot nearest t_days.
+
+    how = "strike" | "dip" | "azimuthal". Prefer naming it explicitly.
+    """
+    r, v, ta, sd = _load(job, "slip", t_days, _resolve(how, azimuthal),
+                         return_std)
     return (r, v, ta, sd) if return_std else (r, v, ta)
 
 
-def load_dp(job, t_days, azimuthal=True, return_std=False):
+def load_dp(job, t_days, how=None, azimuthal=True, return_std=False):
     """(r_m, dp_Pa, t_actual_days[, std_Pa]). pf is written in MPa; converted."""
-    r, v, ta, sd = _load(job, "pf", t_days, azimuthal, return_std)
+    r, v, ta, sd = _load(job, "pf", t_days, _resolve(how, azimuthal),
+                         return_std)
     return ((r, v * 1e6, ta, None if sd is None else sd * 1e6) if return_std
             else (r, v * 1e6, ta))
 
 
-def front_lambda(job, t_days, alpha, thresh=1e-6):
+def front_lambda(job, t_days, alpha, thresh=1e-6, how="azimuthal"):
     """(R_m, lambda, t_actual) with lambda = R/sqrt(4*alpha*t).
 
     thresh is explicit because it biases the answer: the theory's edge is where
     slip vanishes, so a larger threshold reports a smaller crack. See the module
     docstring for the measured sensitivity.
     """
-    r, sl, ta = load_slip(job, t_days)
+    r, sl, ta = load_slip(job, t_days, how=how)
     b = np.where(sl < thresh)[0]
     R = r[b[0]] if len(b) else r[-1]
     return float(R), float(R / np.sqrt(4 * alpha * ta * 86400)), ta
