@@ -147,18 +147,37 @@ def per_run(n):
             prof = f[:, d["JM"] // 2] if which == "dip" else f[d["IM"] // 2, :]
             ax.plot(x if which == "dip" else y, prof, lw=1.8, color=c,
                     label=f"{ta:.2f} d")
-        ax.axhline(d["dc"], color=DCC, lw=1.3, ls="--")
-        ax.annotate(f"dc = {d['dc']:.1e} m  (front threshold)",
-                    xy=(0.99, d["dc"]), xycoords=("axes fraction", "data"),
-                    xytext=(0, 4), textcoords="offset points", ha="right",
-                    fontsize=8.5, color=DCC)
-        ax.set_yscale("log")
+        # The dc line and the log scale exist to make the dc CROSSING readable,
+        # which is what the front metric is built on. That is irrelevant when the
+        # point of the figure is the shape and amplitude of the slip itself, and
+        # log scale actively misleads there -- so both are opt-out.
+        if LOGSCALE:
+            ax.axhline(d["dc"], color=DCC, lw=1.3, ls="--")
+            ax.annotate(f"dc = {d['dc']:.1e} m  (front threshold)",
+                        xy=(0.99, d["dc"]), xycoords=("axes fraction", "data"),
+                        xytext=(0, 4), textcoords="offset points", ha="right",
+                        fontsize=8.5, color=DCC)
+            ax.set_yscale("log")
+        else:
+            # On a linear axis the full +/-6 km domain renders the profile as a
+            # spike: in 632888 all the slip is inside +/-0.5 km. Zoom to where
+            # slip actually is -- the widest extent over the plotted times where
+            # it exceeds 1e-3 of that time's peak -- padded 30%. Log scale keeps
+            # the full domain because there the far-field floor is the point.
+            k, _ = at_time(d, times[-1])
+            f = frame(d, k)
+            prof = f[:, d["JM"] // 2] if which == "dip" else f[d["IM"] // 2, :]
+            ax_km = x if which == "dip" else y
+            m = prof > 1e-3 * prof.max()
+            if m.any():
+                w = max(abs(ax_km[m]).max(), 2 * abs(ax_km[1] - ax_km[0]))
+                ax.set_xlim(-1.3 * w, 1.3 * w)
         style(ax).set(xlabel=f"distance along {which} from injector (km)",
                       ylabel="cumulative slip (m)",
                       title=f"Slip profile along {which} (through the injector)")
         ax.legend(frameon=False, labelcolor=INK, ncol=2)
-    fig.suptitle(label(n, dk) + "\nlog scale, so the dc crossing that defines the "
-                 "front is readable", fontsize=11)
+    fig.suptitle(label(n, dk) + ("\nlog scale, so the dc crossing that defines the "
+                 "front is readable" if LOGSCALE else "\nlinear scale"), fontsize=11)
     for e in ("png", "pdf"):
         fig.savefig(folder / f"slipprof_{n}.{e}", dpi=180, bbox_inches="tight")
     plt.close(fig)
@@ -243,12 +262,21 @@ def sweep_overlay(sw):
     print(f"  {sw['key']}: wrote sweeps/slip_{sw['key']}.png  (at {tcut:.2f} d)")
 
 
+LOGSCALE = True          # overridden by --linear; see the profile plot
+
+
 def main():
+    global LOGSCALE
     ap = argparse.ArgumentParser()
     ap.add_argument("jobs", nargs="*", type=int)
+    ap.add_argument("--linear", action="store_true",
+                    help="linear y-axis on the slip profiles instead of log, and "
+                         "no dc line. Use when the figure is about slip shape and "
+                         "amplitude rather than the dc crossing.")
     ap.add_argument("--sweeps", action="store_true")
     ap.add_argument("--all", action="store_true")
     a = ap.parse_args()
+    LOGSCALE = not a.linear
 
     import importlib.util as iu
     spec = iu.spec_from_file_location("sf", str(H / "make_sweep_figures.py"))
