@@ -1,0 +1,80 @@
+filenumber 632893
+! STAGE 8 -- reproduce Job 911 via a COMPLIANT WELLBORE, no code change.
+! 911's physics kept exactly: kp = kpmin = 1e-15, kpmax 2.5e-13
+! (250x enhancement range), permev T, ds 5 m.
+!
+! WHY STAGE 7 MISSED. 632888 matches 911's peak (6.00 cm vs ~6 cm at
+! 17 d) but is 2.6x too narrow and rounded at the apex, because it is
+! permev F (no enhancement at all) at ds 20 m. 632889 has enhancement
+! but only 2.5x, kpmin having been raised to 1e-13. Both followed from
+! raising kp 100x for numerical reasons.
+!
+! THAT WAS THE WRONG FIX. kp = 1e-15 is not intrinsically stiff -- 911
+! ran at it. The stiffness is the WELLBORE, which 911 predates: at
+! kp 1e-15, gamma = (Sw_fwid/h)/((Sw_fwid/h)+T) = 0.977, so the
+! formation barely damps the well and pressure ramps at essentially the
+! full q/Sw_fwid = 0.66 MPa/s, against 0.27 for the run that completed.
+!
+! Sw_fwid raised from 7.4e-9 to 7.4e-5, making the wellbore more
+! compliant. The ramp is q/Sw_fwid, so the reduction is linear.
+!
+! RISK, STATED BEFORE THE FACT: a more compliant well is a bigger
+! buffer, and the formation source is proportional to gamma*T*pw with T
+! tiny at this kp. Too much storage and the fluid fills the wellbore
+! instead of the rock -- numerically healthy, but no pressure in the
+! formation and no slip. This deck is one of a 100x bracket
+! (res632892 7.4e-7, res632893 7.4e-5) precisely because the window is
+! not known in advance. A fast run that produces no slip has FAILED.
+!
+! Domain: far field stays at kpmin, so D = 0.0050 m^2/s and the
+! 17 d diffusion length is 171 m against a 1502 m
+! half-domain (11%).
+!
+! tmax 17 d to match the reference figure, not 911's 30.66 d.
+! imax 600 -> 601 for an exact centre cell.
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 400000
+tmax 0.04657534
+dtmax 43200
+dtout 0.0002
+parameterfromfile F
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 30.0
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 2.5e-13
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 2.25e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "const_rate_4.2e-03_17d.txt"
+rigid 24
+rw 8.9e-2
+Sw_fwid 7.4e-5

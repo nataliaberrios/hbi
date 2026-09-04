@@ -32,6 +32,12 @@ import importlib.util as iu
 H = Path("/home/users/nberrios/3dhbi/hbi_analysis")
 OUT = H / "figures" / "taiyi_validation"
 SCRATCH = "/scratch/users/nberrios/3dhbi/output"
+# The harness rsyncs output to SCRATCH only when a run FINISHES (with
+# --remove-source-files), so a run in flight has its .dat files under
+# runs/<jobid>/output/ instead. Look there too, so a partial figure can be made
+# while the run is still going -- and label it as partial rather than pretending
+# the last curve is the final state.
+RUNS = "/scratch/users/nberrios/3dhbi/runs"
 
 TIMES_D = [3, 5, 7, 9, 11, 13, 15, 17]      # as in the reference figure
 XLIM_KM = 1.5
@@ -52,10 +58,14 @@ def main():
         IM, JM = int(dk["imax"]), int(dk["jmax"])
         ds_m = sf.ffloat(dk["ds"]) * 1000.0
         NC = IM * JM
-        p = f"{SCRATCH}/{n}/slip{n}.dat"
-        if not os.path.exists(p):
-            print(f"  {n}: no slip output at {p}")
+        import glob as _g
+        cands = ([f"{SCRATCH}/{n}/slip{n}.dat"]
+                 + sorted(_g.glob(f"{RUNS}/*/output/slip{n}.dat")))
+        p = next((q for q in cands if os.path.exists(q) and os.path.getsize(q)), None)
+        if p is None:
+            print(f"  {n}: no slip output yet")
             continue
+        in_flight = "/runs/" in p
         t = np.atleast_2d(np.loadtxt(p.replace("slip", "time")))[:, 1] / 86400.0
         nt = min(os.path.getsize(p) // (8 * NC), len(t))
         arr = np.memmap(p, np.float64, "r", shape=(nt, NC))
@@ -82,7 +92,8 @@ def main():
         pev = dk.get("permev", "F")
         kx, km = sf.ffloat(dk.get("kpmax")), sf.ffloat(dk.get("kpmin"))
         rng = f", enhancement range {kx/km:.0f}x" if pev.upper() == "T" else ""
-        ax.set_title(f"constant rate injection simulation (Job {n})\n"
+        partial = "  [PARTIAL -- run still in progress]" if in_flight else ""
+        ax.set_title(f"constant rate injection simulation (Job {n}){partial}\n"
                      f"kp {sf.ffloat(dk['kp']):.0e}, ds {ds_m:.0f} m, "
                      f"permev {pev}{rng}", fontsize=11)
         ax.legend(frameon=True, fontsize=9, loc="upper right")

@@ -58,10 +58,10 @@ from pathlib import Path
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 PARENT = 911
 DAYS = 17.0
-QFILE = "const_rate_5.0e-03_17d.txt"
-RATE = 5.0e-3
+QFILE = "const_rate_4.2e-03_17d.txt"
+RATE = 4.2e-3   # 911's qinj -- gives deltaP = qinj*eta/(4*pi*kpmax) = 1.19 MPa
 IWELL = JWELL = 301
-SW_VARIANTS = [(632890, "7.4e-7"), (632891, "7.4e-5")]
+SW_VARIANTS = [(632892, "7.4e-7"), (632893, "7.4e-5")]
 
 
 def read_deck(p):
@@ -152,7 +152,7 @@ def main():
             "! tiny at this kp. Too much storage and the fluid fills the wellbore",
             "! instead of the rock -- numerically healthy, but no pressure in the",
             "! formation and no slip. This deck is one of a 100x bracket",
-            f"! (res632890 7.4e-7, res632891 7.4e-5) precisely because the window is",
+            f"! (res632892 7.4e-7, res632893 7.4e-5) precisely because the window is",
             "! not known in advance. A fast run that produces no slip has FAILED.",
             "!",
             f"! Domain: far field stays at kpmin, so D = {D:.4f} m^2/s and the",
