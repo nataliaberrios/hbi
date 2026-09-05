@@ -1,0 +1,82 @@
+filenumber 632894
+! Fig 6 remake -- Job 807's physics on the current code.
+! Built from res807.in.
+!
+! res807.in cannot be rerun as written:
+!  * shear_mod 24 is not a recognised key -- read_inputfile has only
+!    case('rigid') (main_LH.f90:2695), the key having been renamed --
+!    so 807 silently ran at the default rigid = 32.04 GPa
+!    (m_const.f90:4), not the 24 it asked for. Now rigid 24.
+!  * Sw_fwid was absent and defaults to 1.0 (main_LH.f90:180)
+!    against the 7.4e-9 in use. 807 predates the wellbore model.
+!  * it used oct_clean_300.txt, in the OLDER injection format
+!    (nwell / iwell jwell npoint / rates / times) against what
+!    input_well now reads (nwell / npoint / times / iwell jwell /
+!    rates). The current reader would take 300 as npoint and then
+!    read the rate line as times -- silently wrong, not an error.
+!
+! INJECTION is june_clean.txt rather than a converted
+! oct_clean_300.txt. Same November 2012 record sampled differently:
+! identical 31.39 d span and 8.7443e-3 peak, volume per width
+! 6085.9 vs 6090.4 (0.07%), but pointwise differences up to 9.8e-4,
+! 11% of peak, and a different well index (300,300 vs 301,301).
+! june_clean makes this panel directly comparable to the 632510
+! panel, which is the point of the figure.
+!
+! Sw_fwid 7.4e-9, NOT the 7.4e-7 used for the constant-rate runs.
+! That was needed because those inject 4.2e-3 from t=0 and at
+! kp = 1e-15 the Peaceman well is stiff. june_clean starts at
+! 3.3e-4, a 13x gentler ramp, and 632510 already runs at kp = 1e-15
+! with Sw_fwid 7.4e-9 on this injection without trouble.
+!
+! Domain: far field stays at kpmin, D = 4.994e-03 m^2/s, so the
+! 17 d diffusion length is 171 m against a 1502 m
+! half-domain (11%).
+!
+! imax/jmax 601 for an exact centre cell (807 used 600, which has none).
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 400000
+tmax 0.04657534
+dtmax 43200
+dtout 0.0002
+parameterfromfile F
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 30.0
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 2.5e-13
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 2.25e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2

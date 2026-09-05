@@ -1,0 +1,63 @@
+filenumber 632895
+! Fig 6 remake -- 632510 post-fix, extended past nstep to reach 17 d.
+! Built from res632510.in.
+!
+! The post-fix run of 632510 (in fix_632510/) stopped at 16.37 d
+! having exhausted nstep 40000, NOT at tmax. Only nstep, tmax,
+! dtout and the filenumber change here, so this extends the same
+! physics rather than replacing it -- the 16.37 d panel is already
+! made from that run and this should continue it.
+!
+! Domain: far field stays at kpmin, D = 5.604e-03 m^2/s, so the
+! 17 d diffusion length is 181 m against a 1502 m
+! half-domain (12%).
+!
+! imax/jmax 601 for an exact centre cell (807 used 600, which has none).
+problem 3dp
+imax 601
+jmax 601
+ds 0.005
+interval 30
+nstep 400000
+tmax 0.04657534
+dtmax 43200
+dtout 0.0002
+parameterfromfile T
+parameter_file "perm_632510_ds5.txt"
+parameter_file_ncol 1
+backslip T
+vpl 0d0
+a 0.015
+b 0.012
+dc 1e-4
+f0 0.6
+muinit 0.37
+sigmainit 30.0
+velinit 1d-12
+limitsigma T
+minsig 1
+velmin 1d-20
+pressurediffusion T
+permev T
+kpmax 5e-14
+kpmin 1e-15
+kp 1e-15
+phi 0.01
+beta 2.005e-8
+eta 0.89e-3
+kL 1e-3
+kT 1e15
+pfinit 0d0
+bcl Dirichlet
+bcr Dirichlet
+bct Dirichlet
+bcb Dirichlet
+pbcl 0d0
+pbcr 0d0
+pbct 0d0
+pbcb 0d0
+injectionfromfile T
+injection_file "june_clean.txt"
+rigid 24
+Sw_fwid 7.4e-9
+rw 8.9e-2

@@ -72,6 +72,10 @@ STAGES = {
             parents={632888: 911, 632889: 911},
             title="Stage 7 — CONSTANT-RATE injection on corrected code, for "
                   "comparison against an analytical solution (2 runs)"),
+    8: dict(runs=[632894, 632895],
+            parents={632894: 807, 632895: 632510},
+            title="Fig 6 remake — Job 807's physics on current code, and 632510 "
+                  "extended to the full 17 d (2 runs)"),
     6: dict(runs=[632884, 632885],
             parents={632884: 632880, 632885: 632881},
             title="Stage 6 — permeability enhancement ON, on the Taiyi "

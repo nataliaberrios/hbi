@@ -1,0 +1,31 @@
+res807.in  ->  res632894.in   (comments stripped)
+============================================================
+1c1
+< filenumber 807
+---
+> filenumber 632894
+3,4c3,4
+< imax 600
+< jmax 600
+---
+> imax 601
+> jmax 601
+7,8c7,8
+< nstep 40000
+< tmax 0.084
+---
+> nstep 400000
+> tmax 0.04657534
+10c10
+< dtout 0.001
+---
+> dtout 0.0002
+44,45c44,47
+< injection_file "oct_clean_300.txt"
+< shear_mod 24
+---
+> injection_file "june_clean.txt"
+> rigid 24
+> Sw_fwid 7.4e-9
+> rw 8.9e-2
+
