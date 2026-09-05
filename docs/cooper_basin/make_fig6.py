@@ -104,8 +104,12 @@ def main():
                x_mid, mid),
               (f"Simulation, cusp fixed (run {BOT})", x_bot, bot)]
 
-    fig, axes = plt.subplots(3, 1, figsize=(9.0, 10.2), dpi=200,
+    # Taller figure plus an explicit h_pad so the panels do not crowd: every
+    # panel carries its own x label and tick labels, which constrained_layout's
+    # default padding leaves nearly touching the title of the panel below.
+    fig, axes = plt.subplots(3, 1, figsize=(9.0, 11.4), dpi=200,
                              constrained_layout=True)
+    fig.get_layout_engine().set(h_pad=0.18, hspace=0.10)
     for ax, (title, x, Y) in zip(axes, panels):
         for i, td in enumerate(TIMES_D):
             ax.plot(x, Y[:, i], lw=1.9, color=cols[i], label=f"{td} days")
