@@ -103,7 +103,11 @@ def main():
     for ax, (title, x, Y) in zip(axes, panels):
         for i, td in enumerate(TIMES_D):
             ax.plot(x, Y[:, i], lw=1.9, color=cols[i], label=f"{td} days")
-        ax.set(ylabel="Cumulative slip (cm)", xlim=(-XLIM, XLIM), title=title)
+        # Label BOTH axes on EVERY panel. The poster's panels were separate
+        # figures, so each carried its own pair of labels; sharing an x label
+        # across a stacked column loses that.
+        ax.set(xlabel=f"Distance along-{a.axis} (km)",
+               ylabel="Cumulative slip (cm)", xlim=(-XLIM, XLIM), title=title)
         ax.set_ylim(bottom=0)
         ax.legend(fontsize=8, ncol=2, loc="upper right", frameon=True)
     # top two share a y-limit, as in the original; the bottom is 2.5x larger and
@@ -111,7 +115,6 @@ def main():
     ymax = max(axes[0].get_ylim()[1], axes[1].get_ylim()[1])
     axes[0].set_ylim(0, ymax)
     axes[1].set_ylim(0, ymax)
-    axes[2].set_xlabel(f"Distance along-{a.axis} (km)")
     for e in ("png", "pdf"):
         fig.savefig(OUT / f"fig6_remake_{a.axis}.{e}", bbox_inches="tight")
     plt.close(fig)
