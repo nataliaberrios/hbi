@@ -40,20 +40,27 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OBS = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
+# One observed file per DIRECTION, on DIFFERENT time sets: strike at
+# 3,5,7,...,17 d, dip at 3,6,9,...,21 d. Not interchangeable -- reading the
+# strike file for both axes pairs simulated dip against observed strike.
+OBS_DIR = Path("/home/users/nberrios/3dhbi/hbi")
+OBS_BY_AXIS = {
+    "strike": ("slip_profiles_strike.txt", [3, 5, 7, 9, 11, 13, 15, 17]),
+    "dip":    ("slip_profiles_dip.txt",    [3, 6, 9, 12, 15, 18, 21]),
+}
+SIM_END_D = 17.0
 SCRATCH = Path("/scratch/users/nberrios/3dhbi/output")
 OUT = Path("/home/users/nberrios/3dhbi/hbi_analysis/figures/fig6_remake")
 PAIR_SIM, WIDE_SIM = 632894, 632895
 IM = JM = 601
 DS_M = 5.0
-TIMES_D = [3, 5, 7, 9, 11, 13, 15, 17]
 # From cell 107 of cooper_basin_plots-27_abs_pressure.ipynb, which produced
 # image16. The wide panel (image18) has no surviving source, so it gets the same
 # sizes on a figure sized to its aspect, 2369x870 px at dpi 300 = 7.9 x 2.9 in.
 FS_LABEL, FS_TITLE, FS_LEGEND = 13, 14, 9
 
 
-def sim_profiles(job, axis):
+def sim_profiles(job, axis, TIMES_D):
     base = SCRATCH / str(job)
     p = base / f"slip{job}.dat"
     t = np.atleast_2d(np.loadtxt(base / f"time{job}.dat"))[:, 1] / 86400.0
@@ -80,11 +87,19 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     xlab = f"Distance along-{a.axis} (km)"
 
-    o = np.loadtxt(OBS)
-    x_obs, obs = o[:, 0], o[:, 1:]
-    x_p, pair = sim_profiles(PAIR_SIM, a.axis)
-    x_w, wide = sim_profiles(WIDE_SIM, a.axis)
+    fname, obs_times = OBS_BY_AXIS[a.axis]
+    keep = [i for i, td in enumerate(obs_times) if td <= SIM_END_D + 1e-6]
+    dropped = [td for td in obs_times if td > SIM_END_D + 1e-6]
+    TIMES_D = [obs_times[i] for i in keep]
+    o = np.loadtxt(OBS_DIR / fname)
+    x_obs, obs = o[:, 0], o[:, 1:][:, keep]
+    x_p, pair = sim_profiles(PAIR_SIM, a.axis, TIMES_D)
+    x_w, wide = sim_profiles(WIDE_SIM, a.axis, TIMES_D)
     colors = plt.cm.viridis(np.linspace(0, 1, len(TIMES_D)))
+    print(f"axis along-{a.axis}   observed: {fname}   times {TIMES_D}")
+    if dropped:
+        print(f"  observed curves dropped, past the simulations' "
+              f"{SIM_END_D:.0f} d end: {dropped}")
 
     # ---- the side-by-side pair, image16's geometry
     fig, (ax_obs, ax_sim) = plt.subplots(1, 2, figsize=(16, 3), dpi=300)

@@ -43,20 +43,32 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OBS = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
+# The observed profiles are precomputed per DIRECTION, and the two files are on
+# DIFFERENT TIME SETS -- strike at 3,5,7,...,17 d and dip at 3,6,9,...,21 d.
+# They are not interchangeable, and an earlier version of this script read the
+# strike file for both axes while labelling the panel "along-dip", which paired
+# simulated dip against observed strike. Each axis now gets its own file and its
+# own times, and the times are intersected with what the simulations reach
+# (17 d), so the dip figure drops the 18 and 21 day observed curves rather than
+# inventing simulated ones.
+OBS_DIR = Path("/home/users/nberrios/3dhbi/hbi")
+OBS_BY_AXIS = {
+    "strike": ("slip_profiles_strike.txt", [3, 5, 7, 9, 11, 13, 15, 17]),
+    "dip":    ("slip_profiles_dip.txt",    [3, 6, 9, 12, 15, 18, 21]),
+}
 SCRATCH = Path("/scratch/users/nberrios/3dhbi/output")
 OUT = Path("/home/users/nberrios/3dhbi/hbi_analysis/figures/fig6_remake")
 MID, BOT = 632894, 632895
 IM = JM = 601
 DS_M = 5.0
-TIMES_D = [3, 5, 7, 9, 11, 13, 15, 17]
 XLIM = 1.5
+SIM_END_D = 17.0        # both runs stop here
 # Poster font sizes, from cell 107 of cooper_basin_plots-27_abs_pressure.ipynb --
 # the cell that produced image16 -- rather than eyeballed from the image.
 FS_LABEL, FS_TITLE, FS_LEGEND = 13, 14, 9
 
 
-def sim_profiles(job, axis):
+def sim_profiles(job, axis, TIMES_D):
     """(x_km, slip_cm[len(x), len(TIMES_D)]) at the frames nearest TIMES_D."""
     base = SCRATCH / str(job)
     p = base / f"slip{job}.dat"
@@ -89,11 +101,19 @@ def main():
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
-    o = np.loadtxt(OBS)
-    x_obs, obs = o[:, 0], o[:, 1:]
-    x_mid, mid, t_mid = sim_profiles(MID, a.axis)
-    x_bot, bot, t_bot = sim_profiles(BOT, a.axis)
-    print(f"axis: along-{a.axis}")
+    fname, obs_times = OBS_BY_AXIS[a.axis]
+    keep = [i for i, td in enumerate(obs_times) if td <= SIM_END_D + 1e-6]
+    dropped = [obs_times[i] for i in range(len(obs_times)) if i not in keep]
+    TIMES_D = [obs_times[i] for i in keep]
+    o = np.loadtxt(OBS_DIR / fname)
+    x_obs, obs = o[:, 0], o[:, 1:][:, keep]
+    x_mid, mid, t_mid = sim_profiles(MID, a.axis, TIMES_D)
+    x_bot, bot, t_bot = sim_profiles(BOT, a.axis, TIMES_D)
+    print(f"axis: along-{a.axis}   observed file: {fname}")
+    print(f"  times: {TIMES_D}")
+    if dropped:
+        print(f"  observed curves DROPPED, past the {SIM_END_D:.0f} d end of the "
+              f"simulations: {dropped}")
     print(f"  frames used, middle: {np.round(t_mid,3)}")
     print(f"  frames used, bottom: {np.round(t_bot,3)}")
 
