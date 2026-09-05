@@ -7,8 +7,8 @@ DERIVED — what the solver responds to, not stated in the deck
   dp_crit = sigmainit(1-mu/f0)   10.729 MPa   (overpressure needed to fail)
   tmax                           5.0000 d  (HBI year = 365 d)
   permeability field             permphi_2zone_601_ds5_kmax2.5e-13_G3.txt
-                                 near 2.000e-02 / far 1.000e-15 m^2, contrast 20000000000000x
-  D near-well                    9.9875e+10 m^2/s
+                                 near 2.500e-13 / far 1.000e-15 m^2, contrast 250x
+  D near-well                    1.2484e+00 m^2/s
   D far-field                    4.9938e-03 m^2/s
   str = beta*phi                 2.2500e-10 1/Pa   (m_diffusion.f90:444)
   Peaceman log(0.2*ds/rw)+skin   2.4191

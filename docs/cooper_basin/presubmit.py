@@ -76,6 +76,10 @@ STAGES = {
             parents={632894: 807, 632895: 632510},
             title="Fig 6 remake — Job 807's physics on current code, and 632510 "
                   "extended to the full 17 d (2 runs)"),
+    9: dict(runs=[632896, 632897, 632898],
+            parents={n: 632875 for n in (632896, 632897, 632898)},
+            title="Stage 9 — kpmax raised 10x/100x/1000x on 632875, the one "
+                  "configuration whose front matches (3 runs)"),
     6: dict(runs=[632884, 632885],
             parents={632884: 632880, 632885: 632881},
             title="Stage 6 — permeability enhancement ON, on the Taiyi "
@@ -119,7 +123,16 @@ def perm_field(dk):
     pf = dk.get("parameter_file")
     if not pf or not (IN / pf).exists():
         return None, None, f"{pf} (MISSING)"
+    # Multi-column parameter files ("kp phi") need the kp column selected BY
+    # NAME. Taking max/min over the whole array compares a permeability against
+    # a porosity: for the G3 maps it returned max = phi 0.02 and min = kp 1e-15,
+    # a contrast of 2e13, and fed 0.02 into D_near as if it were a permeability.
+    # This is the third place the same mistake has appeared -- bounds_ok() in
+    # score_grid.py and perm_plot() below were the other two.
     k = np.loadtxt(IN / pf, skiprows=1)
+    if k.ndim > 1:
+        names = (IN / pf).read_text().split("\n", 1)[0].split()
+        k = k[:, names.index("kp")] if "kp" in names else k[:, 0]
     return float(k.max()), float(k.min()), pf
 
 
