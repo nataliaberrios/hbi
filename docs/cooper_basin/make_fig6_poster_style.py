@@ -47,6 +47,10 @@ PAIR_SIM, WIDE_SIM = 632894, 632895
 IM = JM = 601
 DS_M = 5.0
 TIMES_D = [3, 5, 7, 9, 11, 13, 15, 17]
+# From cell 107 of cooper_basin_plots-27_abs_pressure.ipynb, which produced
+# image16. The wide panel (image18) has no surviving source, so it gets the same
+# sizes on a figure sized to its aspect, 2369x870 px at dpi 300 = 7.9 x 2.9 in.
+FS_LABEL, FS_TITLE, FS_LEGEND = 13, 14, 9
 
 
 def sim_profiles(job, axis):
@@ -71,6 +75,7 @@ def sim_profiles(job, axis):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--axis", choices=("strike", "dip"), default="strike")
+    ap.add_argument("--no-titles", action="store_true")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     xlab = f"Distance along-{a.axis} (km)"
@@ -87,37 +92,48 @@ def main():
         ax_obs.plot(x_obs, obs[:, i], lw=2, color=colors[i], label=f"{td} days")
         ax_sim.plot(x_p, pair[:, i], "-", lw=2, color=colors[i], alpha=0.8,
                     label=f"{td} days")
-    ax_obs.set_xlabel(xlab, fontsize=13)
-    ax_obs.set_ylabel("Cumulative slip (cm)", fontsize=13)
+    ax_obs.set_xlabel(xlab, fontsize=FS_LABEL)
+    ax_obs.set_ylabel("Cumulative slip (cm)", fontsize=FS_LABEL)
     ax_obs.set_xlim([-1.5, 1.5])
-    ax_obs.legend(fontsize=9, loc="best")
-    ax_obs.set_title("Observed, 20 m west of well", fontsize=14)
-    ax_sim.set_xlabel(xlab, fontsize=13)
-    ax_sim.set_ylabel("Cumulative slip (cm)", fontsize=13)
+    ax_obs.tick_params(labelsize=FS_LABEL - 2)
+    ax_obs.legend(fontsize=FS_LEGEND, loc="best")
+    if not a.no_titles:
+        ax_obs.set_title("Observed, 20 m west of well", fontsize=FS_TITLE)
+    ax_sim.set_xlabel(xlab, fontsize=FS_LABEL)
+    ax_sim.set_ylabel("Cumulative slip (cm)", fontsize=FS_LABEL)
     ax_sim.set_xlim([-1.5, 1.5])
-    ax_sim.legend(fontsize=9, loc="upper right")
-    ax_sim.set_title(f"Simulation (Job {PAIR_SIM})", fontsize=14)
+    ax_sim.tick_params(labelsize=FS_LABEL - 2)
+    ax_sim.legend(fontsize=FS_LEGEND, loc="upper right")
+    if not a.no_titles:
+        ax_sim.set_title(f"Simulation (Job {PAIR_SIM})", fontsize=FS_TITLE)
     ymax = max(ax_obs.get_ylim()[1], ax_sim.get_ylim()[1])
     ax_obs.set_ylim([0, ymax])
     ax_sim.set_ylim([0, ymax])
     plt.tight_layout()
     for e in ("png", "pdf"):
-        fig.savefig(OUT / f"fig6_pair_{a.axis}.{e}", bbox_inches="tight")
+        fig.savefig(OUT / f"fig6_pair_{a.axis}"
+                    f"{'_notitle' if a.no_titles else ''}.{e}",
+                    bbox_inches="tight")
     plt.close(fig)
 
     # ---- the wide single panel, image18's geometry
-    fig, ax = plt.subplots(figsize=(10.5, 3.9), dpi=300)
+    fig, ax = plt.subplots(figsize=(7.9, 2.9), dpi=300)
     for i, td in enumerate(TIMES_D):
         ax.plot(x_w, wide[:, i], lw=2.2, color=colors[i], label=f"{td} days")
-    ax.set_xlabel(xlab, fontsize=17)
-    ax.set_ylabel("Cumulative slip (cm)", fontsize=17)
+    ax.set_xlabel(xlab, fontsize=FS_LABEL)
+    ax.set_ylabel("Cumulative slip (cm)", fontsize=FS_LABEL)
     ax.set_xlim([-1.5, 1.5])
     ax.set_ylim(bottom=0)
-    ax.tick_params(labelsize=14)
-    ax.legend(fontsize=13, loc="upper right")
+    ax.tick_params(labelsize=FS_LABEL - 2)
+    if not a.no_titles:
+        ax.set_title(f"Simulation, cusp fixed (Job {WIDE_SIM})",
+                     fontsize=FS_TITLE)
+    ax.legend(fontsize=FS_LEGEND, loc="upper right")
     plt.tight_layout()
     for e in ("png", "pdf"):
-        fig.savefig(OUT / f"fig6_wide_{a.axis}.{e}", bbox_inches="tight")
+        fig.savefig(OUT / f"fig6_wide_{a.axis}"
+                    f"{'_notitle' if a.no_titles else ''}.{e}",
+                    bbox_inches="tight")
     plt.close(fig)
 
     print(f"axis: along-{a.axis}")

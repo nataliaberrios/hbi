@@ -51,6 +51,9 @@ IM = JM = 601
 DS_M = 5.0
 TIMES_D = [3, 5, 7, 9, 11, 13, 15, 17]
 XLIM = 1.5
+# Poster font sizes, from cell 107 of cooper_basin_plots-27_abs_pressure.ipynb --
+# the cell that produced image16 -- rather than eyeballed from the image.
+FS_LABEL, FS_TITLE, FS_LEGEND = 13, 14, 9
 
 
 def sim_profiles(job, axis):
@@ -80,6 +83,9 @@ def sim_profiles(job, axis):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--axis", choices=("strike", "dip"), default="strike")
+    ap.add_argument("--no-titles", action="store_true",
+                    help="omit panel titles, as the poster does. Keep the "
+                         "titled version for reading; send the untitled one.")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -106,19 +112,25 @@ def main():
         # Label BOTH axes on EVERY panel. The poster's panels were separate
         # figures, so each carried its own pair of labels; sharing an x label
         # across a stacked column loses that.
-        ax.set(xlabel=f"Distance along-{a.axis} (km)",
-               ylabel="Cumulative slip (cm)", xlim=(-XLIM, XLIM), title=title)
+        ax.set_xlabel(f"Distance along-{a.axis} (km)", fontsize=FS_LABEL)
+        ax.set_ylabel("Cumulative slip (cm)", fontsize=FS_LABEL)
+        ax.set_xlim(-XLIM, XLIM)
+        if not a.no_titles:
+            ax.set_title(title, fontsize=FS_TITLE)
+        ax.tick_params(labelsize=FS_LABEL - 2)
         ax.set_ylim(bottom=0)
-        ax.legend(fontsize=8, ncol=2, loc="upper right", frameon=True)
+        ax.legend(fontsize=FS_LEGEND, ncol=2, loc="upper right", frameon=True)
     # top two share a y-limit, as in the original; the bottom is 2.5x larger and
     # would flatten them
     ymax = max(axes[0].get_ylim()[1], axes[1].get_ylim()[1])
     axes[0].set_ylim(0, ymax)
     axes[1].set_ylim(0, ymax)
     for e in ("png", "pdf"):
-        fig.savefig(OUT / f"fig6_remake_{a.axis}.{e}", bbox_inches="tight")
+        fig.savefig(OUT / f"fig6_remake_{a.axis}{'_notitle' if a.no_titles else ''}"
+                    f".{e}", bbox_inches="tight")
     plt.close(fig)
-    print(f"wrote {OUT}/fig6_remake_{a.axis}.png")
+    print(f"wrote {OUT}/fig6_remake_{a.axis}"
+          f"{'_notitle' if a.no_titles else ''}.png")
 
     c = len(x_mid) // 2
     print(f"\n{'t (d)':>6s} {'observed':>9s} {'632894':>9s} {'632895':>9s} "
