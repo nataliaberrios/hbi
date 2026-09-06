@@ -42,7 +42,13 @@ slip_profiles_dip.txt on a DIFFERENT time set (3,6,...,21 d); it is not
 interchangeable, and pairing simulated dip against observed strike was a bug
 fixed earlier in this project.
 
+COMPARE MODE (--compare --tag NAME --at DAYS) puts several runs on shared axes
+against the observed profile at ONE time, which is the slip-distribution
+counterpart of pressure_compare_*/RT_compare_*/RV_compare_*. Per-run mode varies
+time for one run; compare mode varies run at one time.
+
 Usage:  python make_obs_overlay.py 632901 [632900 ...]
+        python make_obs_overlay.py --compare --tag story5 --at 5 632901 632896 ...
 """
 import argparse
 import os
@@ -73,14 +79,98 @@ def front(r, s, thr=FRONT_THR):
     return r[b[0]] if len(b) else r[-1]
 
 
+def obs_at(x_km, obs_cm, td):
+    """(x_m, slip_cm, front_m) for the observed profile at time td."""
+    i = OBS_TIMES.index(td)
+    xo_m, so = x_km * 1000.0, obs_cm[:, i]
+    pos = xo_m >= 0
+    Ro = max(front(xo_m[pos], so[pos] / 100.0),
+             front(-xo_m[~pos][::-1], so[~pos][::-1] / 100.0))
+    return xo_m, so, Ro
+
+
+def compare(jobs, tag, td, x_km, obs_cm):
+    """Several runs against the observed profile at ONE time, shared axes."""
+    xo_m, so_cm, Ro = obs_at(x_km, obs_cm, td)
+    cols = plt.cm.viridis(np.linspace(0.05, 0.85, len(jobs)))
+    fig, (a0, a1, a2) = plt.subplots(1, 3, figsize=(15.0, 4.3), dpi=200,
+                                     constrained_layout=True)
+    for ax in (a0, a1):
+        ax.plot(xo_m, so_cm, lw=2.6, color="#a8071a", zorder=5,
+                label=f"OBSERVED {td} d")
+    a2.plot(xo_m, so_cm / so_cm.max(), lw=2.6, color="#a8071a", zorder=5,
+            label=f"OBSERVED {td} d")
+    rows = []
+    for c, job in zip(cols, jobs):
+        d = _deck(job)
+        try:
+            r, sl, ta = load_slip(job, td, how="strike")
+        except FileNotFoundError:
+            print(f"  [skip] {job}: no slip output"); continue
+        if abs(ta - td) > 0.05:
+            print(f"  [skip] {job}: nearest frame to {td} d is {ta:.2f} d")
+            continue
+        sl_cm = sl * 100.0
+        xs = np.concatenate([-r[::-1], r[1:]])
+        ss = np.concatenate([sl_cm[::-1], sl_cm[1:]])
+        lab = (f"{job}: tau_0 {_ff(d['muinit'])*_ff(d['sigmainit']):.2f} MPa, "
+               f"kpmax {d.get('kpmax','-')}")
+        for ax in (a0, a1):
+            ax.plot(xs, ss, lw=1.9, color=c, label=lab)
+        a2.plot(xs, ss / max(ss.max(), 1e-30), lw=1.9, color=c, label=lab)
+        rows.append((job, sl_cm[0], front(r, sl)))
+    a0.set(xlabel="Distance along strike from injector (m)",
+           ylabel="Cumulative slip (cm)", xlim=(-700, 700))
+    a0.set_ylim(bottom=0)
+    a0.set_title(f"A. Amplitude at {td} d")
+    a1.set(xlabel="Distance along strike from injector (m)",
+           ylabel="Cumulative slip (cm)", xlim=(-700, 700), yscale="log",
+           ylim=(1e-4, 20))
+    a1.axhline(FRONT_THR * 100, color=INK, ls=":", lw=1.5)
+    a1.text(-660, FRONT_THR * 100 * 1.35,
+            f"front threshold {FRONT_THR:.0e} m", fontsize=8, color=INK)
+    a1.set_title("B. Front — where each profile crosses the threshold")
+    a2.set(xlabel="Distance along strike from injector (m)",
+           ylabel="Slip / peak slip", xlim=(-700, 700), ylim=(0, 1.05))
+    a2.set_title("C. Shape — each profile over its own peak")
+    for ax in (a0, a1, a2):
+        ax.grid(alpha=0.3, color=GRID)
+        ax.legend(loc="upper right", fontsize=7.5)
+    fig.suptitle(f"Slip distribution against the seismicity-derived observation "
+                 f"at {td} d.  The observed lobe is ONE-SIDED "
+                 f"(-400 to +80 m, peak at -150 m); the simulations are "
+                 f"symmetric about the injector.", fontsize=10)
+    OUTROOT.mkdir(parents=True, exist_ok=True)
+    for e in ("png", "pdf"):
+        fig.savefig(OUTROOT / f"cooper_basin_calibration" /
+                    f"slip_compare_{tag}.{e}", bbox_inches="tight")
+    plt.close(fig)
+    print(f"\nwrote slip_compare_{tag}.png/.pdf   (observed peak "
+          f"{so_cm.max():.3f} cm, observed R {Ro:.0f} m)")
+    print(f"  {'run':>8s} {'peak slip':>10s} {'/obs':>6s} {'R':>6s} {'/obs':>6s}")
+    for job, pk, R in rows:
+        print(f"  {job:>8d} {pk:>9.3f}cm {pk/so_cm.max():>6.2f} "
+              f"{R:>5.0f}m {R/Ro:>6.2f}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("jobs", nargs="+", type=int)
+    ap.add_argument("--compare", action="store_true",
+                    help="several runs on shared axes at one time")
+    ap.add_argument("--tag", default="compare")
+    ap.add_argument("--at", type=int, default=5, choices=OBS_TIMES,
+                    help="observed time to compare at (default 5 d)")
     a = ap.parse_args()
 
     o = np.loadtxt(OBS)
     # column 0 is km; the slip columns are already CENTIMETRES
     x_obs_km, obs_cm = o[:, 0], o[:, 1:]
+
+    if a.compare:
+        (OUTROOT / "cooper_basin_calibration").mkdir(parents=True, exist_ok=True)
+        compare(a.jobs, a.tag, a.at, x_obs_km, obs_cm)
+        return
 
     for job in a.jobs:
         d = _deck(job)
