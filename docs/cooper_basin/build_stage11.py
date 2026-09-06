@@ -110,6 +110,31 @@ def ff(x):
     return float(str(x).replace("d", "e").replace("D", "e"))
 
 
+def extent(base, days, lam_km_sqrtd=None):
+    """(L_est, half, note) -- how far pressure actually gets, not just D_far.
+
+    THE CHECK THIS REPLACES WAS WRONG FOR ENHANCEMENT RUNS. It used only
+    L = sqrt(4*D_far*t) with D_far from kp = kpmin, and reported L/half = 0.12
+    for the ds = 5 m 18 d runs. That is the right question for a run whose
+    permeability never changes, but with permev T the high-k zone is CARRIED
+    OUTWARD by slip -- 632901's map disc is 150 m while its pressure plateau and
+    slip front both reach 380 m at 5 d. The extent is therefore the enhanced
+    edge PLUS diffusion beyond it, and the honest numbers for Stage 11 are
+    0.48-0.67, not 0.12.
+
+    For permev T, the enhanced edge is extrapolated from the run's own measured
+    0-5 d front fit, R[km] = lam*sqrt(t[d]).
+    """
+    D = ff(base["kp"]) / (ff(base["eta"]) * ff(base["phi"]) * ff(base["beta"]))
+    L_diff = math.sqrt(4 * D * days * 86400)
+    half = int(base["imax"]) * ff(base["ds"]) * 1000 / 2
+    on = str(base.get("permev", "F")).upper().startswith("T")
+    if on and lam_km_sqrtd:
+        R = lam_km_sqrtd * math.sqrt(days) * 1000.0
+        return R + L_diff, half, f"enhanced edge {R:.0f}m + diff {L_diff:.0f}m"
+    return L_diff, half, f"fixed perm, D_far {D:.3e}"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")

@@ -92,6 +92,10 @@ STAGES = {
              title="Stage 11 — 18 d extensions of the five plotted runs "
                    "(632914 is 14 d, domain-limited) plus the a-b sweep, the "
                    "only untouched knob left for slip amplitude (8 runs)"),
+    12: dict(runs=[632918], parents={632918: 632901},
+             title="Stage 12 — the permev F CONTROL on 632901: isolates whether "
+                   "permeability ENHANCEMENT is doing the work, or whether the "
+                   "nonuniform initial map alone was enough (1 run)"),
     10: dict(runs=[632900, 632901, 632902],
              parents={n: 632897 for n in (632900, 632901, 632902)},
              title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "
