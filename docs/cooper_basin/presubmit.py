@@ -85,6 +85,13 @@ STAGES = {
             title="Stage 6 — permeability enhancement ON, on the Taiyi "
                   "configuration: the only base that matches the wellhead AND "
                   "slips (2 runs)"),
+    11: dict(runs=list(range(632910, 632918)),
+             parents={632910: 632901, 632911: 632896, 632912: 632875,
+                      632913: 632812, 632914: 632881,
+                      632915: 632901, 632916: 632901, 632917: 632901},
+             title="Stage 11 — 18 d extensions of the five plotted runs "
+                   "(632914 is 14 d, domain-limited) plus the a-b sweep, the "
+                   "only untouched knob left for slip amplitude (8 runs)"),
     10: dict(runs=[632900, 632901, 632902],
              parents={n: 632897 for n in (632900, 632901, 632902)},
              title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "
