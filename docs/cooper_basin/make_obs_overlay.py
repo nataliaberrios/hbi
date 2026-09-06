@@ -9,10 +9,19 @@ separate cleanly into three panels:
 
   A  slip vs distance, linear. The AMPLITUDE comparison. 632901 sits 5.7x below
      the observed curves here, which is the open problem.
-  B  the same on a log y axis with the 1e-4 m front threshold drawn. The FRONT
-     comparison. The curves cross the threshold at nearly the same radius even
-     though they are a factor of 6 apart in height -- that is the cliff at the
-     disc edge, and it is why the front matches while the amplitude does not.
+  B  the same on a LINEAR axis zoomed on the WESTERN FOOT (x -520 to -150 m,
+     y 0 to 5x the threshold), with the 1e-4 m front threshold drawn. The FRONT
+     comparison. West because the observed lobe runs -400 to +80 m, so its
+     front is on the negative side while the simulations are symmetric. The curves cross the threshold at
+     nearly the same radius even though they are a factor of 6 apart in height
+     -- that is the cliff at the disc edge, and it is why the front matches
+     while the amplitude does not.
+
+     NO LOG AXIS ANYWHERE IN THIS SCRIPT. An earlier version used log y here.
+     It resolves the threshold crossings well, but it also renders a
+     factor-of-six amplitude gap as a modest vertical offset, and the amplitude
+     is the quantity actually in question. A narrow linear window shows the
+     crossings just as clearly without that distortion.
   C  each profile divided by its own peak. The SHAPE comparison, which asks
      whether the simulated crack is the same object scaled down or a different
      one. Answer for 632901: same shape to about 10% over the inner half.
@@ -66,6 +75,13 @@ from sim_curves import load_slip, _deck, _ff, _path
 OBS = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
 OBS_TIMES = [3, 5, 7, 9, 11, 13, 15, 17]
 FRONT_THR = 1e-4          # the same fixed threshold score_grid.py uses
+# Panel B's window. Zoomed on the WEST foot: the observed lobe runs -400 to
+# +80 m, so its front is on the negative side, while the simulations are
+# symmetric -- a positive-side zoom would show every simulated foot and no
+# observed one. Full-width linear made the profiles leave the top of the window
+# as near-vertical lines, which resolved nothing.
+FOOT_X = (-520.0, -150.0)
+FOOT_Y = 5 * FRONT_THR * 100      # 5x the threshold, in cm
 OUTROOT = Path("/home/users/nberrios/3dhbi/hbi_analysis/figures")
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
 plt.rcParams.update({"font.size": 10, "axes.titlesize": 10.5,
@@ -123,13 +139,15 @@ def compare(jobs, tag, td, x_km, obs_cm):
            ylabel="Cumulative slip (cm)", xlim=(-700, 700))
     a0.set_ylim(bottom=0)
     a0.set_title(f"A. Amplitude at {td} d")
+    # LINEAR zoom, not a log axis. A log y makes a factor-of-six amplitude gap
+    # read as a modest offset, and it is the amplitude that is in question here.
+    # The threshold crossings are still resolved because the window is narrow.
     a1.set(xlabel="Distance along strike from injector (m)",
-           ylabel="Cumulative slip (cm)", xlim=(-700, 700), yscale="log",
-           ylim=(1e-4, 20))
+           ylabel="Cumulative slip (cm)", xlim=FOOT_X, ylim=(0, FOOT_Y))
     a1.axhline(FRONT_THR * 100, color=INK, ls=":", lw=1.5)
-    a1.text(-660, FRONT_THR * 100 * 1.35,
+    a1.text(FOOT_X[0] + 8, FRONT_THR * 100 * 1.12,
             f"front threshold {FRONT_THR:.0e} m", fontsize=8, color=INK)
-    a1.set_title("B. Front — where each profile crosses the threshold")
+    a1.set_title("B. Front — linear zoom on the western foot")
     a2.set(xlabel="Distance along strike from injector (m)",
            ylabel="Slip / peak slip", xlim=(-700, 700), ylim=(0, 1.05))
     a2.set_title("C. Shape — each profile over its own peak")
@@ -222,13 +240,12 @@ def main():
         a0.set_ylim(bottom=0)
         a0.set_title("A. Amplitude — solid observed, dashed simulated")
         a1.set(xlabel="Distance along strike from injector (m)",
-               ylabel="Cumulative slip (cm)", xlim=(-700, 700), yscale="log",
-               ylim=(1e-4, 20))
+               ylabel="Cumulative slip (cm)", xlim=FOOT_X, ylim=(0, FOOT_Y))
         a1.axhline(FRONT_THR * 100, color="#a8071a", ls=":", lw=1.5)
-        a1.text(-660, FRONT_THR * 100 * 1.35,
+        a1.text(FOOT_X[0] + 8, FRONT_THR * 100 * 1.12,
                 f"front threshold {FRONT_THR:.0e} m", fontsize=8,
                 color="#a8071a")
-        a1.set_title("B. Front — the threshold crossings nearly coincide")
+        a1.set_title("B. Front — linear zoom on the western foot")
         a2.set(xlabel="Distance along strike from injector (m)",
                ylabel="Slip / peak slip", xlim=(-700, 700), ylim=(0, 1.05))
         a2.set_title("C. Shape — each profile over its own peak")
