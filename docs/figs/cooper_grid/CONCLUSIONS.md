@@ -907,3 +907,45 @@ spatially varying `kpmax` -- the parameter-file dispatch at :453 handles `kp` an
 at 6.9 d -- "Slip rate below vmin", not tmax -- so Wang & Dunham's config gets
 only the 3 and 5 d observed times, fewer than the 14 d domain limit allowed.
 632918, the permev F control, is queued.
+
+### Correction to the asymmetry claim, from the 17 d data
+
+The section above says the observed lobe is one-sided and treats that as a
+property of the record. It is not -- it is an EARLY-TIME feature, and the claim
+was read off the 5 d column:
+
+      t   west edge   east edge   peak at    W/E   peak
+     3 d     -481m         96m     -136m    5.01   2.81cm
+     5 d     -481m         96m     -136m    5.01   2.81
+     7 d     -513m        144m      -96m    3.56   3.02
+     9 d     -617m        240m      -96m    2.57   4.37
+    11 d     -665m        441m      -96m    1.51   4.99
+    13 d     -729m        441m      -96m    1.66   5.40
+    15 d     -978m        609m      -96m    1.61   7.56
+    17 d     -978m       1090m     -289m    0.90   9.17
+
+W/E falls from 5.0 at 5 d to 0.90 by 17 d. So the observed slip patch becomes
+essentially symmetric, and the symmetric model is the right shape for the full
+record even though it is the wrong shape for the first week. That weakens the
+"concentrate the slip on one side to gain a factor of 2" idea as a route to the
+amplitude gap -- it would help at 5 d and hurt at 17 d.
+
+It also removes the main objection to 632913, whose slip_poster_632913.png shows
+a symmetric cone tracking the observed amplitude at all eight times.
+
+### Figures
+
+  stage11/stage11_front_window.png  left: front radius vs sqrt(t) to 18 d with
+    the observed cloud, so the divergence is visible rather than inferred.
+    Neither the simulated nor the observed front is really sqrt(t) -- both step
+    with the injection cycles, which is worth knowing given that lambda from
+    R = lambda*sqrt(t) is this project's headline metric. Right:
+    lambda_sim/lambda_obs against fitting window, both refit per window. 632913
+    sits inside +/-15% from 6 to 18 d; the others leave the band immediately
+    after 5 d and settle at 1.4-1.7.
+  stage11/stage11_ab.png            the a-b falsification. Left: slip at 5 d vs
+    a-b, with 632915 and 632917 at the same a-b and 2.3x apart. Right: the same
+    four runs on an (a, b) grid, where the pattern actually lives.
+  slip_poster_style/slip_poster_632913.png   the first eight-curve version of
+    the poster figure. This is the one to look at.
+  per-run suites for 632913-632917, all linear.
