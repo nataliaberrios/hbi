@@ -171,8 +171,8 @@ At kpmax 2.5e-11 the plateau is fixed at 9.78 MPa, so raise the excess over dp_c
 
 | run | σ̄₀ | τ₀ | Δτc | k near/far | φ | η | β | pev | ds | front | wellhead | pk/dc |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 632900 | 27.99 | 10.78 | 6.02 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | *not run yet* | — | — |
-| 632901 | 27.99 | 11.11 | 5.68 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | *not run yet* | — | — |
+| 632900 | 27.99 | 10.78 | 6.02 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | **1.02** | +10.8% | 47 |
+| 632901 | 27.99 | 11.11 | 5.68 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | **1.06** | +9.7% | 49 |
 | 632902 | 27.99 | 11.48 | 5.32 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | *not run yet* | — | — |
 
 ## Held fixed in all 68 runs
@@ -192,8 +192,8 @@ At kpmax 2.5e-11 the plateau is fixed at 9.78 MPa, so raise the excess over dp_c
 
 ## Where the grid stands
 
-- Best front: **632875**, λ/λ_obs **1.03**, wellhead +80.0%
-- Runs with the wellhead inside ±15%: **30** of 73
-- Runs inside **both** bands: **1**
+- Best front: **632901**, λ/λ_obs **1.06**, wellhead +9.7%
+- Runs with the wellhead inside ±15%: **32** of 75
+- Runs inside **both** bands: **3**
 
 The two targets are in tension: the wellhead needs *low* near-well overpressure, the front needs *high*. τ₀ moves the front without moving the wellhead at all — see Stage 3, where the wellhead is flat to ±0.1% across the whole sweep — but it saturates at λ 0.34 by τ₀ = 15.0, and τ₀ cannot exceed f₀σ̄₀ = 16.79 MPa without the fault being past its own strength at zero overpressure.

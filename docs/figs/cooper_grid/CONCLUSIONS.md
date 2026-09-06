@@ -714,12 +714,38 @@ at `kpmax` ~2.5e-13, which is why the two targets had always appeared locked.
 1. The plateau is NOT pinned at dp_crit. It falls with `kpmax` too, 11.90 to
    8.63 MPa. The "pinned" reading came from measuring over a single decade.
 2. The wellhead bias has a FLOOR near +10.7%, reached by 632898 even at
-   dp(r_w) = 8.64 MPa against a measured peak of 10.92. Since it does not respond
-   to the near-well pressure, the residual is the shut-in periods, which HBI
-   cannot follow without wellbore bleed-off. Pushing `kpmax` higher cannot close
-   it and costs slip. +10.7% is inside the band, so this is a floor, not a
-   failure — but it means the wellhead metric is saturated and should stop being
-   treated as a tuning target below about +12%.
+   dp(r_w) = 8.64 MPa against a measured peak of 10.92, so pushing `kpmax`
+   higher cannot close it and costs slip.
+
+   **CORRECTION, added after inspecting the curve rather than the score.** An
+   earlier version of this section attributed that floor to the shut-in periods,
+   which HBI cannot follow without wellbore bleed-off. That is wrong: the
+   pressure metric MASKS shut-ins out (`q > 25%` of peak and `p_obs > 5 MPa`,
+   `score_grid.py:188`). The residual is a ramp-SHAPE mismatch inside the
+   flowing window. Decomposed for 632901:
+
+         window        sim    measured     bias
+       0.50-0.80 d   40.99      35.94    +14.1%
+       0.80-1.10 d   44.64      41.50     +7.6%
+       1.10-1.40 d   42.93      37.08    +15.8%
+       1.40-1.65 d   44.55      43.09     +3.4%
+       PEAK          45.42      44.68     +1.6%
+
+   The simulation pressurises too EARLY on the ramp and does not dip enough
+   during the mid-stage rate reduction near 1.1-1.4 d. The headline +9.7% is
+   those two errors partly cancelling, not a uniform offset. The defensible
+   claim is that the PEAK wellhead pressure matches to 1.6% while the history
+   matches only to about +/-16%, and closing that is a near-well
+   storage/permeability question (`Sw_fwid`, or the disc permeability being too
+   low early so pressure builds faster than it spreads) — NOT a tau_0 or
+   `kpmax` question.
+
+3. SCOPE OF THE PRESSURE SCORE, which should be quoted whenever the score is.
+   The flowing mask covers t = 0.62 to 1.58 d, **14% of the 0–5 d window** —
+   about 23 hours. Outside it the measured surface gauge reads ~0 because the
+   well is bled off, and no formation model reproduces that. "Matched the
+   wellhead" means matched over that 23-hour flowing window; saying it without
+   the qualifier overstates the result.
 
 **THE BINDING CONSTRAINT IS NOW SLIP AMPLITUDE, which was not one of the two
 original targets.** Observed cumulative slip at the injector at 5 d is 2.81 cm.
@@ -749,3 +775,59 @@ Falsifiable both ways: if the wellhead moves with `muinit` here, the Stage-3
 independence does not survive at high `kpmax` and the targets are coupled after
 all. If slip rises but the front leaves its band, the front was not
 volume-controlled and Stage 9's agreement was luck.
+
+## SESSION 2026-09-05, later — Stage 10: the tau_0 route to slip amplitude FAILS
+
+**The hypothesis is falsified.** Raising `muinit` at fixed `kpmax` 2.5e-11 was
+meant to lower dp_crit and so raise the excess `plateau - dp_crit` that slip
+amplitude tracks. Predicted ~2-3 cm for 632901. Measured:
+
+     run   muinit   tau_0   dp_crit   plateau   excess     slip   front   wellhead
+  632897    0.370   10.36     10.73      9.78    -0.95   0.450cm   0.98     +12.2%
+  632900    0.385   10.78     10.03      8.92    -1.11   0.472     1.02     +10.8%
+  632901    0.397   11.11      9.47      8.24    -1.23   0.488     1.06      +9.7%
+
+Slip moved 8%, not 6x. **The plateau tracked dp_crit downward at slope 1.22**, so
+the excess got MORE negative rather than turning positive. In the tau_0
+direction the plateau really is pinned to the failure threshold -- Stage 9's fall
+was `kpmax` draining the disc, a separate mechanism. Both are true, and together
+they mean **the excess is nearly invariant at fixed `kpmax`**. tau_0 cannot buy
+amplitude, and no pressure route can: positive excess needs low `kpmax`, which
+is exactly what breaks the wellhead.
+
+**632902 (muinit 0.410) DID NOT COMPLETE** -- "Maximum iteration" at step 6102,
+t = 4.51 d against a 5.00 d tmax, so it is below the 4.75 d usability gate and
+is not scored. The RK solver stiffens as tau_0 rises, which is itself a limit on
+this direction.
+
+**What Stage 10 did establish, and it is worth keeping.** The front stayed in
+band across the sweep (0.98 -> 1.02 -> 1.06) and the wellhead IMPROVED
+(+12.2 -> +10.8 -> +9.7%), its best value in the project. So Stage 3's
+tau_0/wellhead independence survives at high `kpmax`, and the double match is
+robust across tau_0 = 10.4-11.1 MPa rather than being one lucky point.
+
+**Where the project actually stands** (632901, and quoting the scope):
+
+  * slip front: MATCHED. lambda 0.1971 vs lambda_obs 0.1866, 1.06x. Peak slip is
+    49x dc, so it is a real front, not the razor-thin ring the plan warns about.
+  * wellhead PEAK: MATCHED, +1.6% (45.42 vs 44.68 MPa).
+  * wellhead HISTORY: close, not matched. Right magnitude, wrong ramp shape,
+    +/-16% within the flowing window. See the correction above.
+  * slip AMOUNT: 5.7x low, 0.49 cm against 2.81 observed at 5 d.
+
+all at tau_0 = 11.11 MPa, 26% below Wang & Dunham's 15.0.
+
+**Two independent things remain.** (a) The ramp shape, which is a near-well
+storage/permeability question. (b) The slip amount, where the only remaining
+knob is the friction: `a` = 0.015 and `b` = 0.012 are identical in all 75 scored
+runs, giving a-b = +0.003. Since the fault never reaches failure and creeps the
+whole time at v = vref*exp[(tau/sigmabar - f0)/(a-b)], a-b sets how far below f0
+the fault keeps creeping before it stalls -- measured at 9.3 e-folds, i.e.
+d(tau/sigmabar) = 0.0278, for 632901. That window is proportional to a-b, so
+slip should be roughly LINEAR in a-b, needing a-b ~ 0.017 for 2.81 cm.
+
+Checked, not assumed: raising the amplitude 5.7x moves the front only 5%
+(380 -> 400 m), because the profile has a cliff at the disc edge -- slip falls
+from 10% to 0.1% of peak between 370 and 420 m. And the exterior stays dead
+(tau/sigmabar - f0 = -0.203 there, so exp(-11.9) even at a-b = 0.017). So the
+amplitude and the front are separable. Untested: a and b have never been varied.
