@@ -949,3 +949,41 @@ a symmetric cone tracking the observed amplitude at all eight times.
   slip_poster_style/slip_poster_632913.png   the first eight-curve version of
     the poster figure. This is the one to look at.
   per-run suites for 632913-632917, all linear.
+
+### The top-5 set, rebuilt on 18 d runs (compare_story5_18d/, slip_poster_story5_18d)
+
+Six of the eight Stage 11 runs have finished, so the comparison set is now on
+the honest window. Everything below is a 0-18 d fit with the observed front
+refit on the same window.
+
+     run     kpmax   front 0-5d   front 0-18d   slip 5d   slip 17d   /obs17   wellhead
+  632913   2.5e-13        0.70          1.08    2.90cm     8.72cm     0.95     +70.7%
+  632911   2.5e-12        0.99          1.57    1.27       5.09       0.55     +19.1%
+  632916   2.5e-11        0.97          1.45    0.81       1.53       0.17      +8.8%
+  632917   2.5e-11        1.03          1.49    0.60       0.83       0.09      +8.3%
+  632910   2.5e-11        1.06          1.70    0.49       1.49       0.16      +9.7%
+
+Monotonic in kpmax on every column, and every run that looked matched on 0-5 d
+overruns by 45-70% on 0-18 d. The one that looked WORST at 5 d (632913, 0.70) is
+the only one inside the band at 18 d.
+
+632913's slip against the observation, all eight times:
+
+      t        3d     5d     7d     9d    11d    13d    15d    17d
+   observed  2.81   2.81   3.02   4.37   4.99   5.40   7.56   9.17
+   632913    2.91   2.91   4.05   4.11   4.60   5.03   8.72   8.73
+
+Within 10-35% at every time, with the same growth shape. No other run is within
+a factor of 2 at 17 d. And 632913 is the ORIGINAL configuration -- 632812's
+physics at kpmax 2.5e-13, tau_0 10.36 MPa, a 0.015 / b 0.012 -- not a tuned one.
+Ten stages of tuning moved away from the answer, and the 5 d window is why.
+
+METHOD NOTE, second occurrence of the same trap. Building this set with 632914
+in it collapsed the common fitting window to 6.898 d, because that is where
+632914 stopped ("Slip rate below vmin"). Every lambda was then refit on a third
+of the intended span. This is exactly the 632880 incident recorded earlier, and
+the script does print the window -- it has to be read. 632914 is excluded from
+the comparison; it also has no 17 d slip, so it does not belong in a 17 d
+figure regardless.
+
+STILL OUT: 632912 (= 632875 at 18 d) and 632918 (the permev F control).
