@@ -831,3 +831,79 @@ Checked, not assumed: raising the amplitude 5.7x moves the front only 5%
 from 10% to 0.1% of peak between 370 and 420 m. And the exterior stays dead
 (tau/sigmabar - f0 = -0.203 there, so exp(-11.9) even at a-b = 0.017). So the
 amplitude and the front are separable. Untested: a and b have never been varied.
+
+## SESSION 2026-09-06 — Stage 11: the 5 d front match does NOT survive to 18 d
+
+**THE HEADLINE, AND IT REVERSES THE PREVIOUS TWO SECTIONS.** Every claim that a
+run "matches the front" was made on a 0-5 d window. Refitting on matched
+windows, the tuned runs overrun badly:
+
+     run    front 0-5 d   front 0-18 d
+  632915        1.04           1.66
+  632917        1.03           1.49
+  632916        0.97           1.45
+  632913        0.70           1.08
+
+lambda_obs is 0.1866 over 0-5 d and 0.1709 over 0-18 d, so this is not a
+window-convention artifact -- the SIMULATED front keeps growing while the
+observed one does not. The 5 d agreement was a crossing, not a match.
+
+**THE RANKING INVERTS, and 632913 is now the interesting run.** It is 632812
+(kpmax 2.5e-13, tau_0 10.36, a 0.015 / b 0.012 -- the ORIGINAL configuration,
+not a tuned one) extended to 18 d:
+
+                        5 d      17 d    growth
+     observed slip     2.81cm   9.17cm     3.27x
+     632913            2.90     8.72       3.01x     <- amplitude AND evolution
+     632916            0.81     1.53       1.88x
+     632917            0.60     0.83       1.38x
+     632915            0.27     0.59       2.24x
+
+632913 matches the observed slip magnitude at BOTH times and very nearly its
+growth rate, and its 0-18 d front is 1.08. It fails on one thing only: the
+wellhead, at +70.7%. The runs that match the wellhead (+7.4 to +8.8%) are 6-15x
+low on slip at 17 d and overrun the front by 45-66%.
+
+**THE a-b HYPOTHESIS IS FALSIFIED, and the control run is what proved it.**
+632915 and 632917 share a-b = 0.010 with different `a`, and give 0.27 vs
+0.60 cm -- a factor of 2.3. So a-b is NOT the controlling parameter:
+
+     run       a       b     a-b   slip 5 d
+  632915   0.015   0.005   0.010    0.27cm
+  632901   0.015   0.012   0.003    0.49
+  632917   0.022   0.012   0.010    0.60
+  632916   0.022   0.005   0.017    0.81
+
+Amplitude tracks `a` (0.015 -> 0.022 roughly doubles it) and b's effect even
+changes sign with `a`. The prediction of linear-in-(a-b) growth came from
+inverting the STEADY-STATE relation tau/sigmabar = f0 + (a-b)*ln(v/vref), but
+this fault is in a transient, where `a` enters the regularised law directly
+through 2*vref*exp(-psi/a)*sinh(tau/sigmabar/a). Wrong frame. Also worth
+recording: larger `a` is LESS stiff, not more -- 632916 took 4118 steps against
+632915's 10261, the opposite of the risk flagged before launch.
+
+**THE TRADE-OFF, NOW QUANTIFIED AT THE INJECTOR.** At 5 d, 632913 carries
+16.80 MPa of formation overpressure at the injector cell to produce the observed
+slip, while the measured wellhead peak allows about 10.9 MPa. That is the whole
+disagreement: a factor of ~1.5 in near-well overpressure. Everything else --
+kpmax, tau_0, a, b -- trades along it.
+
+`skin` was checked and DOES NOT fix it. The Peaceman well-to-formation drop in
+632913 is only 2.94 MPa of the 19.74 MPa well overpressure, so even skin = -2.2
+(T x11) leaves pw near 17 MPa against a measured ~10.9 peak. The excess is
+FORMATION pressure, not well coupling.
+
+**WHERE THE FACTOR OF ~2 MIGHT COME FROM: the asymmetry.** The observed lobe is
+one-sided -- it spans -400 to +80 m and peaks at -150 m -- while every
+simulation is symmetric about the injector. The same pressurised volume
+concentrated on one side produces roughly twice the local slip, which would
+close much of the amplitude gap at unchanged pressure. This is implementable
+without a code change: main_LH.f90:447-451 reads per-cell `tau` and `sigma` from
+the parameter file (and `a`, `b`, `dc`, `f0` besides). What is NOT available is a
+spatially varying `kpmax` -- the parameter-file dispatch at :453 handles `kp` and
+`phi` only, so kpmax is a scalar and a three-zone kpmax would need a code change.
+
+**RUN STATUS.** 632910/632911/632912 still running at 10 h. 632914 stopped early
+at 6.9 d -- "Slip rate below vmin", not tmax -- so Wang & Dunham's config gets
+only the 3 and 5 d observed times, fewer than the 14 d domain limit allowed.
+632918, the permev F control, is queued.

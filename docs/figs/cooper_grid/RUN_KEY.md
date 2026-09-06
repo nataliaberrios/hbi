@@ -193,7 +193,7 @@ At kpmax 2.5e-11 the plateau is fixed at 9.78 MPa, so raise the excess over dp_c
 ## Where the grid stands
 
 - Best front: **632901**, λ/λ_obs **1.06**, wellhead +9.7%
-- Runs with the wellhead inside ±15%: **32** of 75
-- Runs inside **both** bands: **3**
+- Runs with the wellhead inside ±15%: **35** of 79
+- Runs inside **both** bands: **6**
 
 The two targets are in tension: the wellhead needs *low* near-well overpressure, the front needs *high*. τ₀ moves the front without moving the wellhead at all — see Stage 3, where the wellhead is flat to ±0.1% across the whole sweep — but it saturates at λ 0.34 by τ₀ = 15.0, and τ₀ cannot exceed f₀σ̄₀ = 16.79 MPa without the fault being past its own strength at zero overpressure.
