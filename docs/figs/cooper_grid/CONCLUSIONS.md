@@ -682,3 +682,70 @@ consistent bounds the same lineage reaches lambda/lambda_obs 0.97-0.99. They are
 exactly the figures that would support the retracted claim that enhancement kills
 slip. Now marked SUPERSEDED with their ratios and an explicit instruction not to
 cite them as evidence about enhancement.
+
+## SESSION 2026-09-05 — Stage 9: the first double match, and the constraint it exposed
+
+**A run is inside both bands.** 632897 (`kpmax` 2.5e-11) scores front 0.98x and
+wellhead +12.2% at **tau_0 = 10.36 MPa** — 31% below Wang & Dunham's 15.0. The
+two targets are not intrinsically coupled, and matching them does not require
+abandoning the stress measurements. That was the question this whole grid was
+built to answer.
+
+**What separates them is `kpmax`, and the reason is worth stating precisely.**
+The enhanced near-well zone behaves as a sealed disc: overpressure forms a
+plateau across it with a logarithmic peak at the well and a cliff at the disc
+edge. `deltaP = q*eta/(4*pi*kpmax)` predicts the peak should scale as 1/`kpmax`,
+and it does, over three decades and to within the linewidth (see
+`figures/stage9/stage9_mechanism.png`, middle panel):
+
+     run     kpmax   plateau   peak above   dp(r_w)   front   wellhead   peak slip
+  632875   2.5e-13     11.90        7.05     18.96    1.03      +80.0%     6.03 cm
+  632896   2.5e-12     10.66        0.70     11.36    0.99      +19.1%     1.27
+  632897   2.5e-11      9.78        0.07      9.85    0.98      +12.2%     0.45
+  632898   2.5e-10      8.63        0.01      8.64    0.59      +10.7%     0.03
+
+The front holds at 0.98-1.03 across a 100x change in `kpmax`, breaking only at
+2.5e-10 where slip nearly dies — so the front is set by volume balance into the
+disc (phi*beta and dp_crit), not by `kpmax`. Every one of the previous 70 runs sat
+at `kpmax` ~2.5e-13, which is why the two targets had always appeared locked.
+
+**Two corrections to what this file said before.**
+
+1. The plateau is NOT pinned at dp_crit. It falls with `kpmax` too, 11.90 to
+   8.63 MPa. The "pinned" reading came from measuring over a single decade.
+2. The wellhead bias has a FLOOR near +10.7%, reached by 632898 even at
+   dp(r_w) = 8.64 MPa against a measured peak of 10.92. Since it does not respond
+   to the near-well pressure, the residual is the shut-in periods, which HBI
+   cannot follow without wellbore bleed-off. Pushing `kpmax` higher cannot close
+   it and costs slip. +10.7% is inside the band, so this is a floor, not a
+   failure — but it means the wellhead metric is saturated and should stop being
+   treated as a tuning target below about +12%.
+
+**THE BINDING CONSTRAINT IS NOW SLIP AMPLITUDE, which was not one of the two
+original targets.** Observed cumulative slip at the injector at 5 d is 2.81 cm.
+632897 gives 0.45 cm, 6x low; 632896 gives 1.27 cm, 2.2x low; 632875 gives
+6.03 cm, 2.2x high. The front is matching by RADIUS while the slip producing it
+is too small — a thin ring. Slip tracks `plateau - dp_crit`, the excess
+overpressure over the failure threshold, and that excess goes negative exactly
+where the wellhead comes right.
+
+**Stage 10 follows from this and is the natural next test.** At `kpmax` 2.5e-11
+the plateau is fixed at 9.78 MPa, so raise the excess by lowering
+dp_crit = sigma_0 - tau_0/f instead — a small `muinit` increase. Stage 3 measured
+the wellhead flat to +/-0.1% across a 36-run tau_0 sweep, so this should buy slip
+without spending the wellhead match:
+
+    muinit   tau_0    dp_crit   excess   expected slip
+     0.370   10.36      10.73    -0.95    0.45 cm (632897, measured)
+     0.385   10.78      10.03    -0.25    ~1 cm      632900
+     0.397   11.11       9.47    +0.31    ~2-3 cm    632901
+     0.410   11.48       8.86    +0.92    ~5 cm      632902
+
+The right panel of the Stage 9 figure crosses the observed 2.81 cm at an excess
+of about +0.35 MPa, which is what 632901 targets. tau_0 = 11.11 MPa is still 26%
+below 15.0, so this stays an understressed fault.
+
+Falsifiable both ways: if the wellhead moves with `muinit` here, the Stage-3
+independence does not survive at high `kpmax` and the targets are coupled after
+all. If slip rises but the front leaves its band, the front was not
+volume-controlled and Stage 9's agreement was luck.

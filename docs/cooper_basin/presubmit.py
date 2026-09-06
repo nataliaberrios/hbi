@@ -85,6 +85,11 @@ STAGES = {
             title="Stage 6 — permeability enhancement ON, on the Taiyi "
                   "configuration: the only base that matches the wellhead AND "
                   "slips (2 runs)"),
+    10: dict(runs=[632900, 632901, 632902],
+             parents={n: 632897 for n in (632900, 632901, 632902)},
+             title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "
+                   "kpmax where the wellhead is already in band, to lower "
+                   "dp_crit and recover slip amplitude (3 runs)"),
 }
 
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"

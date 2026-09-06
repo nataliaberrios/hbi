@@ -52,6 +52,28 @@ BLOCKS = [
      "First time in the project that HBI has been run on Wang & Dunham's own "
      "inputs. Differ from each other ONLY in dc: 1.53e-5 (his value) vs 1e-4 "
      "(this project's). Note ds = 20 m here, not the 5 m used by the other 66."),
+    ("Stage 6 — enhancement ON, on the Taiyi configuration",
+     [632884, 632885],
+     "632880/632881 with permev T. Wang & Dunham have no permeability "
+     "enhancement, so this asks whether adding it to their own parameters "
+     "changes anything. It does not: 632885 vs 632881 is 0.22 -> 0.22 on the "
+     "front."),
+    ("Stage 9 — the kpmax sweep, and the first double match",
+     [632896, 632897, 632898],
+     "632875's configuration with kpmax raised 10x/100x/1000x, each with its "
+     "own map so the disc still IS kpmax. Separates the two targets: the "
+     "near-well peak falls as 1/kpmax (7.05 -> 0.70 -> 0.07 -> 0.01 MPa) while "
+     "the front holds at 0.98-1.03, so the front is volume-controlled and the "
+     "wellhead is kpmax-controlled. 632897 is INSIDE BOTH BANDS at "
+     "tau_0 = 10.36 MPa. But the plateau falls with kpmax too, and slip "
+     "amplitude tracks plateau - dp_crit, so slip collapses as the wellhead "
+     "improves -- 0.45 cm against an observed 2.81."),
+    ("Stage 10 — muinit raised where the wellhead is already in band",
+     [632900, 632901, 632902],
+     "At kpmax 2.5e-11 the plateau is fixed at 9.78 MPa, so raise the excess "
+     "over dp_crit = sigma_0 - tau_0/f by lowering dp_crit instead. Targets "
+     "the observed 2.81 cm at 5 d, which the Stage 9 trend crosses at an "
+     "excess of about +0.35 MPa (632901). tau_0 stays 26% below 15.0."),
 ]
 
 
@@ -146,7 +168,9 @@ def main():
     A("")
     A("**pk/dc** is peak slip divided by that run's own `dc`. This one *is*")
     A("per-run, because it asks a different question — did the patch weaken at all.")
-    A("Below ~1 there is no front to speak of and the λ is near-noise; `no slip`")
+    A("Below ~1 there is no front to speak of and the λ is near-noise; `no slip`\n"
+      "means the run finished without one, while *not run yet* means a deck\n"
+      "exists but has no output.")
     A("means nothing reached the threshold, which is a result, not missing data.")
     A("")
     A("## Column legend")
@@ -186,8 +210,11 @@ def main():
             sig, mu, f0 = ff(dk["sigmainit"]), ff(dk["muinit"]), ff(dk["f0"])
             tau0 = mu * sig
             pk, contrast = perm_desc(dk)
+            # Distinguish "ran and produced no front" from "has a deck but no
+            # output yet". Both used to print `no slip`, which reads as a
+            # result for a run that has not happened.
             lam = (f"**{s['lam_ratio']:.2f}**" if s.get("lam_ratio") is not None
-                   else "no slip")
+                   else "no slip" if n in scores else "*not run yet*")
             wh = f"{s['p_pct']:+.1f}%" if s.get("p_pct") is not None else "—"
             pd = (f"{s['peak_over_dc']:.0f}"
                   if s.get("peak_over_dc") is not None else "—")

@@ -19,6 +19,8 @@ two samplings of the same run. 0% is a match; ±15% is the agreed band.
 **pk/dc** is peak slip divided by that run's own `dc`. This one *is*
 per-run, because it asks a different question — did the patch weaken at all.
 Below ~1 there is no front to speak of and the λ is near-noise; `no slip`
+means the run finished without one, while *not run yet* means a deck
+exists but has no output.
 means nothing reached the threshold, which is a result, not missing data.
 
 ## Column legend
@@ -144,6 +146,35 @@ First time in the project that HBI has been run on Wang & Dunham's own inputs. D
 | 632880 | 27.99 | 15.00 | 1.79 | 1.1e-12/4e-13 | 0.010 | 8.90e-04 | 1.000e-08 | F | 20 | **0.14** | +11.1% | 253 |
 | 632881 | 27.99 | 15.00 | 1.79 | 1.1e-12/4e-13 | 0.010 | 8.90e-04 | 1.000e-08 | F | 20 | **0.22** | +8.2% | 68 |
 
+## Stage 6 — enhancement ON, on the Taiyi configuration
+
+632880/632881 with permev T. Wang & Dunham have no permeability enhancement, so this asks whether adding it to their own parameters changes anything. It does not: 632885 vs 632881 is 0.22 -> 0.22 on the front.
+
+| run | σ̄₀ | τ₀ | Δτc | k near/far | φ | η | β | pev | ds | front | wellhead | pk/dc |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 632884 | 27.99 | 15.00 | 1.79 | 1.1e-12/4e-13 | 0.010 | 8.90e-04 | 1.000e-08 | T | 20 | **0.08** | +nan% | 139 |
+| 632885 | 27.99 | 15.00 | 1.79 | 1.1e-12/4e-13 | 0.010 | 8.90e-04 | 1.000e-08 | T | 20 | **0.22** | +8.2% | 67 |
+
+## Stage 9 — the kpmax sweep, and the first double match
+
+632875's configuration with kpmax raised 10x/100x/1000x, each with its own map so the disc still IS kpmax. Separates the two targets: the near-well peak falls as 1/kpmax (7.05 -> 0.70 -> 0.07 -> 0.01 MPa) while the front holds at 0.98-1.03, so the front is volume-controlled and the wellhead is kpmax-controlled. 632897 is INSIDE BOTH BANDS at tau_0 = 10.36 MPa. But the plateau falls with kpmax too, and slip amplitude tracks plateau - dp_crit, so slip collapses as the wellhead improves -- 0.45 cm against an observed 2.81.
+
+| run | σ̄₀ | τ₀ | Δτc | k near/far | φ | η | β | pev | ds | front | wellhead | pk/dc |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 632896 | 27.99 | 10.36 | 6.44 | 2.5e-12/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | **0.99** | +19.1% | 127 |
+| 632897 | 27.99 | 10.36 | 6.44 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | **0.98** | +12.2% | 45 |
+| 632898 | 27.99 | 10.36 | 6.44 | 2.5e-10/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | **0.59** | +10.7% | 3 |
+
+## Stage 10 — muinit raised where the wellhead is already in band
+
+At kpmax 2.5e-11 the plateau is fixed at 9.78 MPa, so raise the excess over dp_crit = sigma_0 - tau_0/f by lowering dp_crit instead. Targets the observed 2.81 cm at 5 d, which the Stage 9 trend crosses at an excess of about +0.35 MPa (632901). tau_0 stays 26% below 15.0.
+
+| run | σ̄₀ | τ₀ | Δτc | k near/far | φ | η | β | pev | ds | front | wellhead | pk/dc |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 632900 | 27.99 | 10.78 | 6.02 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | *not run yet* | — | — |
+| 632901 | 27.99 | 11.11 | 5.68 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | *not run yet* | — | — |
+| 632902 | 27.99 | 11.48 | 5.32 | 2.5e-11/1e-15 | 0.005/0.020 G3 | 8.90e-04 | 2.250e-08 | T | 5 | *not run yet* | — | — |
+
 ## Held fixed in all 68 runs
 
 | | value | |
@@ -162,7 +193,7 @@ First time in the project that HBI has been run on Wang & Dunham's own inputs. D
 ## Where the grid stands
 
 - Best front: **632875**, λ/λ_obs **1.03**, wellhead +80.0%
-- Runs with the wellhead inside ±15%: **27** of 68
-- Runs inside **both** bands: **none**
+- Runs with the wellhead inside ±15%: **30** of 73
+- Runs inside **both** bands: **1**
 
 The two targets are in tension: the wellhead needs *low* near-well overpressure, the front needs *high*. τ₀ moves the front without moving the wellhead at all — see Stage 3, where the wellhead is flat to ±0.1% across the whole sweep — but it saturates at λ 0.34 by τ₀ = 15.0, and τ₀ cannot exceed f₀σ̄₀ = 16.79 MPa without the fault being past its own strength at zero overpressure.
