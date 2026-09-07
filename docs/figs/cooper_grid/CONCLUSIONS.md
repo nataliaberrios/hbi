@@ -1121,3 +1121,63 @@ Habanero-Geothermal-Project-Field-Development-Plan.pdf). Sv comes from a text
 inference, not a table: Fig 36 (Holl) and Fig 4-3 (FDP) plot several overburden
 models against depth and would pin it directly, but they are figures and only
 their captions are machine-readable here.
+
+## SESSION 2026-09-07 — Stage 14: f0 fixes the PLATEAU, not the wellhead
+
+The f0 = 0.40 test ran, with an f0 = 0.60 control at the same ds so the friction
+change could be separated from the mesh change. Both at ds 10 m, imax 601, 11 d.
+
+     run      f0   dp_crit   plateau   dp(r_w)   PEAK above   slip 5d   slip 9d   front   wellhead
+  632925    0.60     10.73      9.94     15.69         5.75    2.79cm    3.99cm    0.69     +70.5%
+  632924    0.40      2.10      2.68      9.06         6.38    3.72      6.33      1.46     +61.6%
+  observed/measured  0.4-2.6                                   2.81      4.37
+
+**THE PLATEAU COLLAPSED AS PREDICTED AND LANDS ON THE MEASURED VALUE.** 9.94 ->
+2.68 MPa, inside the field-measured 0.4-2.6 MPa activation band. So f0 = 0.40
+does fix the strength problem, and the prediction recorded in the Stage 14 deck
+headers was right about that.
+
+**BUT THE WELLHEAD BARELY MOVED, +70.5% -> +61.6%, AND THAT FALSIFIES THE OTHER
+HALF OF THE PREDICTION.** The reason is visible in the decomposition: the PEAK
+above the plateau went 5.75 -> 6.38 MPa, i.e. unchanged. The wellhead metric is
+dominated by that near-well peak, and the peak is deltaP = q*eta/(4*pi*kpmax) --
+pure INJECTIVITY, independent of friction. Lowering f0 lets the fault fail at
+lower pressure; it does nothing about the pressure required to push the fluid in.
+
+So the diagnosis splits cleanly, and this is the useful result:
+
+    quantity                     controlled by      status
+    plateau -> slip, front       strength margin    FIXED at f0 0.40
+    near-well peak -> wellhead   injectivity        untouched by f0
+
+**AND THAT MAKES THE UNTESTED COMBINATION PROMISING RATHER THAN A DEAD END.** At
+f0 = 0.60 the disc had to hold ~10 MPa to fail, which forced a low kpmax, which
+created the 6 MPa peak; Stage 9 then measured that raising kpmax drained the
+plateau and killed the slip. At f0 = 0.40 the disc only needs ~2 MPa, so kpmax
+can be raised to collapse the peak WITHOUT starving the slip. Stage 9's
+trade-off was a consequence of the wrong f0, not a property of the physics.
+
+Stage 15 (632930 f0 0.40 / kpmax 2.5e-12, 632931 f0 0.40 / 2.5e-11, 632932
+f0 0.45 / 2.5e-12) tests exactly that. Predicted peaks 0.64, 0.06 and 0.64 MPa
+against plateaus of 2.41, 2.14 and 6.37 -- all still above their dp_crit.
+
+TWO CAVEATS.
+
+  * f0 = 0.40 now OVERSHOOTS. Front 1.46 against the control's 0.69, slip 3.72
+    vs 2.81 observed at 5 d and 6.33 vs 4.37 at 9 d. So 0.40 is slightly too
+    weak and something near 0.45-0.50 may be the mark once kpmax is set. 632932
+    covers that.
+  * THE CONTROLS WORKED, which is what makes the above attributable. 632925 at
+    ds 10 m gives front 0.69 / wellhead +70.5% / slip 0.99x against res632913's
+    0.70 / +70.7% / 1.03x at ds 5 m, so the ds change is small and f0 really is
+    what moved.
+
+632926 (ds 20 m, f0 0.40) is NOT USABLE: it stopped at 0.88 d on "Slip rate
+below vmin" after slipping 2.45 cm -- rapid early slip then lock-up -- so it is
+below the 4.75 d scoring gate. The ds 10 m pair carries the result.
+
+SEPARATELY: lhbiem_kpmaxmap (branch spatial-kpmax, de15dec) built successfully,
+but NO run has used it -- no deck or map with a kpmax column exists. Held
+deliberately: the per-cell ceiling existed to let kpmax be high at the well and
+low in the disc simultaneously, and if a scalar kpmax now suffices at f0 = 0.40
+the change is unnecessary. Test the scalar combination first.
