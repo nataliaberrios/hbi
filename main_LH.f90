@@ -293,7 +293,12 @@ program main
   allocate(ag(NCELLg),bg(NCELLg),dcg(NCELLg),f0g(NCELLg),etavg(NCELLg),etabg(NCELLg),vcg(NCELLg),vwg(NCELLg),fwg(NCELLg))
   allocate(taug(NCELLg),sigmag(NCELLg),pfG(Ncellg),velG(NCELLg),rake(NCELLg),cslipG(NCELLg),velnG(NCELLg),tmparray(NCELLg))
   allocate(taudotg(NCELLg),sigdotg(NCELLg),vplg(NCELLg),param_diff%kpG(NCELLg),param_diff%phiG(NCELLg))
+  allocate(param_diff%kpmaxG(NCELLg))
   param_diff%kpG=param_diff%kp0;param_diff%phiG=param_diff%phi0;pfG=pfinit
+  ! Per-cell permeability CEILING. Defaults to the scalar from the `kpmax`
+  ! input key, so every deck written before this existed is unaffected; a
+  ! `kpmax` column in parameter_file overrides it cell by cell.
+  param_diff%kpmaxG=param_diff%kpmax0
   st_bemv%xcol=0d0;st_bemv%ycol=0d0;st_bemv%zcol=0d0;st_bemv%ds=0d0
   st_bemv%w=ds0
   st_bemv%problem=problem
@@ -452,6 +457,8 @@ program main
         velg(:)=values(:,k)
       case('kp')
         param_diff%kpG(:)=values(:,k)
+      case('kpmax')
+        param_diff%kpmaxG(:)=values(:,k)
       case('phi')
         param_diff%phiG(:)=values(:,k)
       case('taudot')
@@ -556,13 +563,14 @@ program main
   psi=0d0;vel=0d0;tau=0d0;sigma=0d0;slip=0d0;etav=0d0;etab=0d0;pre=0d0;vflow=0d0;vslip=0d0;pf=0d0
   allocate(a(NCELL),b(NCELL),dc(NCELL),f0(NCELL),vc(NCELL),vw(NCELL),fw(NCELL),taudot(NCELL),tauddot(NCELL),sigdot(NCELL),vpl(NCELL))
   taudot=0d0;sigdot=0d0
-  allocate(param_diff%kp(ncell))
+  allocate(param_diff%kp(ncell),param_diff%kpmax(ncell))
 
    
 
   !uniform frictional parameters
   a=a0; b=b0; dc=dc0; f0=mu0; vc=vc0; vpl=vpl0; vw=vw0; fw=fw0
   param_diff%kp=param_diff%kp0
+  param_diff%kpmax=param_diff%kpmax0
   if(bingham) etab=etab0
   if(viscous) pre=1/etav0
 
@@ -883,6 +891,11 @@ program main
           do i=1,NCELL
             i_=st_sum%lodc(i)
             param_diff%kp(i)=param_diff%kpG(i_)
+          end do
+        case('kpmax')
+          do i=1,NCELL
+            i_=st_sum%lodc(i)
+            param_diff%kpmax(i)=param_diff%kpmaxG(i_)
           end do
         end select
       end do
@@ -2410,7 +2423,7 @@ end subroutine
     pfo=pf
     if(param_diff%permev) then
       do i=1,ncell
-        tmp=-vel(i)/param_diff%kL*(param_diff%kp(i)-param_diff%kpmax)-(param_diff%kp(i)-param_diff%kpmin)/param_diff%kT
+        tmp=-vel(i)/param_diff%kL*(param_diff%kp(i)-param_diff%kpmax(i))-(param_diff%kp(i)-param_diff%kpmin)/param_diff%kT
         param_diff%kp(i)=param_diff%kp(i)+dtdid*tmp
       end do
       call MPI_GATHERv(param_diff%kp,NCELL,MPI_REAL8,tmparray,rcounts,displs,MPI_REAL8,st_ctl%lpmd(37),st_ctl%lpmd(31),ierr)   
@@ -2807,7 +2820,7 @@ end subroutine
     case('kpmin')
       read(pvalue,*) param_diff%kpmin
     case('kpmax')
-      read(pvalue,*) param_diff%kpmax
+      read(pvalue,*) param_diff%kpmax0
     case('kL')
       read(pvalue,*) param_diff%kL
     case('kT')
