@@ -102,6 +102,12 @@ STAGES = {
                    "in a domain sized for its front. 632922 (f0 0.4366, the "
                    "value the front criterion requires) is on HOLD: imax 1601 "
                    "is past the partition limit (3 decks, 2 to launch)"),
+    16: dict(runs=[632942, 632943],
+             parents={632942: 632913, 632943: 632942},
+             title="Stage 16 — RESTART at t0 = 4.300 d, where injection resumes. "
+                   "One parameter per run: 632942 changes only the injection "
+                   "record from res632913.in; 632943 changes only the initial "
+                   "disc radius (150 -> 300 m) from 632942 (2 runs)"),
     10: dict(runs=[632900, 632901, 632902],
              parents={n: 632897 for n in (632900, 632901, 632902)},
              title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "

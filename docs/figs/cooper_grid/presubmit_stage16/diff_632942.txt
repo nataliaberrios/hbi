@@ -1,0 +1,15 @@
+res632913.in  ->  res632942.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632913
+---
+> filenumber 632942
+8c8
+< tmax 0.04931507
+---
+> tmax 0.03589041
+46c46
+< injection_file "june_clean.txt"
+---
+> injection_file "june_clean_from_d4300.txt"
+
