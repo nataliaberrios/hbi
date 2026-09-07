@@ -96,6 +96,12 @@ STAGES = {
              title="Stage 12 — the permev F CONTROL on 632901: isolates whether "
                    "permeability ENHANCEMENT is doing the work, or whether the "
                    "nonuniform initial map alone was enough (1 run)"),
+    13: dict(runs=[632920, 632921, 632922],
+             parents={n: 632913 for n in (632920, 632921, 632922)},
+             title="Stage 13 — f0 sweep on 632913 at the MEASURED tau_0, each run "
+                   "in a domain sized for its front. 632922 (f0 0.4366, the "
+                   "value the front criterion requires) is on HOLD: imax 1601 "
+                   "is past the partition limit (3 decks, 2 to launch)"),
     10: dict(runs=[632900, 632901, 632902],
              parents={n: 632897 for n in (632900, 632901, 632902)},
              title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "

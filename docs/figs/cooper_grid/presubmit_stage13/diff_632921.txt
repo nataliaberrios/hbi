@@ -1,0 +1,21 @@
+res632913.in  ->  res632921.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632913
+---
+> filenumber 632921
+3,4c3,4
+< imax 601
+< jmax 601
+---
+> imax 901
+> jmax 901
+12c12
+< parameter_file "perm_2zone_601_ds5_kmax2.5e-13.txt"
+---
+> parameter_file "perm_2zone_901_ds5_kmax2.5e-13.txt"
+19c19
+< f0 0.6
+---
+> f0 0.5000
+
