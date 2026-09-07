@@ -3,14 +3,18 @@ use mod_constant
   type :: t_params
   integer::nwell,nn,npoint,n1,i1,i2,nfault,nconnect
   integer,pointer::kleng(:),iwell(:),jwell(:),connect(:,:),ns(:)
-  real(8)::phi0,beta,eta,sigmastar,kp0,kpmin,kpmax,kL,kT,pinj,pbcl,pbcr,pbct,pbcb,qinj,q0
+  ! kpmax0 is the SCALAR set by the `kpmax` input key. The per-cell ceiling
+  ! lives in kpmaxG/kpmax below and defaults to kpmax0 everywhere, so a deck
+  ! that says nothing new behaves exactly as before. This mirrors the existing
+  ! kp0 -> kpG/kp and phi0 -> phiG/phi pattern rather than inventing a second one.
+  real(8)::phi0,beta,eta,sigmastar,kp0,kpmin,kpmax0,kL,kT,pinj,pbcl,pbcr,pbct,pbcb,qinj,q0
   real(8)::qbcl,qbcr,qbct,qbcb
   real(8)::tinj=1d5
   real(8) :: pwinit
   real(8) :: rw
   real(8) :: skin
   real(8) :: Sw_fwid
-  real(8),pointer::kp(:),kpG(:),qtimes(:),qvals(:,:),pfhyd(:,:),phi(:),phiG(:)
+  real(8),pointer::kp(:),kpG(:),kpmax(:),kpmaxG(:),qtimes(:),qvals(:,:),pfhyd(:,:),phi(:),phiG(:)
   character(128)::bc,bcl,bcr,bct,bcb,setting,injection,injection_file,network_file
   logical::injectionfromfile,switch,permev,permsigma,network
   end type t_params
