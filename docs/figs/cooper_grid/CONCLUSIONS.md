@@ -987,3 +987,137 @@ the comparison; it also has no 17 d slip, so it does not belong in a 17 d
 figure regardless.
 
 STILL OUT: 632912 (= 632875 at 18 d) and 632918 (the permev F control).
+
+## SESSION 2026-09-06, later — the Cooper Basin source papers, and a MEASURED slip threshold
+
+Four primary sources were read for the first time in this project (Holl & Barton
+WGC2015; Holl 2015 "What did we learn about EGS in the Cooper Basin"; the
+Habanero Geothermal Project Field Development Plan; Hogarth et al. 2013). They
+change what the target is, and they correct two things asserted earlier in this
+file.
+
+### 1. The stress interpretation is SOUND — both tau_0 and sigmabar_0
+
+Holl & Barton give RATIOS, not magnitudes: SHmax/Shmin/Sv ~ 1.35-1.45 /
+1.10-1.25 / 1.0 at reservoir depth, with Pp = 72.7 MPa at 4100 mSS (~34 MPa
+overpressure), a reverse/over-thrust regime with SHmax = sigma_1 at azimuth
+82 +/- 5 deg, and targets that are N-S striking and SHALLOW DIPPING -- over 80%
+of the 2012 fault-plane solutions were low-angle thrust mechanisms (McMahon &
+Baisch 2015).
+
+Sv is not stated numerically anywhere in the text, but Holl sec 8.4 gives it
+indirectly: first seismicity at H04 was 2.6 MPa above reservoir pressure "whilst
+still ~20 MPa below the stress induced by the overburden", so
+
+    Sv ~ 72.7 + 2.6 + 20 = 95.3 MPa,   sigma_v effective = 22.6 MPa
+
+Resolving the ratios onto low-angle thrust planes with THAT Sv:
+
+     dip        R=1.35                    R=1.45
+             tau   sig_eff   mu0      tau   sig_eff   mu0
+     10d    5.70    23.61   0.242    7.33    23.89   0.307
+     15d    8.34    24.83   0.336   10.72    25.47   0.421
+     18d    9.80    25.79   0.380   12.60    26.70   0.472
+     20d   10.72    26.50   0.405   13.78    27.62   0.499
+     25d   12.78    28.56   0.447   16.43    30.26   0.543
+
+This project's tau_0 = 10.36 MPa, sigmabar_0 = 27.99 MPa, mu_0 = 0.370 sits
+inside that band -- an 18-20 deg thrust at the low end of the stress ratio.
+BOTH numbers are supported, not just tau_0.
+
+CORRECTION: earlier today I claimed sigmabar_0 = 27.99 was unsupported and that
+resolving the tensor gives 34-42 MPa. That was my error -- I used a
+density-integration Sv of 106.6 MPa instead of the field-constrained 95.3.
+
+Wang & Dunham's mu_0 = 0.536 also falls in the band, at ~25 deg dip and the high
+ratio. So THE STRESS DATA CANNOT DISTINGUISH THE TWO MODELS, and the magnitudes
+are modelled rather than measured throughout -- "numerically modeled using
+wellbore breakouts", SHmax "likely to be AS HIGH AS 150 MPa", Shmin only
+"intermediate between SHmax and Sv" (an inequality), and the breakout constraint
+assuming rock strength 130-150 MPa. Their uncertainty argument is well founded,
+and "they ignored the stress measurements" is not a defensible claim.
+
+### 2. But the stress data was never the binding constraint. There is a MEASURED dp_crit.
+
+Both the Field Development Plan (sec 4, Fig 4-3) and Holl (sec 8.4) report the
+downhole overpressure at which seismicity began on the Habanero Fault:
+
+    H04 local stimulation, Oct 2012:      dp = 2.6 MPa (380 psi)
+    H04 extended stimulation, Nov 2012:   dp ~ 0.4 MPa
+
+The Nov 2012 extended stimulation is the record this project models. That 0.4 MPa
+is dp_crit, MEASURED -- no stress tensor, no assumed friction, no fault dip.
+
+                                       dp_crit
+    measured, H04 2012                0.4-2.6 MPa
+    Wang & Dunham (tau_0 15.0, f0 0.6)      3.0
+    this project (tau_0 10.36, f0 0.6)     10.72
+    632913's actual measured plateau       11.9
+
+The model needs 4-27x the overpressure at which the fault actually failed. That
+IS the +58% wellhead, restated as a measurement instead of a metric, and it
+explains the whole 82-run pattern at once: every configuration that reproduced
+the observed slip had to over-pressurise, because the threshold it had to
+overcome was set an order of magnitude too high.
+
+### 3. f0 = 0.6 is excluded by OBSERVATION, not by mineralogy
+
+Holding this project's tau_0 and sigmabar_0 and requiring the measured threshold:
+
+    dp_crit = 0.4 MPa  ->  f0 = tau_0/(sigmabar_0 - dp_crit) = 0.375
+    dp_crit = 2.6 MPa  ->  f0 = 0.408
+
+So f0 = 0.375-0.408, BELOW the 0.433 retracted earlier in this file, and reached
+with no chlorite argument at all.
+
+That retraction stands on its own terms -- 0.433 would need ~82 wt.% chlorite
+against a documented maximum of 35 -- but it answered the wrong question. It
+asked "what gouge composition gives f0 = 0.433?" when the field data asks "what
+f0 is consistent with a fault that slipped at 0.4 MPa?" The second question does
+not go through friction databases at all.
+
+This is also the answer to "an advisor will say f0 ~ 0.4 is not physically
+justifiable": the argument is no longer from a friction table, it is that the
+fault demonstrably failed at ~1 MPa of overpressure and f0 = 0.6 with the
+measured stresses cannot produce that.
+
+It cuts against Wang & Dunham too. Their dp_crit = 3.0 MPa is closer but still
+above the 0.4 MPa of the very stimulation they model, and they reach it by
+raising tau_0 rather than lowering f0. The activation pressure constrains the
+COMBINATION, so their solution is strained by it as well.
+
+### 4. Anisotropic enhancement is supported -- but PERPENDICULAR to slip
+
+Holl sec 8.4: "Active shearing of the Habanero Fault zone during stimulation
+creates both porosity and structural permeability. This permeability is
+anisotropic as is possibly shown by the elliptical extension of the seismic
+cloud in the direction PERPENDICULAR to the sense of shear", and Llanos et al.
+(2015) used a 2:1 anisotropy ratio in their TOUGH2 model of this reservoir.
+
+So an anisotropic enhancement tensor has observational support and a calibrated
+ratio -- but oriented across slip, not along it. Any implementation should use
+that orientation and 2:1 rather than treating either as free.
+
+### 5. What this means for the plan
+
+  * The activation pressure should become a FOURTH scored observable. It is a
+    direct measurement, it is the tightest constraint found so far, and no run
+    in this project has ever been scored against it.
+  * The f0 runs in flight (632920 at 0.55, 632921 at 0.50) now UNDERSHOOT -- the
+    field data points at 0.375-0.408. They remain useful as a mechanical test of
+    whether pressure and strength separate at all.
+  * Stage 13's premise needs restating. It was built to test whether f0 can
+    rescue an understressed fault. The better framing is that f0 = 0.6 is
+    inconsistent with a measured 0.4 MPa activation pressure regardless of the
+    stress state, so the sweep is measuring how HBI responds to a correction
+    that the field data already requires.
+  * spatially varying kpmax (branch spatial-kpmax) targets the near-well
+    pressure peak, which is largely a CONSEQUENCE of dp_crit being too high. Fix
+    the threshold first; the peak may not need fixing.
+
+Sources are in hbi_analysis/figures/taiyi_validation/ (Holl_Barton_WGC2015.pdf,
+"Heinz-Gerd Holl - 2015 - What did we learn about EGS in the Cooper Basin.pdf",
+Habanero-Geothermal-Project-Field-Development-Plan.pdf). Sv comes from a text
+inference, not a table: Fig 36 (Holl) and Fig 4-3 (FDP) plot several overburden
+models against depth and would pin it directly, but they are figures and only
+their captions are machine-readable here.
