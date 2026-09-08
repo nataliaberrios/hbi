@@ -112,12 +112,17 @@ MARK = "#8E44AD"
 YEL = "#ffcc00"                                  # the Mw >= MBIG dots
 MBIG = 3.0
 
-# "Days since injection began" would be WRONG on the current axis: injection
-# starts at T_ON = 0.501 d, so t = 0 here is half a day BEFORE it. Flipping
-# this to True subtracts T_ON from every plotted time and relabels, which is
-# self-consistent but renumbers the figure against every other one in the
-# project -- the shut-ins become 1.081 and 16.650 d, resumption 3.799 d.
-X_FROM_INJECTION = False
+# ON: every plotted time has T_ON = 0.501 d subtracted and the axis reads
+# "Days since injection began", which is the clock an audience wants. Renaming
+# WITHOUT the subtraction would be wrong by 0.501 d, since t = 0 in the files
+# is 2012-11-13 and injection starts half a day later.
+#
+# THE COST, and it is not zero: this figure now numbers the record differently
+# from the notebook and from every deck in the project. Injection resumption is
+# 3.799 d here and 4.300 d everywhere else -- and 4.300 is a landmark, being
+# the cycle-2 origin and the name of june_clean_from_d4300.txt. Shut-ins read
+# 1.081 and 16.650 d. Set False to go back to days since 2012-11-13.
+X_FROM_INJECTION = True
 
 plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
                      "axes.labelsize": 13.5, "axes.edgecolor": MUTED,
