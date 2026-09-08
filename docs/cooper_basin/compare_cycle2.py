@@ -136,7 +136,7 @@ def main():
     slip_t0 = float(np.interp(T0, OT, ocm))
     cols = plt.cm.viridis(np.linspace(0.05, 0.85, len(a.jobs)))
 
-    fig, ax = plt.subplots(2, 2, figsize=(15.0, 9.4), dpi=200,
+    fig, ax = plt.subplots(2, 2, figsize=(16.0, 10.0), dpi=200,
                            constrained_layout=True)
     (ap_, ar), (av, asl) = ax
 
@@ -190,9 +190,13 @@ def main():
         xo_, b, r2 = sqrt_fit(d["T"], Rm)
         D = b / (4 * np.pi * 86400.0)
         ar.plot(tf, np.sqrt(np.maximum(b * (tf - xo_), 0)), "--", lw=1.3,
-                color=c, alpha=0.85,
-                label=f"  fit: $D$={D:.3f}, $t_{{off}}$={xo_:+.2f} d, "
-                      f"$R^2$={r2:.3f}")
+                color=c, alpha=0.85)
+        # fit parameters folded into the RUN label, so each run costs one legend
+        # entry rather than two -- with 10 runs the doubled legend covered the
+        # curves entirely.
+        ar.lines[-2].set_label(
+            f"{n} arm {arm_of(n)[0]}, " r"$\tau_0$=" f"{_ff(_deck(n)['muinit'])*_ff(_deck(n)['sigmainit']):.2f}"
+            f" | $D$={D:.3f}, $t_{{off}}$={xo_:+.2f} d, $R^2$={r2:.3f}")
         Vs = np.interp(d["T"], tvol, vol)
         av.plot(Vs, Rm, lw=1.7, color=c)
         xv_, bb, r2b = sqrt_fit(Vs, Rm)
@@ -215,27 +219,32 @@ def main():
             ylim=(25, 62))
     ap_.set_title("Wellhead pressure. Observed pulled back 4.300 d;\n"
                   "the 87.8 MPa water-hammer transient is off-scale by design")
-    ap_.legend(loc="lower right", fontsize=7.5); ap_.grid(alpha=0.3, color=GRID)
+    ap_.legend(loc="lower right", fontsize=7.0, framealpha=0.93,
+               labelspacing=0.35)
+    ap_.grid(alpha=0.3, color=GRID)
 
     ar.set(xlabel="Days since injection resumed", ylabel="Front radius (m)",
            xlim=(0, 13.2), ylim=(0, 2600))
     ar.set_title("R–T with square-root fits (dashed).\n"
                  "$r=\\sqrt{4\\pi D(t-t_{off})}$ — the $\\sqrt{t}$ law with a "
                  "shifted origin, since neither front starts at $r=0,t=0$")
-    ar.legend(loc="upper left", fontsize=7.5); ar.grid(alpha=0.3, color=GRID)
+    ar.legend(loc="lower right", fontsize=7.0, framealpha=0.93,
+              borderpad=0.5, labelspacing=0.35)
+    ar.grid(alpha=0.3, color=GRID)
 
     av.set(xlabel="Cumulative injected volume since t$_0$ (ML)",
            ylabel="Front radius (m)", ylim=(0, 2600))
     av.set_title("R–V with square-root fits (dashed).\n"
                  "Volume removes the rate-step staircase that spoils R–T")
-    av.legend(loc="upper left", fontsize=7.5)
+    av.legend(loc="lower right", fontsize=7.0, framealpha=0.93)
     av.grid(alpha=0.3, color=GRID)
 
     asl.set(xlabel="Days since injection resumed",
             ylabel="Slip at the injector (cm)", xlim=(0, 13.2))
     asl.set_title("Slip vs the observed INCREMENT since t$_0$.\n"
                   "HBI zeroes slip at restart, so absolute slip is not the target")
-    asl.legend(loc="upper left", fontsize=7.5); asl.grid(alpha=0.3, color=GRID)
+    asl.legend(loc="upper left", fontsize=7.5, framealpha=0.93)
+    asl.grid(alpha=0.3, color=GRID)
 
     for e in ("png", "pdf"):
         fig.savefig(OUT / f"cycle2_compare_{a.tag}.{e}", bbox_inches="tight")
