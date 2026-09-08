@@ -181,7 +181,11 @@ def main(argv=None):
     # tall, so on one line it overran into the panel above.
     axp.set_ylabel("Wellhead pressure\nchange (MPa)", color=GRN,
                    linespacing=1.5)
-    axp.tick_params(axis="y", color=GRN, labelcolor=INK)
+    # Right-hand numbers GREEN, matching their own label and curve. The left
+    # axes stay black. This is the one place colour earns its keep: two
+    # quantities share the panel, so the numbers have to say which scale they
+    # belong to.
+    axp.tick_params(axis="y", color=GRN, labelcolor=GRN)
     axp.set_ylim(-2, 22)
     axp.spines["right"].set_color(GRN)
     axp.spines["top"].set_visible(False)
