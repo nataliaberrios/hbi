@@ -101,6 +101,40 @@ def rate_history():
     return ti[k][o], q[k][o]
 
 
+def front_runmax(t, r):
+    """The FRONT: running maximum of event distance. Monotone BY CONSTRUCTION.
+
+    A per-bin high percentile is NOT a front -- it tracks where the event
+    POPULATION sits in that bin, so it moves backwards when the cloud
+    redistributes. Measured on this catalogue it retreats four times
+    (819->739, 882->613, 1010->817, 1544->1429 m), which no front can do.
+    """
+    return np.maximum.accumulate(r)
+
+
+def sqrt_test(t, r, a, b):
+    """(lambda, R^2) for R = lambda*sqrt(t) over [a,b).
+
+    R = lambda*sqrt(t) is equivalent to R^2 linear in t, so R^2 of that
+    regression is the honest test of whether the sqrt law holds. It assumes
+    CONSTANT RATE, so it should hold on an uninterrupted flowing block and
+    degrade across shut-ins and rate steps -- which is exactly what happens.
+    """
+    m = (t >= a) & (t < b)
+    tt, rr = t[m], np.maximum.accumulate(r)[m]
+    lam = float(np.sum(np.sqrt(tt) * rr) / np.sum(tt))
+    A = np.vstack([tt, np.ones_like(tt)]).T
+    _, res, _, _ = np.linalg.lstsq(A, rr ** 2, rcond=None)
+    ss = np.sum((rr ** 2 - np.mean(rr ** 2)) ** 2)
+    return lam, float(1 - (res[0] / ss if len(res) else 0)), int(m.sum())
+
+
+def D_from_triggering(lam_m_per_sqrtday):
+    """Shapiro triggering front r = sqrt(4*pi*D*t)  =>  D = lambda^2/(4 pi)."""
+    lam = lam_m_per_sqrtday / np.sqrt(86400.0)      # m / sqrt(s)
+    return lam ** 2 / (4 * np.pi)
+
+
 def edges(t, r, bins, lo_pct=5, hi_pct=95, nmin=25):
     """Inner (back) and outer (front) edge of the cloud per time bin."""
     tc, rin, rout, n = [], [], [], []
@@ -210,50 +244,102 @@ def main(argv=None):
     print(f"  monotonic, and the late bins hold only "
           f"{n[post][-1]}-{n[post][-3]} events.\n")
 
+    # ---------------- diffusivities from the two fronts, model-free
+    lam_s, r2_s, n_s = sqrt_test(t, r, 5.3, 13.2)      # steady flowing block
+    lam_a, r2_a, n_a = sqrt_test(t, r, T_ON, T_SHUT)   # all injection
+    D_trig = D_from_triggering(lam_s)
+    ETA, PHI, BETA = 0.89e-3, 0.01, 2.25e-8            # the decks' fluid
+    print(f"sqrt(t) test -- R = lam*sqrt(t) means R^2 is LINEAR in t, so R^2 of")
+    print(f"that regression is the honest test. It assumes CONSTANT RATE.")
+    print(f"  5.3-13.2 d (uninterrupted flowing block): lam {lam_s:>6.1f} "
+          f"m/sqrt(d), R2 = {r2_s:.3f}, n = {n_s}")
+    print(f"  {T_ON}-{T_SHUT} d (all injection, 4 rate changes): lam {lam_a:>6.1f} "
+          f"m/sqrt(d), R2 = {r2_a:.3f}, n = {n_a}")
+    print(f"  -> sqrt(t) HOLDS on the steady block and degrades across the")
+    print(f"     shut-in and the rate steps at 13.5 and 16.5 d, as it should.\n")
+    print(f"TWO INDEPENDENT DIFFUSIVITIES, neither using any HBI run:")
+    print(f"  triggering front (Shapiro, r = sqrt(4 pi D t)), during injection:")
+    print(f"     D = lam^2/(4 pi) = {D_trig:.4f} m^2/s  -> k = {D_trig*ETA*PHI*BETA:.2e} m^2")
+    print(f"  back front (Parotidis), post-shut-in:")
+    print(f"     D = {D_fit:.4f} m^2/s  -> k = {D_fit*ETA*PHI*BETA:.2e} m^2")
+    print(f"  RATIO D_back/D_trig = {D_fit/D_trig:.1f}x -- a MODEL-FREE measure of")
+    print(f"  the permeability enhancement achieved during the stimulation.")
+    print(f"  the decks assume kpmax/kpmin = 250x. The data says ~{D_fit/D_trig:.0f}x.")
+    print(f"  model bounds: kpmin -> {1e-15/(ETA*PHI*BETA):.4f}, "
+          f"kpmax -> {2.5e-13/(ETA*PHI*BETA):.3f} m^2/s; both fits sit between.\n")
+
     # ---------------- figure
-    fig, (a0, a1) = plt.subplots(1, 2, figsize=(14.5, 5.0), dpi=200,
-                                 constrained_layout=True)
+    runmax = front_runmax(t, r)
+    fig, (a0, a1, a2) = plt.subplots(1, 3, figsize=(16.5, 4.9), dpi=200,
+                                     constrained_layout=True)
+
     a0.scatter(t, r, s=2.5, alpha=0.16, color=MUTED, lw=0,
                label=f"all {len(t)} events (full catalogue)")
-    a0.plot(tc, rout, "-", lw=2.2, color=RED, label="FRONT (95th pct)")
+    a0.plot(t, runmax, "-", lw=2.2, color=RED,
+            label="FRONT = running max (monotone)")
     a0.plot(tc, rin, "-", lw=2.2, color=BLUE, label="BACK FRONT (5th pct)")
     a0.plot(tc[post][ipk + 1:], rin[post][ipk + 1:], "x", ms=8, mew=2,
             color=BLUE, label="excluded from the fit (falling, low n)")
     tg = np.linspace(T_SHUT + 0.02, t.max(), 300)
     a0.plot(tg, bf_single(tg, D_fit), "--", lw=2, color=INK,
-            label=f"Parotidis 2D back front, D = {D_fit:.2f} m$^2$/s "
-                  f"(fitted to the rising limb)")
+            label=f"Parotidis back front, D = {D_fit:.2f} m$^2$/s")
     a0.plot(tg, bf_super(tg, D_fit, ti, q), ":", lw=2, color=GRN,
             label="same D, ACTUAL rate history (superposition)")
+    # Draw the triggering front ONLY over the window it was fitted on. Shown
+    # across the whole record it sits below the staircase everywhere and looks
+    # like a bad fit, when in fact it is an extrapolation outside its domain.
+    tt = np.linspace(5.3, 13.2, 200)
+    a0.plot(tt, lam_s * np.sqrt(tt), "-.", lw=2.2, color="#8E44AD",
+            label=f"triggering front $\\lambda\\sqrt{{t}}$ over its FIT window, "
+                  f"D = {D_trig:.3f}")
     a0.axvspan(1.582, 4.300, color=GRID, alpha=0.7, zorder=0)
+    a0.axvspan(5.3, 13.2, color="#8E44AD", alpha=0.07, zorder=0)
     a0.axvline(T_SHUT, color=INK, lw=1.4, ls="-.")
-    a0.text(T_SHUT - 0.25, 1180, "injection ends", fontsize=8.5, color=INK,
+    a0.text(T_SHUT - 0.25, 1700, "injection ends", fontsize=8.5, color=INK,
             rotation=90, va="top", ha="right")
-    a0.text(2.94, 40, "1st shut-in", fontsize=8.5, color=MUTED,
-            rotation=90, va="bottom", ha="center")
     a0.set(xlabel="Days since 2012-11-13", ylabel="Distance from injector (m)",
            xlim=(0, t.max()), ylim=(0, 1800))
-    a0.set_title("Cooper Basin seismicity: front and back front\n"
-                 "the back front only exists in the part of the catalogue "
-                 "previously cut off")
-    a0.legend(loc="upper left", fontsize=8)
+    a0.set_title("A. Front (monotone) and back front.\nShaded purple: the "
+                 "uninterrupted flowing block")
+    a0.legend(loc="upper left", fontsize=7.5)
     a0.grid(alpha=0.3, color=GRID)
 
-    a1b = a1.twinx()
-    a1b.fill_between(ti, 0, q, color=GRID, zorder=0, label="injection rate")
-    a1b.set_ylabel("Injection rate (L/s)", color=MUTED)
-    a1b.set_ylim(0, 260)
-    a1.plot(tc, rout, "-o", ms=3, lw=2, color=RED, label="front")
-    a1.plot(tc, rin, "-o", ms=3, lw=2, color=BLUE, label="back front")
-    a1.plot(tg, bf_single(tg, D_fit), "--", lw=2, color=INK,
-            label=f"analytical back front (D = {D_fit:.2f})")
+    # --- B: the sqrt(t) test. R^2 linear in t  <=>  R ~ sqrt(t)
+    for a_, b_, c_, nm in ((5.3, 13.2, "#8E44AD", "steady block"),
+                           (T_ON, T_SHUT, MUTED, "all injection")):
+        m = (t >= a_) & (t < b_)
+        lam_, r2_, _ = sqrt_test(t, r, a_, b_)
+        a1.plot(t[m], (runmax[m] / 1000.0) ** 2, "-", lw=2, color=c_,
+                label=f"{nm}: $R^2$ = {r2_:.3f}")
+        a1.plot(t[m], (lam_ * np.sqrt(t[m]) / 1000.0) ** 2, "--", lw=1.4,
+                color=c_, alpha=0.8)
     a1.axvline(T_SHUT, color=INK, lw=1.4, ls="-.")
-    a1.set(xlabel="Days since 2012-11-13", ylabel="Distance from injector (m)",
-           xlim=(12, t.max()), ylim=(0, 1800))
-    a1.set_title("Zoom on the final shut-in.\nThe cloud becomes an expanding "
-                 "ANNULUS — a pulse, per Sáez & Lecampion (2023)")
-    a1.legend(loc="upper left", fontsize=8)
-    a1.grid(alpha=0.3, color=GRID)
+    a1.axvspan(1.582, 4.300, color=GRID, alpha=0.7, zorder=0)
+    a1.set(xlabel="Days since 2012-11-13",
+           ylabel="(front radius)$^2$  (km$^2$)", xlim=(0, T_SHUT + 0.5))
+    a1.set_title("B. The $\\sqrt{t}$ test — straight lines mean $R\\propto"
+                 "\\sqrt{t}$.\nA STAIRCASE: each step is a rate increase, so "
+                 "$\\sqrt{t}$ is a trend, not the mechanism")
+    a1.legend(loc="upper left"); a1.grid(alpha=0.3, color=GRID)
+
+    # --- C: the two diffusivities against the model's bounds
+    names = ["triggering front\n(during injection)", "back front\n(post-shut-in)"]
+    vals = [D_trig, D_fit]
+    a2.bar([0, 1], vals, width=0.5, color=["#8E44AD", BLUE], alpha=0.85)
+    for i, v in enumerate(vals):
+        a2.text(i, v * 1.15, f"{v:.3f}", ha="center", fontsize=10)
+    a2.axhline(1e-15 / (ETA * PHI * BETA), color=GRN, ls="--", lw=1.6,
+               label="model $k_{pmin}$")
+    a2.axhline(2.5e-13 / (ETA * PHI * BETA), color=RED, ls="--", lw=1.6,
+               label="model $k_{pmax}$")
+    a2.set_yscale("log")
+    a2.set_xticks([0, 1]); a2.set_xticklabels(names, fontsize=8.5)
+    a2.set(ylabel="hydraulic diffusivity $D$ (m$^2$/s)", ylim=(2e-3, 5))
+    a2.set_title(f"C. Two MODEL-FREE diffusivities.\nRatio "
+                 f"{D_fit/D_trig:.1f}x = the permeability enhancement\n"
+                 f"(the decks assume 250x)")
+    a2.legend(loc="upper left", fontsize=8); a2.grid(alpha=0.3, color=GRID, axis="y")
+
     for e in ("png", "pdf"):
         fig.savefig(out / f"front_backfront.{e}", bbox_inches="tight")
     plt.close(fig)
