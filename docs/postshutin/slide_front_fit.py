@@ -7,23 +7,30 @@ both requested:
   1. NO LEGEND AND NO IN-PANEL TEXT. Not a legend, not curve labels, not the
      event count, not the shut-in markers' names -- every word is added in
      PowerPoint, where it can be placed and sized against the rest of the
-     slide. Only axis and tick labels remain, and the graphical marks that
-     cannot be redrawn in a slide editor over the right x values: the dashed
-     verticals at injection resumption (4.300 d) and shut-in (17.455 d), and
-     the shaded first shut-in, 1.582-3.558 d.
+     slide. Only axis and tick labels remain, plus the one graphical mark that
+     cannot be redrawn in a slide editor over the right x values.
 
-     THE SHADED BAND ENDS AT 3.558 d, NOT 4.300. The rate is zero only to
-     3.558 d; from there to 4.298 d a 1.6-2.5 L/s trickle runs, and 4.300 d is
-     where it steps to ~8 L/s and climbs. Earlier versions shaded through to
-     4.300 and so called 0.74 d of low-rate injection a shut-in. The interval
-     now comes from front_backfront.zero_rate_interval(), read off the rate
-     file. 4.300 d remains the cycle-2 origin and its dashed marker stays --
-     sustained injection does resume there -- it is just not where the shut-in
-     ended.
+  1b. ONE MARK, ONE MEANING. A purple dashed vertical wherever injection
+     stops, and nothing else -- no end-of-shut-in, no resumption marker at
+     4.300 d, no seismicity onset, no shaded band, no grid. Earlier versions
+     mixed all of these into the same dashed-line style, so the reader had to
+     be told case by case what each line meant.
 
-     No grid either, and the dashed verticals are drawn in a grey that no data
-     series uses. They were the same INK as the Q line, which made a time
-     marker look like part of the rate history.
+     front_backfront.shutin_starts() reads them off the rate file: 1.582 and
+     17.151 d. It thresholds on duration, because the record has 27 zero-rate
+     runs and 24 of them are under half an hour -- dropouts, not decisions. The
+     cut at 0.1 d falls in a wide gap; the longest run it excludes is 0.035 d.
+
+     THE FINAL SHUT-IN IS AT 17.151 d, NOT T_SHUT = 17.455. Injection stops at
+     17.095, restarts for 31 minutes, and stops for good at 17.151; 17.455 is
+     the rate file's LAST SAMPLE. So the blue curve, which starts at T_SHUT
+     because that is the t_s the fit uses, begins 0.30 d to the right of the
+     purple line it belongs to. That gap is real and visible, not a drawing
+     error, and re-fitting on t_s = 16.650 d rather than 16.954 d would close
+     it.
+
+     The purple is #8E44AD. The marks were INK, the same colour as the Q line,
+     which made a time marker look like part of the rate history.
 
      What this costs: the figure no longer states what its own curves are, so
      everything below has to be said out loud. main() prints all of it on every
@@ -52,10 +59,10 @@ front_backfront.pressure_history). Two consequences leave the axis, and with
 the annotations gone NEITHER IS MARKED:
 
   - during the first shut-in the gauge bleeds to atmospheric, so dp falls to
-    -35.07 MPa and leaves the bottom of the axis. The shaded band is the only
-    remaining indication. The axis is clipped at -2 as in their figure 2a
-    rather than rescaled to hold the gauge emptying, which is not the
-    reservoir.
+    -35.07 MPa and leaves the bottom of the axis. With the band gone there is
+    now NO indication of this at all; the green trace simply drops out between
+    1.582 and 3.558 d. The axis is clipped at -2 as in their figure 2a rather
+    than rescaled to hold the gauge emptying, which is not the reservoir.
   - a burst at 14.2 d reaches 87.76 MPa absolute, dp = +53.34, which is 92% of
     the vertical stress and almost certainly water hammer. 1036 samples clear
     +25 over 78 minutes, only 2 above +50; away from 14.20-14.38 d nothing in
@@ -86,7 +93,7 @@ cf = _load("classic_front_fit")
 
 T_ON, T_SHUT, TS = cf.T_ON, cf.T_SHUT, cf.TS
 T_RESUME = cf.T_RESUME
-T_SHUT1, T_TRICKLE = fb.zero_rate_interval()     # 1.582 -> 3.558 d
+SHUTINS = fb.shutin_starts()                     # [1.582, 17.151] d
 OUT = Path("/home/users/nberrios/3dhbi/hbi_analysis/figures/postshutin")
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
 RED, BLUE, GRN = "#a8071a", "#1d4ed8", "#009E73"
@@ -128,7 +135,11 @@ def main(argv=None):
           f"{tp_full[i_pk]:.2f} d -- {(dp_full > 25).sum()} samples above +25, "
           f"off the plotted axis")
     print(f"  minimum dp {dp_full.min():+.2f} MPa, gauge bled off during the "
-          f"first shut-in ({T_SHUT1:.3f}-{T_TRICKLE:.3f} d)")
+          f"first shut-in")
+    print(f"  shut-ins marked at " +
+          ", ".join(f"{x:.3f}" for x in SHUTINS) + " d; the blue curve starts "
+          f"at T_SHUT = {T_SHUT} d, the rate file's last sample, "
+          f"{T_SHUT - SHUTINS[-1]:.3f} d later")
     print(f"  pressure decimated {EVERY}x for drawing "
           f"({len(dp_full)} -> {len(dp)} samples); extrema above are undecimated")
 
@@ -145,13 +156,12 @@ def main(argv=None):
     rb = cf.back_front(gb - T_ON, D_back)
     ax.plot(gb, rb, "-", lw=3.2, color=BLUE)
 
-    # NO IN-PANEL TEXT AT ALL -- every word goes on in PowerPoint. The
-    # graphical marks stay, because they are not words and cannot be redrawn in
-    # a slide editor over the right x values: the two dashed verticals at
-    # injection resumption and shut-in, and the shaded first shut-in.
-    for x in (T_RESUME, T_SHUT):
+    # ONE MARK, ONE MEANING: a purple dashed vertical wherever injection stops.
+    # Nothing else is marked -- not the end of a shut-in, not the resumption at
+    # 4.300 d, not the onset of seismicity -- and the shaded band is gone with
+    # them, since its right edge marked the end of the first shut-in.
+    for x in SHUTINS:
         ax.axvline(x, color=MARK, lw=1.7, ls="--")
-    ax.axvspan(T_SHUT1, T_TRICKLE, color=GRID, alpha=0.65, zorder=0)
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max()), ylim=(0, 1750))
 
@@ -183,8 +193,7 @@ def main(argv=None):
     # what sets the axis at +22. main() prints all of it every run.
 
     for a in (axq, axp):
-        a.axvspan(T_SHUT1, T_TRICKLE, color=GRID, alpha=0.65, zorder=0)
-        for x in (T_RESUME, T_SHUT):
+        for x in SHUTINS:
             a.axvline(x, color=MARK, lw=1.7, ls="--", zorder=1)
 
     OUT.mkdir(parents=True, exist_ok=True)

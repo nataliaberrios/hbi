@@ -101,6 +101,37 @@ def rate_history():
     return ti[k][o], q[k][o]
 
 
+def shutin_starts(min_len=0.1, thr=0.05):
+    """Times at which injection stops for longer than `min_len` days.
+
+    Returns [1.582, 17.151]. The record has 27 zero-rate runs; 24 are under
+    half an hour and are dropouts rather than decisions, so a length threshold
+    is what separates a shut-in from noise, and 0.1 d puts the cut in a wide
+    empty gap -- the next-longest run after the two returned is 0.035 d.
+
+    THE FINAL SHUT-IN BEGINS AT 17.151 d, NOT AT T_SHUT = 17.455. Injection
+    stops at 17.095, restarts for 31 minutes at 17.130, and stops for good at
+    17.151; 17.455 is simply the LAST SAMPLE OF THE RATE FILE, 0.30 d later.
+    T_SHUT is used elsewhere as t_s, the injection duration in the back-front
+    formula, so it is left alone here -- but anything drawn at T_SHUT is
+    marking the end of the record, not a shut-in.
+    """
+    ti, q = rate_history()
+    z = q <= thr
+    out, i = [], 0
+    while i < len(z):
+        if z[i]:
+            j = i
+            while j + 1 < len(z) and z[j + 1]:
+                j += 1
+            if ti[j] - ti[i] > min_len:
+                out.append(float(ti[i]))
+            i = j + 1
+        else:
+            i += 1
+    return out
+
+
 def zero_rate_interval(thr=0.05):
     """(t0, t1) of the longest interval with q <= thr L/s during the record.
 
