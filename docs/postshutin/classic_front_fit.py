@@ -122,7 +122,9 @@ def fit_quantile(t, r, curve, frac, lo=1e-4, hi=1e3, **kw):
 def main():
     t_abs, r, _ = fb.catalogue()
     ti, q = fb.rate_history()
-    ETA, PHI, BETA = 0.89e-3, 0.01, 2.25e-8
+    PHI, BETA = 0.01, 2.25e-8
+    ETA_DECK, ETA_RES = 0.89e-3, 1.27e-4       # deck's (Taiyi's) vs reservoir
+    ETA = ETA_DECK
 
     # triggering front, anchored at injection RESUMPTION (see the docstring)
     tt = t_abs - T_RESUME
@@ -154,6 +156,12 @@ def main():
     print(f"\nratio D_back/D_trig = {D_back/D_trig:.1f}x")
     print(f"model bounds: kpmin -> {1e-15/(ETA*PHI*BETA):.4f}, "
           f"kpmax -> {2.5e-13/(ETA*PHI*BETA):.3f} m^2/s")
+    print(f"\nPERMEABILITY DEPENDS ON WHICH VISCOSITY, k = D*eta*phi*beta:")
+    for nm, e in (("deck / Taiyi  eta = 0.89e-3", ETA_DECK),
+                  ("reservoir     eta = 1.27e-4", ETA_RES)):
+        print(f"  {nm}:  k_trig = {D_trig*e*PHI*BETA:.2e},  "
+              f"k_back = {D_back*e*PHI*BETA:.2e} m^2")
+    print(f"  the D comparison above is eta-INDEPENDENT; only k is affected.")
 
     fig, (ax, axq) = plt.subplots(
         2, 1, figsize=(11.5, 8.0), dpi=200, sharex=True,

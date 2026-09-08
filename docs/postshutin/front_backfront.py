@@ -248,7 +248,16 @@ def main(argv=None):
     lam_s, r2_s, n_s = sqrt_test(t, r, 5.3, 13.2)      # steady flowing block
     lam_a, r2_a, n_a = sqrt_test(t, r, T_ON, T_SHUT)   # all injection
     D_trig = D_from_triggering(lam_s)
-    ETA, PHI, BETA = 0.89e-3, 0.01, 2.25e-8            # the decks' fluid
+    # TWO viscosities, deliberately. The decks carry eta = 0.89e-3, which came
+    # down the 1807 lineage and is Wang & Dunham's value; this project's rule is
+    # eta = 1.27e-4, appropriate for the depth and temperature of the Habanero
+    # reservoir. k = D*eta*phi*beta scales with eta, so the inferred
+    # permeability differs by 7.008x and is meaningless without saying which.
+    # The D comparison against kpmax/(eta*phi*beta) is eta-INDEPENDENT, since
+    # both sides use the same eta, so only the k numbers are affected.
+    PHI, BETA = 0.01, 2.25e-8
+    ETA_DECK, ETA_RES = 0.89e-3, 1.27e-4
+    ETA = ETA_DECK
     print(f"sqrt(t) test -- R = lam*sqrt(t) means R^2 is LINEAR in t, so R^2 of")
     print(f"that regression is the honest test. It assumes CONSTANT RATE.")
     print(f"  5.3-13.2 d (uninterrupted flowing block): lam {lam_s:>6.1f} "
