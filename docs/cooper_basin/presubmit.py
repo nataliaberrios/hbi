@@ -115,6 +115,13 @@ STAGES = {
                    "cycle 1 DISCARDED. muinit swept 0.370 -> 0.536 (tau_0 10.36 "
                    "-> 15.00 MPa) with f0 = 0.60 FIXED at the lab value and "
                    "sigmainit fixed. tau_0 is a result, not an assumption (5 runs)"),
+    21: dict(runs=list(range(632960, 632965)) + list(range(632970, 632975)),
+             parents={**{632960+i: 632950+i for i in range(5)},
+                      **{632970+i: 632960+i for i in range(5)}},
+             title="CYCLE 2 fluid arms — 632960-4 correct the viscosity to "
+                   "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
+                   "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
+                   "on the fluid at fixed muinit sweep (10 runs)"),
     10: dict(runs=[632900, 632901, 632902],
              parents={n: 632897 for n in (632900, 632901, 632902)},
              title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "
