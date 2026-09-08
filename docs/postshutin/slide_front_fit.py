@@ -165,7 +165,12 @@ def main(argv=None):
 
     axp = axq.twinx()
     axp.plot(tp, dp, "-", lw=1.5, color=GRN, alpha=0.9, zorder=3)
-    axp.set_ylabel(r"$\Delta p$ at wellhead (MPa)", color=GRN)
+    # Spelled out, not "$\Delta p$ at wellhead" -- on a slide the axis has to
+    # name the quantity without the audience decoding a symbol first.
+    # Two lines: spelled out in full it is longer than the 2.9 in panel is
+    # tall, so on one line it overran into the panel above.
+    axp.set_ylabel("Wellhead pressure\nchange (MPa)", color=GRN,
+                   linespacing=1.5)
     axp.tick_params(axis="y", color=GRN, labelcolor=INK)
     axp.set_ylim(-2, 22)
     axp.spines["right"].set_color(GRN)
