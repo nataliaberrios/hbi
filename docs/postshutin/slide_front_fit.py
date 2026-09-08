@@ -1,19 +1,37 @@
 #!/usr/bin/env python3
-"""Presentation cut of the r-t front figure. Same fits, no legend.
+"""Presentation cut of the r-t front figure. Same fits, no words on it.
 
 This is classic_front_fit.py's figure redrawn for a slide. Two differences,
 both requested:
 
-  1. NO LEGEND. On a slide the speaker says what the curves are, and the box
-     sat over the empty upper-left corner that the eye wants for the front's
-     early rise. The two curves are instead labelled INLINE at their right-hand
-     ends, where the axes are empty, each in its own colour.
+  1. NO LEGEND AND NO IN-PANEL TEXT. Not a legend, not curve labels, not the
+     event count, not the shut-in markers' names -- every word is added in
+     PowerPoint, where it can be placed and sized against the rest of the
+     slide. Only axis and tick labels remain, and the graphical marks that
+     cannot be redrawn in a slide editor over the right x values: the dashed
+     verticals at injection resumption (4.300 d) and shut-in (17.455 d), and
+     the shaded first shut-in (1.582-4.300 d).
+
+     No grid either, and the dashed verticals are drawn in a grey that no data
+     series uses. They were the same INK as the Q line, which made a time
+     marker look like part of the rate history.
+
+     What this costs: the figure no longer states what its own curves are, so
+     everything below has to be said out loud. main() prints all of it on every
+     run, which is the intended source for the slide's text.
 
   2. LOWER PANEL REDRAWN AFTER WANG & DUNHAM figure 2a: injection rate as a
      LINE on the left axis and the wellhead pressure CHANGE on a twin right
-     axis, rather than rate alone as a filled area. Axis labels are coloured to
-     match their curves, which is what carries the identification with no
-     legend present.
+     axis, rather than rate alone as a filled area. The axis labels and ticks
+     are coloured to match their curves -- with no legend and no annotation,
+     colour is the only thing left to identify them by.
+
+WHAT IS DRAWN, since nothing on the figure says so. Grey dots: all 20 734
+located events of the November 2012 stimulation, distance from the injector
+against time. Red: the triggering front r = sqrt(4 pi D t), t measured from
+injection resumption, D fitted so 95% of events fall below. Blue: Parotidis's
+back front, t from first injection and t_s the injection duration, D fitted so
+5% of post-shut-in events fall below.
 
 THE FITS ARE NOT REDONE HERE. D_trig and D_back come from calling
 classic_front_fit's own fit_quantile/trig_front/back_front, so this figure and
@@ -21,15 +39,19 @@ the notebook's cannot drift apart; if the fit changes there it changes here.
 
 dp CONVENTION. dp is measured from the first sample of the wellhead record,
 34.412 MPa, which is Wang & Dunham's convention (see
-front_backfront.pressure_history). Consequences visible on the panel:
+front_backfront.pressure_history). Two consequences leave the axis, and with
+the annotations gone NEITHER IS MARKED:
 
   - during the first shut-in the gauge bleeds to atmospheric, so dp falls to
-    -35 MPa and leaves the bottom of the axis. The interval is shaded, and the
-    axis is clipped at -2 as in their figure 2a rather than rescaled to hold an
-    excursion that is the gauge emptying, not the reservoir.
-  - a two-sample transient at 14.23 d reaches 87.76 MPa absolute, dp = +53.3,
-    which is 92% of the vertical stress and almost certainly water hammer. It
-    is off the top of the axis and annotated as such, not deleted.
+    -35.07 MPa and leaves the bottom of the axis. The shaded band is the only
+    remaining indication. The axis is clipped at -2 as in their figure 2a
+    rather than rescaled to hold the gauge emptying, which is not the
+    reservoir.
+  - a burst at 14.2 d reaches 87.76 MPa absolute, dp = +53.34, which is 92% of
+    the vertical stress and almost certainly water hammer. 1036 samples clear
+    +25 over 78 minutes, only 2 above +50; away from 14.20-14.38 d nothing in
+    the record exceeds +20, which is what sets the axis at +22. The green trace
+    simply runs off the top there.
 
 Usage:  python slide_front_fit.py
 """
@@ -39,7 +61,6 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.patheffects as pe
 
 import importlib.util as iu
 
@@ -61,7 +82,9 @@ OUT = Path("/home/users/nberrios/3dhbi/hbi_analysis/figures/postshutin")
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
 RED, BLUE, GRN = "#a8071a", "#1d4ed8", "#009E73"
 EVERY = 30                                       # pressure decimation, ~35 s
-HALO = [pe.withStroke(linewidth=3.4, foreground="white")]
+# The time markers get a colour NO DATA SERIES USES. They were INK, which is
+# also the Q line, so a dashed vertical read as part of the rate history.
+MARK = "#9a9a95"
 
 plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
                      "axes.labelsize": 13.5, "axes.edgecolor": MUTED,
@@ -110,32 +133,15 @@ def main(argv=None):
     rb = cf.back_front(gb - T_ON, D_back)
     ax.plot(gb, rb, "-", lw=3.2, color=BLUE)
 
-    # Inline curve labels replace the legend, each in the empty region its own
-    # curve bounds: the triggering front's is up and to its left, where no
-    # event can be because none has arrived yet, and the back front's is inside
-    # the expanding quiet wedge, which is the feature it exists to mark. The
-    # formulae are deliberately not on the figure -- they are in the caption and
-    # in what the speaker says, and on a projector they only cost legibility.
-    ax.text(5.55, 760, "triggering front\n" f"$D$ = {D_trig:.3f} m$^2$/s",
-            ha="left", va="bottom", color=RED, fontsize=13.5,
-            linespacing=1.45, path_effects=HALO, zorder=7)
-    ax.text(18.15, 75, "back front\n" f"$D$ = {D_back:.3f} m$^2$/s",
-            ha="left", va="bottom", color=BLUE, fontsize=13.5,
-            linespacing=1.45, path_effects=HALO, zorder=7)
-    ax.text(0.35, 1690, f"{len(t_abs):,} located events".replace(",", " "),
-            ha="left", va="top", color=MUTED, fontsize=12,
-            path_effects=HALO, zorder=7)
-
-    for x, lab in ((T_RESUME, "injection resumes"), (T_SHUT, "shut-in, $t_s$")):
-        ax.axvline(x, color=INK, lw=1.7, ls="--")
-        ax.text(x + 0.17, 900, lab, rotation=90, ha="left", va="top",
-                fontsize=11.5, color=INK, path_effects=HALO, zorder=6)
+    # NO IN-PANEL TEXT AT ALL -- every word goes on in PowerPoint. The
+    # graphical marks stay, because they are not words and cannot be redrawn in
+    # a slide editor over the right x values: the two dashed verticals at
+    # injection resumption and shut-in, and the shaded first shut-in.
+    for x in (T_RESUME, T_SHUT):
+        ax.axvline(x, color=MARK, lw=1.7, ls="--")
     ax.axvspan(T_SHUT1, T_RESUME, color=GRID, alpha=0.65, zorder=0)
-    ax.text(2.94, 900, "1st shut-in", rotation=90, ha="center", va="top",
-            fontsize=11.5, color=MUTED, path_effects=HALO, zorder=6)
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max()), ylim=(0, 1750))
-    ax.grid(alpha=0.28, color=GRID)
 
     # ------------------------------------------- lower: Q and dp, Taiyi 2a
     axq.plot(ti, q, "-", lw=2.0, color=INK, zorder=4)
@@ -143,7 +149,6 @@ def main(argv=None):
             ylim=(0, 70))
     axq.set_ylabel("Q (L/s)", color=INK)
     axq.tick_params(axis="y", colors=INK)
-    axq.grid(alpha=0.28, color=GRID)
     axq.set_axisbelow(True)
 
     axp = axq.twinx()
@@ -153,24 +158,17 @@ def main(argv=None):
     axp.set_ylim(-2, 22)
     axp.spines["right"].set_color(GRN)
     axp.spines["top"].set_visible(False)
-    # The excursion is a 78-minute BURST of spikes, not one sample: 1036
-    # samples clear +25 between 14.205 and 14.260 d, the tallest reaching
-    # 87.8 MPa absolute. Away from 14.20-14.38 d nothing exceeds +20, which is
-    # what sets the axis at +22.
-    axp.text(14.23 + 0.25, 20.6,
-             f"spike burst to {p_full[i_pk]:.1f} MPa\n"
-             r"($\Delta p$ = " f"{dp_full.max():+.0f}), off scale",
-             ha="left", va="top", color=GRN, fontsize=10.5,
-             linespacing=1.35, path_effects=HALO, zorder=7)
-    axp.annotate("", xy=(14.23, 22), xytext=(14.23, 18.9),
-                 arrowprops=dict(arrowstyle="-|>", color=GRN, lw=1.5))
-    axp.text(2.94, 1.2, "gauge bled off", rotation=90, ha="center", va="bottom",
-             fontsize=10.5, color=MUTED, path_effects=HALO, zorder=7)
+    # Both off-axis features are now UNLABELLED, so they need saying out loud
+    # when the slide goes up. The gauge bleeds to atmospheric during the shaded
+    # interval, dp reaching -35.07 MPa, and the burst at 14.2 d leaves the top:
+    # 1036 samples clear +25 over 78 minutes, the tallest at 87.8 MPa absolute,
+    # only 2 above +50. Away from 14.20-14.38 d nothing exceeds +20, which is
+    # what sets the axis at +22. main() prints all of it every run.
 
     for a in (axq, axp):
         a.axvspan(T_SHUT1, T_RESUME, color=GRID, alpha=0.65, zorder=0)
         for x in (T_RESUME, T_SHUT):
-            a.axvline(x, color=INK, lw=1.7, ls="--", zorder=1)
+            a.axvline(x, color=MARK, lw=1.7, ls="--", zorder=1)
 
     OUT.mkdir(parents=True, exist_ok=True)
     for e in ("png", "pdf"):
