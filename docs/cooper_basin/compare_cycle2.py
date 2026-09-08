@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Cycle-2 comparison figures: pressure, R-T, R-V, slip, on the SHIFTED clock.
 
+PANEL TITLES ARE PLAIN DESCRIPTIONS -- (a) Wellhead pressure, and so on. Every
+justification for a transformation lives in the notebook captions
+(notebooks/cycle2_comparison.ipynb), not on the figure. An earlier version
+argued its own methodology in the titles, which reads as covering for something
+and is not what a title is for.
+
 compare_runs_pressure_RT_RV.py cannot be used for these runs. It reads observed
 series at ABSOLUTE time and fits lambda*sqrt(t) through the origin, and neither
 holds after a restart: sim t = 0 is data-day 4.300, and the observed front is
@@ -142,10 +148,10 @@ def main():
 
     # --- observed, all pulled back to sim time
     ap_.plot(obs["tp"] - T0, obs["pm"], lw=1.2, color=MEAS, alpha=0.85,
-             label="measured wellhead (shifted)")
+             label="measured")
     m = (tcat - T0) > 0
     ar.plot(tcat[m] - T0, runmax[m], lw=2.4, color="#a8071a",
-            label="observed front (running max)")
+            label="observed")
     xo, bo, r2o = sqrt_fit(tcat[m] - T0, runmax[m])
     Do = bo / (4 * np.pi * 86400.0)
     tf = np.linspace(0.02, 13.1, 300)
@@ -157,7 +163,7 @@ def main():
 
     tg = np.linspace(0.02, 13.1, 300)
     asl.plot(tg, np.interp(tg + T0, OT, ocm) - slip_t0, lw=2.4, color="#a8071a",
-             label="observed slip INCREMENT")
+             label="observed (increment)")
     # cumulative volume since t0
     ti, q = obs["ti"], obs["q"]
     kv = ti >= T0
@@ -166,7 +172,7 @@ def main():
                                            * 0.5 * (q[kv][1:] + q[kv][:-1]))]) / 1e6
     tvol = ti[kv] - T0
     Vo = np.interp(tcat[m] - T0, tvol, vol)
-    av.plot(Vo, runmax[m], lw=2.4, color="#a8071a", label="observed front")
+    av.plot(Vo, runmax[m], lw=2.4, color="#a8071a", label="observed")
     xv, bv, r2v = sqrt_fit(Vo, runmax[m])
     vf = np.linspace(0.05, vol.max(), 300)
     av.plot(vf, np.sqrt(np.maximum(bv * (vf - xv), 0)), "--", lw=2.2,
@@ -217,32 +223,27 @@ def main():
     ap_.set(xlabel="Days since injection resumed (data-day 4.300)",
             ylabel="Absolute wellhead pressure (MPa)", xlim=(0, 13.2),
             ylim=(25, 62))
-    ap_.set_title("Wellhead pressure. Observed pulled back 4.300 d;\n"
-                  "the 87.8 MPa water-hammer transient is off-scale by design")
+    ap_.set_title("(a)  Wellhead pressure")
     ap_.legend(loc="lower right", fontsize=7.0, framealpha=0.93,
                labelspacing=0.35)
     ap_.grid(alpha=0.3, color=GRID)
 
     ar.set(xlabel="Days since injection resumed", ylabel="Front radius (m)",
            xlim=(0, 13.2), ylim=(0, 2600))
-    ar.set_title("R–T with square-root fits (dashed).\n"
-                 "$r=\\sqrt{4\\pi D(t-t_{off})}$ — the $\\sqrt{t}$ law with a "
-                 "shifted origin, since neither front starts at $r=0,t=0$")
+    ar.set_title("(b)  Front radius vs time")
     ar.legend(loc="lower right", fontsize=7.0, framealpha=0.93,
               borderpad=0.5, labelspacing=0.35)
     ar.grid(alpha=0.3, color=GRID)
 
     av.set(xlabel="Cumulative injected volume since t$_0$ (ML)",
            ylabel="Front radius (m)", ylim=(0, 2600))
-    av.set_title("R–V with square-root fits (dashed).\n"
-                 "Volume removes the rate-step staircase that spoils R–T")
+    av.set_title("(c)  Front radius vs cumulative injected volume")
     av.legend(loc="lower right", fontsize=7.0, framealpha=0.93)
     av.grid(alpha=0.3, color=GRID)
 
     asl.set(xlabel="Days since injection resumed",
             ylabel="Slip at the injector (cm)", xlim=(0, 13.2))
-    asl.set_title("Slip vs the observed INCREMENT since t$_0$.\n"
-                  "HBI zeroes slip at restart, so absolute slip is not the target")
+    asl.set_title("(d)  Cumulative slip at the injector")
     asl.legend(loc="upper left", fontsize=7.5, framealpha=0.93)
     asl.grid(alpha=0.3, color=GRID)
 

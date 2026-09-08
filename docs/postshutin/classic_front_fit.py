@@ -119,7 +119,10 @@ def fit_quantile(t, r, curve, frac, lo=1e-4, hi=1e3, **kw):
     return brentq(g, lo, hi, xtol=1e-8, rtol=1e-10)
 
 
-def main():
+def main(argv=None):
+    """argv is accepted and ignored -- present so a notebook can call main([]).
+    This script takes no options; front_backfront.py does and needs the same
+    signature, so both are callable the same way."""
     t_abs, r, _ = fb.catalogue()
     ti, q = fb.rate_history()
     PHI, BETA = 0.01, 2.25e-8
