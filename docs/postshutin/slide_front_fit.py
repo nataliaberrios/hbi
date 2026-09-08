@@ -5,7 +5,7 @@ This is classic_front_fit.py's figure redrawn for a slide. Two differences,
 both requested:
 
   0. TWO CUTS ARE WRITTEN. slide_front_fit.* is the plain figure;
-     slide_front_fit_M3.* adds magenta dots on the four Mw >= 3 events, same
+     slide_front_fit_M3.* adds yellow dots on the four Mw >= 3 events, same
      marker as the rest of the catalogue and 2.5x the diameter. Both come from
      one pass over the data, so they cannot diverge.
 
@@ -106,7 +106,11 @@ EVERY = 30                                       # pressure decimation, ~35 s
 # The time markers get a colour NO DATA SERIES USES. They were INK, which is
 # also the Q line, so a dashed vertical read as part of the rate history.
 MARK = "#8E44AD"
-MAG = "#e6007e"                                  # the Mw >= MBIG dots
+# Yellow, as requested. #ffcc00 rather than pure #ffff00, which on a white
+# background has too little contrast to find at all -- this is as light as it
+# goes and still reads as yellow. Say so if it is still too faint projected;
+# a hairline dark outline fixes it without changing the fill.
+YEL = "#ffcc00"                                  # the Mw >= MBIG dots
 MBIG = 3.0
 
 # "Days since injection began" would be WRONG on the current axis: injection
@@ -208,7 +212,7 @@ def _draw(big, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
     # different events.
     if big:
         k = mw >= MBIG
-        ax.scatter(t_abs[k] - off, r[k], s=26, c=MAG, lw=0, zorder=6)
+        ax.scatter(t_abs[k] - off, r[k], s=26, c=YEL, lw=0, zorder=6)
 
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max() - off), ylim=(0, 1750))
