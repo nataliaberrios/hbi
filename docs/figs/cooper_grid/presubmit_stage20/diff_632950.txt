@@ -1,0 +1,23 @@
+res632925.in  ->  res632950.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632925
+---
+> filenumber 632950
+8c8
+< tmax 0.03013699
+---
+> tmax 0.03589041
+12c12
+< parameter_file "perm_2zone_601_ds10_kmax2.5e-13.txt"
+---
+> parameter_file "perm_2zone_601_ds10_disc300_kmax2.5e-13.txt"
+20c20
+< muinit 0.37
+---
+> muinit 0.3700
+46c46
+< injection_file "june_clean.txt"
+---
+> injection_file "june_clean_from_d4300.txt"
+

@@ -108,6 +108,13 @@ STAGES = {
                    "One parameter per run: 632942 changes only the injection "
                    "record from res632913.in; 632943 changes only the initial "
                    "disc radius (150 -> 300 m) from 632942 (2 runs)"),
+    20: dict(runs=[632950, 632951, 632952, 632953, 632954],
+             parents={632950: 632925, **{n: 632950 for n in
+                      (632951, 632952, 632953, 632954)}},
+             title="CYCLE 2 as a new project, Round 1 — t = 0 is data-day 4.300, "
+                   "cycle 1 DISCARDED. muinit swept 0.370 -> 0.536 (tau_0 10.36 "
+                   "-> 15.00 MPa) with f0 = 0.60 FIXED at the lab value and "
+                   "sigmainit fixed. tau_0 is a result, not an assumption (5 runs)"),
     10: dict(runs=[632900, 632901, 632902],
              parents={n: 632897 for n in (632900, 632901, 632902)},
              title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "
