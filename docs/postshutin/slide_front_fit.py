@@ -90,6 +90,9 @@ plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
                      "axes.labelsize": 13.5, "axes.edgecolor": MUTED,
                      "text.color": INK, "axes.labelcolor": INK,
                      "xtick.color": MUTED, "ytick.color": MUTED,
+                     # tick NUMBERS black on every axis; xtick.color/ytick.color
+                     # above now govern only the tick marks themselves
+                     "xtick.labelcolor": INK, "ytick.labelcolor": INK,
                      "xtick.labelsize": 12, "ytick.labelsize": 12})
 
 
@@ -148,13 +151,13 @@ def main(argv=None):
     axq.set(xlabel="Days since 2012-11-13", xlim=(0, t_abs.max()),
             ylim=(0, 70))
     axq.set_ylabel("Q (L/s)", color=INK)
-    axq.tick_params(axis="y", colors=INK)
+    axq.tick_params(axis="y", color=MUTED, labelcolor=INK)
     axq.set_axisbelow(True)
 
     axp = axq.twinx()
     axp.plot(tp, dp, "-", lw=1.5, color=GRN, alpha=0.9, zorder=3)
     axp.set_ylabel(r"$\Delta p$ at wellhead (MPa)", color=GRN)
-    axp.tick_params(axis="y", colors=GRN)
+    axp.tick_params(axis="y", color=GRN, labelcolor=INK)
     axp.set_ylim(-2, 22)
     axp.spines["right"].set_color(GRN)
     axp.spines["top"].set_visible(False)
