@@ -49,7 +49,8 @@ envelope by hand. Both fractions are printed.
 
 TIME ORIGIN. Both formulae assume injection starting at t = 0 and running
 continuously. The record does not: injection begins at 0.501 d, stops at
-1.582 d, and only resumes continuously at 4.300 d. Anchoring the triggering
+1.582 d, restarts as a 1.6-2.5 L/s trickle at 3.558 d, and only resumes in
+earnest at 4.300 d. The shaded band is the zero-rate part alone, 1.582-3.558 d. Anchoring the triggering
 front at 4.300 d rather than 0.501 d therefore fits far better, measured against
 the per-day observed maximum:
 
@@ -88,6 +89,9 @@ plt.rcParams.update({"font.size": 11, "axes.titlesize": 12,
 
 
 T_RESUME = 4.300                            # injection resumes, cycle-2 zero
+# The shut-in is zero-rate only to 3.558 d; 3.558-4.298 d is a 1.6-2.5 L/s
+# trickle, so shading through to T_RESUME mislabels it. Read from the rate file.
+T_SHUT1, T_TRICKLE = fb.zero_rate_interval()
 
 
 def trig_front(t, D):
@@ -191,8 +195,9 @@ def main(argv=None):
         ax.axvline(x, color=INK, lw=1.6, ls="--")
         ax.text(x + 0.16, 850, lab, rotation=90, ha="left", va="top",
                 fontsize=9.5, color=INK, path_effects=halo, zorder=6)
-    ax.axvspan(1.582, T_RESUME, color=GRID, alpha=0.65, zorder=0)
-    ax.text(2.94, 850, "1st shut-in", rotation=90, ha="center", va="top",
+    ax.axvspan(T_SHUT1, T_TRICKLE, color=GRID, alpha=0.65, zorder=0)
+    ax.text((T_SHUT1 + T_TRICKLE) / 2, 850, "1st shut-in", rotation=90,
+            ha="center", va="top",
             fontsize=9.5, color=MUTED, path_effects=halo, zorder=6)
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max()), ylim=(0, 1750))
@@ -209,7 +214,7 @@ def main(argv=None):
     axq.fill_between(ti, 0, q, color=MUTED, alpha=0.45, lw=0)
     for x in (T_RESUME, T_SHUT):
         axq.axvline(x, color=INK, lw=1.6, ls="--")
-    axq.axvspan(1.582, T_RESUME, color=GRID, alpha=0.65, zorder=0)
+    axq.axvspan(T_SHUT1, T_TRICKLE, color=GRID, alpha=0.65, zorder=0)
     axq.set(xlabel="Days since 2012-11-13", ylabel="q (L/s)",
             xlim=(0, t_abs.max()), ylim=(0, 70))
     axq.grid(alpha=0.28, color=GRID)

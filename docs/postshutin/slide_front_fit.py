@@ -10,7 +10,16 @@ both requested:
      slide. Only axis and tick labels remain, and the graphical marks that
      cannot be redrawn in a slide editor over the right x values: the dashed
      verticals at injection resumption (4.300 d) and shut-in (17.455 d), and
-     the shaded first shut-in (1.582-4.300 d).
+     the shaded first shut-in, 1.582-3.558 d.
+
+     THE SHADED BAND ENDS AT 3.558 d, NOT 4.300. The rate is zero only to
+     3.558 d; from there to 4.298 d a 1.6-2.5 L/s trickle runs, and 4.300 d is
+     where it steps to ~8 L/s and climbs. Earlier versions shaded through to
+     4.300 and so called 0.74 d of low-rate injection a shut-in. The interval
+     now comes from front_backfront.zero_rate_interval(), read off the rate
+     file. 4.300 d remains the cycle-2 origin and its dashed marker stays --
+     sustained injection does resume there -- it is just not where the shut-in
+     ended.
 
      No grid either, and the dashed verticals are drawn in a grey that no data
      series uses. They were the same INK as the Q line, which made a time
@@ -77,14 +86,14 @@ cf = _load("classic_front_fit")
 
 T_ON, T_SHUT, TS = cf.T_ON, cf.T_SHUT, cf.TS
 T_RESUME = cf.T_RESUME
-T_SHUT1 = 1.582                                  # first shut-in begins
+T_SHUT1, T_TRICKLE = fb.zero_rate_interval()     # 1.582 -> 3.558 d
 OUT = Path("/home/users/nberrios/3dhbi/hbi_analysis/figures/postshutin")
 INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
 RED, BLUE, GRN = "#a8071a", "#1d4ed8", "#009E73"
 EVERY = 30                                       # pressure decimation, ~35 s
 # The time markers get a colour NO DATA SERIES USES. They were INK, which is
 # also the Q line, so a dashed vertical read as part of the rate history.
-MARK = "#9a9a95"
+MARK = "#8E44AD"
 
 plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
                      "axes.labelsize": 13.5, "axes.edgecolor": MUTED,
@@ -119,7 +128,7 @@ def main(argv=None):
           f"{tp_full[i_pk]:.2f} d -- {(dp_full > 25).sum()} samples above +25, "
           f"off the plotted axis")
     print(f"  minimum dp {dp_full.min():+.2f} MPa, gauge bled off during the "
-          f"first shut-in ({T_SHUT1}-{T_RESUME} d)")
+          f"first shut-in ({T_SHUT1:.3f}-{T_TRICKLE:.3f} d)")
     print(f"  pressure decimated {EVERY}x for drawing "
           f"({len(dp_full)} -> {len(dp)} samples); extrema above are undecimated")
 
@@ -142,7 +151,7 @@ def main(argv=None):
     # injection resumption and shut-in, and the shaded first shut-in.
     for x in (T_RESUME, T_SHUT):
         ax.axvline(x, color=MARK, lw=1.7, ls="--")
-    ax.axvspan(T_SHUT1, T_RESUME, color=GRID, alpha=0.65, zorder=0)
+    ax.axvspan(T_SHUT1, T_TRICKLE, color=GRID, alpha=0.65, zorder=0)
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max()), ylim=(0, 1750))
 
@@ -169,7 +178,7 @@ def main(argv=None):
     # what sets the axis at +22. main() prints all of it every run.
 
     for a in (axq, axp):
-        a.axvspan(T_SHUT1, T_RESUME, color=GRID, alpha=0.65, zorder=0)
+        a.axvspan(T_SHUT1, T_TRICKLE, color=GRID, alpha=0.65, zorder=0)
         for x in (T_RESUME, T_SHUT):
             a.axvline(x, color=MARK, lw=1.7, ls="--", zorder=1)
 

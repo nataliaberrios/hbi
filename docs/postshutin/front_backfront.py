@@ -101,6 +101,40 @@ def rate_history():
     return ti[k][o], q[k][o]
 
 
+def zero_rate_interval(thr=0.05):
+    """(t0, t1) of the longest interval with q <= thr L/s during the record.
+
+    THE FIRST SHUT-IN IS SHORTER THAN THE GAP BEFORE FULL RESUMPTION, and
+    figures that shade 1.582-4.300 d as "shut-in" are wrong for the last
+    0.74 d of it. The rate is genuinely zero from 1.582 to 3.558 d; from 3.558
+    to 4.298 d a 1.6-2.5 L/s trickle runs; only at 4.300 d does it step to
+    ~8 L/s and climb. 4.300 d is still the right cycle-2 origin -- it is where
+    sustained injection resumes -- but it is not where the shut-in ends.
+
+    Derived from the rate file rather than hard-coded so it cannot drift, and
+    taken as the LONGEST zero run rather than the outermost zero samples: the
+    rate briefly touches zero again at 4.569 d, so min/max over the mask would
+    return 1.582-5.298 d instead.
+    """
+    ti, q = rate_history()
+    z = q <= thr
+    runs, i = [], 0
+    while i < len(z):
+        if z[i]:
+            j = i
+            while j + 1 < len(z) and z[j + 1]:
+                j += 1
+            if ti[i] > T_ON and ti[j] < T_SHUT:
+                runs.append((ti[j] - ti[i], ti[i], ti[j]))
+            i = j + 1
+        else:
+            i += 1
+    if not runs:
+        raise RuntimeError("no zero-rate interval found between T_ON and T_SHUT")
+    _, t0, t1 = max(runs)
+    return float(t0), float(t1)
+
+
 def pressure_history(every=1):
     """(t_days, p_abs, dp) from the wellhead .mat, same clock as rate_history().
 
