@@ -6,8 +6,33 @@ The standard figure in the induced-seismicity literature (Shapiro et al. 1997,
 smooth analytical curves fitted as ENVELOPES of the cloud.
 
   TRIGGERING FRONT       r(t) = sqrt(4 pi D t)
-    Shapiro's result: the leading edge of seismicity triggered by pore-pressure
-    diffusion from a point source. Fitted as an UPPER envelope.
+    Shapiro's result. NOT a pressure-threshold contour -- it is one WAVELENGTH
+    of the pore-pressure diffusion wave (the low-frequency Biot slow wave):
+
+        harmonic forcing at omega in dp/dt = D grad^2 p has skin depth
+            delta = sqrt(2D/omega)
+        one wavelength is
+            lam = 2 pi delta = 2 pi sqrt(2D/omega)
+        a STEP of duration t has its dominant energy at
+            omega ~ 2 pi / t                          (Shapiro 2000, GJI 143)
+        so
+            lam = 2 pi sqrt(2Dt/(2 pi)) = 2 sqrt(pi D t) = sqrt(4 pi D t)
+
+    i.e. 4 pi = (2 pi)^2 / pi -- the (2 pi)^2 from taking a full wavelength
+    rather than a skin depth, the 1/pi from the omega ~ 2 pi/t identification.
+
+    THE PREFACTOR IS A CONVENTION, NOT A DERIVED CONSTANT. Shapiro (2000) calls
+    the omega ~ 2 pi/t step "of partially heuristic character", which is why the
+    literature also carries sqrt(4Dt) and sqrt(6Dt). The last one IS exact for a
+    different definition: the peak-pressure locus of an INSTANTANEOUS 3D point
+    source, p ~ t^-3/2 exp(-r^2/4Dt), has dp/dt = 0 at r = sqrt(6Dt).
+
+    CONSEQUENCE: D scales inversely with the prefactor, so the same envelope
+    fitted with sqrt(4Dt) gives a D that is pi times larger. Any D quoted from a
+    triggering front is meaningless without its convention, so the convention is
+    printed and put on the figure.
+
+    Fitted as an UPPER envelope.
 
   BACK FRONT             r(t) = sqrt( 4 D t (t - t_s)/t_s * ln(t/(t - t_s)) )
     Parotidis's result, derived for 2D radial (Theis/E1) diffusion, which is the
@@ -118,6 +143,10 @@ def main():
     print(f"TRIGGERING FRONT   r = sqrt(4 pi D t),  t from {T_RESUME} d")
     print(f"  D = {D_trig:.4f} m^2/s  (95% of events below)"
           f"  ->  k = {D_trig*ETA*PHI*BETA:.2e} m^2")
+    print(f"  CONVENTION MATTERS: the same envelope under r = sqrt(4Dt) gives")
+    print(f"  D = {D_trig*np.pi:.4f} m^2/s, pi times larger. The 4 pi is one")
+    print(f"  WAVELENGTH of the diffusion wave at omega ~ 2 pi/t, which Shapiro")
+    print(f"  (2000) calls partly heuristic -- see the module docstring.")
     print(f"  [alternative, t from {T_ON} d: D = {D_alt:.4f}, a worse envelope]")
     print(f"BACK FRONT         r = sqrt(4 D t(t-t_s)/t_s ln(t/(t-t_s)))")
     print(f"  D = {D_back:.4f} m^2/s  (5% of post-shut-in events below)"
@@ -127,7 +156,7 @@ def main():
           f"kpmax -> {2.5e-13/(ETA*PHI*BETA):.3f} m^2/s")
 
     fig, (ax, axq) = plt.subplots(
-        2, 1, figsize=(11.5, 7.6), dpi=200, sharex=True,
+        2, 1, figsize=(11.5, 8.0), dpi=200, sharex=True,
         gridspec_kw=dict(height_ratios=[3.4, 1.0], hspace=0.06))
 
     ax.scatter(t_abs, r, s=3.5, alpha=0.22, color=MUTED, lw=0,
@@ -135,25 +164,35 @@ def main():
     g = np.linspace(T_RESUME + 1e-3, t_abs.max(), 800)
     ax.plot(g, trig_front(g - T_RESUME, D_trig), "-", lw=2.8, color=RED,
             label=r"triggering front  $r=\sqrt{4\pi D t}$,  "
-                  f"$D$ = {D_trig:.3f} m$^2$/s")
+                  f"$D$ = {D_trig:.3f} m$^2$/s"
+                  f"\n   ($t=0$ at injection resumption, {T_RESUME} d;"
+                  f"  $4\\pi$ convention)")
     gb = np.linspace(T_SHUT + 1e-3, t_abs.max(), 800)
     ax.plot(gb, back_front(gb - T_ON, D_back), "-", lw=2.8, color=BLUE,
             label=r"back front  $r=\sqrt{4Dt\frac{(t-t_s)}{t_s}"
                   r"\ln\frac{t}{t-t_s}}$,  " f"$D$ = {D_back:.3f} m$^2$/s")
-    for x, lab, yl in ((T_RESUME, "injection resumes  ($t=0$ for $r=\\sqrt{4\\pi Dt}$)",
-                        640),
-                       (T_SHUT, "shut-in  ($t_s$)", 1700)):
+    import matplotlib.patheffects as pe
+    halo = [pe.withStroke(linewidth=3.2, foreground="white")]
+    # Labels hang DOWNWARD from 850 m so they cannot reach the legend box,
+    # and they are kept short -- the "t = 0" detail lives in the legend entry
+    # instead of in a rotated annotation.
+    for x, lab in ((T_RESUME, "injection resumes"), (T_SHUT, "shut-in, $t_s$")):
         ax.axvline(x, color=INK, lw=1.6, ls="--")
-        ax.text(x - 0.18, yl, lab, rotation=90, ha="right", va="top",
-                fontsize=9.5, color=INK)
+        ax.text(x + 0.16, 850, lab, rotation=90, ha="left", va="top",
+                fontsize=9.5, color=INK, path_effects=halo, zorder=6)
     ax.axvspan(1.582, T_RESUME, color=GRID, alpha=0.65, zorder=0)
-    ax.text(2.94, 60, "1st shut-in", rotation=90, ha="center", va="bottom",
-            fontsize=9.5, color=MUTED)
+    ax.text(2.94, 850, "1st shut-in", rotation=90, ha="center", va="top",
+            fontsize=9.5, color=MUTED, path_effects=halo, zorder=6)
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max()), ylim=(0, 1750))
-    ax.set_title("Cooper Basin Habanero 4, November 2012 — "
-                 "triggering front and back front")
-    ax.legend(loc="upper left", framealpha=0.92)
+    # Title as a suptitle so it cannot collide with the legend, and the legend
+    # in the upper-left where the axes are genuinely empty (no events before
+    # 4.3 d above ~400 m). The event-time labels are pushed to mid-height,
+    # to the RIGHT of their lines, so they clear it.
+    fig.suptitle("Cooper Basin Habanero 4, November 2012 — "
+                 "triggering front and back front", fontsize=13, y=0.955)
+    ax.legend(loc="upper left", framealpha=0.95, fontsize=10.5,
+              handlelength=2.4, borderpad=0.7)
     ax.grid(alpha=0.28, color=GRID)
 
     axq.fill_between(ti, 0, q, color=MUTED, alpha=0.45, lw=0)
