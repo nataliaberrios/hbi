@@ -101,6 +101,15 @@ EVERY = 30                                       # pressure decimation, ~35 s
 # The time markers get a colour NO DATA SERIES USES. They were INK, which is
 # also the Q line, so a dashed vertical read as part of the rate history.
 MARK = "#8E44AD"
+GOLD = "#f0b429"                                 # the Mw >= MSTAR stars
+MSTAR = 3.0
+
+# "Days since injection began" would be WRONG on the current axis: injection
+# starts at T_ON = 0.501 d, so t = 0 here is half a day BEFORE it. Flipping
+# this to True subtracts T_ON from every plotted time and relabels, which is
+# self-consistent but renumbers the figure against every other one in the
+# project -- the shut-ins become 1.081 and 16.650 d, resumption 3.799 d.
+X_FROM_INJECTION = False
 
 plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
                      "axes.labelsize": 13.5, "axes.edgecolor": MUTED,
@@ -113,8 +122,14 @@ plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
 
 
 def main(argv=None):
-    """argv accepted and ignored, matching the other two scripts here."""
-    t_abs, r, n_raw = fb.catalogue()
+    """Writes BOTH cuts: slide_front_fit.* and slide_front_fit_stars.*.
+
+    argv accepted and ignored, matching the other two scripts here. The starred
+    version is a variant to choose between, not a replacement, so both are
+    built from one pass over the data.
+    """
+    t_abs, r, ml, mw = fb.catalogue_mag()
+    _, _, n_raw = fb.catalogue()
     ti, q = fb.rate_history()
     tp, p_abs, dp = fb.pressure_history(every=EVERY)
     tp_full, p_full, dp_full = fb.pressure_history()
@@ -142,39 +157,64 @@ def main(argv=None):
           f"{T_SHUT - SHUTINS[-1]:.3f} d later")
     print(f"  pressure decimated {EVERY}x for drawing "
           f"({len(dp_full)} -> {len(dp)} samples); extrema above are undecimated")
+    big = mw >= MSTAR
+    print(f"\nstarred version: {int(big.sum())} events with Mw >= {MSTAR} "
+          f"(ML >= {MSTAR} would give {int((ml >= MSTAR).sum())}, "
+          f"{int(((mw >= MSTAR) & (ml >= MSTAR)).sum())} in both)")
+    idx = np.where(big)[0]
+    for j in idx[np.argsort(-mw[idx])]:
+        print(f"    Mw {mw[j]:.2f}  ML {ml[j]:.2f}  t = {t_abs[j]:7.3f} d  "
+              f"r = {r[j]:6.0f} m")
 
+    for stars in (False, True):
+        _draw(stars, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back)
+    return D_trig, D_back
+
+
+def _draw(stars, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
+    """One figure. `stars` adds the Mw >= MSTAR overlay and changes the stem."""
+    off = T_ON if X_FROM_INJECTION else 0.0
+    xlab = ("Days since injection began" if X_FROM_INJECTION
+            else "Days since 2012-11-13")
     fig, (ax, axq) = plt.subplots(
         2, 1, figsize=(12.0, 8.6), dpi=200, sharex=True,
         gridspec_kw=dict(height_ratios=[2.9, 1.45], hspace=0.08))
 
     # ------------------------------------------------------------ upper: r-t
-    ax.scatter(t_abs, r, s=4.0, alpha=0.22, color=MUTED, lw=0)
+    ax.scatter(t_abs - off, r, s=4.0, alpha=0.22, color=MUTED, lw=0)
     g = np.linspace(T_RESUME + 1e-3, t_abs.max(), 800)
     rg = cf.trig_front(g - T_RESUME, D_trig)
-    ax.plot(g, rg, "-", lw=3.2, color=RED)
+    ax.plot(g - off, rg, "-", lw=3.2, color=RED)
     gb = np.linspace(T_SHUT + 1e-3, t_abs.max(), 800)
     rb = cf.back_front(gb - T_ON, D_back)
-    ax.plot(gb, rb, "-", lw=3.2, color=BLUE)
+    ax.plot(gb - off, rb, "-", lw=3.2, color=BLUE)
 
     # ONE MARK, ONE MEANING: a purple dashed vertical wherever injection stops.
     # Nothing else is marked -- not the end of a shut-in, not the resumption at
     # 4.300 d, not the onset of seismicity -- and the shaded band is gone with
     # them, since its right edge marked the end of the first shut-in.
     for x in SHUTINS:
-        ax.axvline(x, color=MARK, lw=1.7, ls="--")
+        ax.axvline(x - off, color=MARK, lw=1.7, ls="--")
+
+    # The one optional overlay. Mw, not ML -- see fb.catalogue_mag(); the two
+    # scales pick different events, and Mw is the one tied to M0.
+    if stars:
+        k = mw >= MSTAR
+        ax.scatter(t_abs[k] - off, r[k], marker="*", s=300, c=GOLD,
+                   edgecolors=INK, linewidths=0.7, zorder=6)
+
     ax.set(ylabel="Distance from injection point (m)",
-           xlim=(0, t_abs.max()), ylim=(0, 1750))
+           xlim=(0, t_abs.max() - off), ylim=(0, 1750))
 
     # ------------------------------------------- lower: Q and dp, Taiyi 2a
-    axq.plot(ti, q, "-", lw=2.0, color=INK, zorder=4)
-    axq.set(xlabel="Days since 2012-11-13", xlim=(0, t_abs.max()),
-            ylim=(0, 70))
+    axq.plot(ti - off, q, "-", lw=2.0, color=INK, zorder=4)
+    axq.set(xlabel=xlab, xlim=(0, t_abs.max() - off), ylim=(0, 70))
     axq.set_ylabel("Q (L/s)", color=INK)
     axq.tick_params(axis="y", color=MUTED, labelcolor=INK)
     axq.set_axisbelow(True)
 
     axp = axq.twinx()
-    axp.plot(tp, dp, "-", lw=1.5, color=GRN, alpha=0.9, zorder=3)
+    axp.plot(tp - off, dp, "-", lw=1.5, color=GRN, alpha=0.9, zorder=3)
     # Spelled out, not "$\Delta p$ at wellhead" -- on a slide the axis has to
     # name the quantity without the audience decoding a symbol first.
     # Two lines: spelled out in full it is longer than the 2.9 in panel is
@@ -198,14 +238,14 @@ def main(argv=None):
 
     for a in (axq, axp):
         for x in SHUTINS:
-            a.axvline(x, color=MARK, lw=1.7, ls="--", zorder=1)
+            a.axvline(x - off, color=MARK, lw=1.7, ls="--", zorder=1)
 
+    stem = "slide_front_fit_stars" if stars else "slide_front_fit"
     OUT.mkdir(parents=True, exist_ok=True)
     for e in ("png", "pdf"):
-        fig.savefig(OUT / f"slide_front_fit.{e}", bbox_inches="tight")
+        fig.savefig(OUT / f"{stem}.{e}", bbox_inches="tight")
     plt.close(fig)
-    print(f"\nwrote {OUT}/slide_front_fit.png and .pdf")
-    return D_trig, D_back
+    print(f"wrote {OUT}/{stem}.png and .pdf")
 
 
 if __name__ == "__main__":

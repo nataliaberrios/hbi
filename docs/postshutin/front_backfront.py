@@ -101,6 +101,44 @@ def rate_history():
     return ti[k][o], q[k][o]
 
 
+def catalogue_mag():
+    """catalogue() plus magnitudes: (t, r, ML, Mw), identical mask and order.
+
+    TWO MAGNITUDE SCALES SHIP IN THE FILE AND THEY DISAGREE, so "M3" is
+    ambiguous until one is named:
+
+        ML  tops out at 3.0    2 events >= 3.0
+        Mw  tops out at 3.1    4 events >= 3.0,  8 >= 2.8
+
+    and they disagree per event, not just in calibration -- the largest Mw
+    (3.10 at 19.648 d) is only ML 2.0, while an ML 3.0 event is Mw 2.8. So the
+    two scales select overlapping-but-different sets: of the 2 ML>=3 and the
+    4 Mw>=3, only 1 event is in both.
+
+    Mw is the one to prefer for a physical statement, being tied to M0 (also in
+    the file, 4.2e8 to 4.5e13 N m), but both are returned so a figure can say
+    which it used.
+    """
+    m = loadmat(H / "Cooper_Basin_Catalog_HAB_4.mat", squeeze_me=True,
+                struct_as_record=False)
+    c = {e.field: e.val for e in m["Catalog"]}
+    tt = c["Time"].astype(float)
+    dts = [dt.fromordinal(int(x)) + td(days=x % 1) - td(days=366) for x in tt]
+    t = np.array([(d - T_REF).total_seconds() / 86400 for d in dts])
+    r = np.sqrt(((c["Lat"] - LAT) * 111.0) ** 2
+                + ((c["Long"] - LON) * 111.0 * np.cos(np.radians(LAT))) ** 2) * 1e3
+    ml = np.asarray(c["ML"], float)
+    mw = np.asarray(c["Mw"], float)
+    k = np.isfinite(t) & np.isfinite(r) & (t >= 0)
+    o = np.argsort(t[k])
+    t, r, ml, mw = t[k][o], r[k][o], ml[k][o], mw[k][o]
+    # alignment with catalogue() is what lets a caller overlay one on the other
+    t0, r0, _ = catalogue()
+    assert np.array_equal(t, t0) and np.array_equal(r, r0), \
+        "catalogue_mag() diverged from catalogue()"
+    return t, r, ml, mw
+
+
 def shutin_starts(min_len=0.1, thr=0.05):
     """Times at which injection stops for longer than `min_len` days.
 
