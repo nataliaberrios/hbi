@@ -101,6 +101,35 @@ def rate_history():
     return ti[k][o], q[k][o]
 
 
+def pressure_history(every=1):
+    """(t_days, p_abs, dp) from the wellhead .mat, same clock as rate_history().
+
+    p_abs is the measured absolute wellhead pressure in MPa; dp is the CHANGE
+    from the first sample of the record, 34.412 MPa. That is the convention
+    Wang & Dunham use -- export_panelA_fixed.m:30 is
+    `(M2.H4_wh_p(:) - M2.H4_wh_p(1))/1e6` -- so a dp plotted here is directly
+    comparable to their figure 2a. The pre-injection median over t < 0.501 d is
+    33.970 MPa, 0.44 MPa lower, the well having drifted down while shut; using
+    the first sample rather than that median is therefore a choice, and it makes
+    dp smaller by 0.44 MPa everywhere. It is kept only for comparability.
+
+    `every` decimates for plotting -- the record is 1.31 M samples at ~1.2 s.
+    Decimation can drop short transients, so the caller should quote extrema
+    from the undecimated record; p_abs.max() is 87.76 MPa over two samples at
+    14.23 d and survives only at every = 1.
+    """
+    pr = loadmat(H / "Cooper_Basin_HAB_4_Wellhead_Pressure.mat")["d"][0, 0]
+    tp = pr["Date"].squeeze(); tp = tp - tp[0]
+    p = pr["Wellhead_pressure"].squeeze()
+    k = np.isfinite(tp) & np.isfinite(p)
+    o = np.argsort(tp[k])
+    tp, p = tp[k][o], p[k][o]
+    p0 = float(p[0])                    # 34.412 MPa; taken from the file, not
+    if every > 1:                       # hard-coded, so it cannot go stale
+        tp, p = tp[::every], p[::every]
+    return tp, p, p - p0
+
+
 def front_runmax(t, r):
     """The FRONT: running maximum of event distance. Monotone BY CONSTRUCTION.
 
