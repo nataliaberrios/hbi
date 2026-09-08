@@ -106,10 +106,9 @@ EVERY = 30                                       # pressure decimation, ~35 s
 # The time markers get a colour NO DATA SERIES USES. They were INK, which is
 # also the Q line, so a dashed vertical read as part of the rate history.
 MARK = "#8E44AD"
-# Yellow, as requested. #ffcc00 rather than pure #ffff00, which on a white
-# background has too little contrast to find at all -- this is as light as it
-# goes and still reads as yellow. Say so if it is still too faint projected;
-# a hairline dark outline fixes it without changing the fill.
+# Yellow, as requested, with a hairline black outline -- yellow on white has
+# too little contrast on its own, and the outline restores it without darkening
+# the fill. #ffcc00 rather than pure #ffff00 for the same reason.
 YEL = "#ffcc00"                                  # the Mw >= MBIG dots
 MBIG = 3.0
 
@@ -212,7 +211,8 @@ def _draw(big, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
     # different events.
     if big:
         k = mw >= MBIG
-        ax.scatter(t_abs[k] - off, r[k], s=26, c=YEL, lw=0, zorder=6)
+        ax.scatter(t_abs[k] - off, r[k], s=26, c=YEL,
+                   edgecolors=INK, linewidths=0.6, zorder=6)
 
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max() - off), ylim=(0, 1750))
