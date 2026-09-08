@@ -4,6 +4,11 @@
 This is classic_front_fit.py's figure redrawn for a slide. Two differences,
 both requested:
 
+  0. TWO CUTS ARE WRITTEN. slide_front_fit.* is the plain figure;
+     slide_front_fit_M3.* adds magenta dots on the four Mw >= 3 events, same
+     marker as the rest of the catalogue and 2.5x the diameter. Both come from
+     one pass over the data, so they cannot diverge.
+
   1. NO LEGEND AND NO IN-PANEL TEXT. Not a legend, not curve labels, not the
      event count, not the shut-in markers' names -- every word is added in
      PowerPoint, where it can be placed and sized against the rest of the
@@ -101,8 +106,8 @@ EVERY = 30                                       # pressure decimation, ~35 s
 # The time markers get a colour NO DATA SERIES USES. They were INK, which is
 # also the Q line, so a dashed vertical read as part of the rate history.
 MARK = "#8E44AD"
-GOLD = "#f0b429"                                 # the Mw >= MSTAR stars
-MSTAR = 3.0
+MAG = "#e6007e"                                  # the Mw >= MBIG dots
+MBIG = 3.0
 
 # "Days since injection began" would be WRONG on the current axis: injection
 # starts at T_ON = 0.501 d, so t = 0 here is half a day BEFORE it. Flipping
@@ -122,7 +127,7 @@ plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
 
 
 def main(argv=None):
-    """Writes BOTH cuts: slide_front_fit.* and slide_front_fit_stars.*.
+    """Writes BOTH cuts: slide_front_fit.* and slide_front_fit_M3.*.
 
     argv accepted and ignored, matching the other two scripts here. The starred
     version is a variant to choose between, not a replacement, so both are
@@ -157,22 +162,22 @@ def main(argv=None):
           f"{T_SHUT - SHUTINS[-1]:.3f} d later")
     print(f"  pressure decimated {EVERY}x for drawing "
           f"({len(dp_full)} -> {len(dp)} samples); extrema above are undecimated")
-    big = mw >= MSTAR
-    print(f"\nstarred version: {int(big.sum())} events with Mw >= {MSTAR} "
-          f"(ML >= {MSTAR} would give {int((ml >= MSTAR).sum())}, "
-          f"{int(((mw >= MSTAR) & (ml >= MSTAR)).sum())} in both)")
-    idx = np.where(big)[0]
+    hi = mw >= MBIG
+    print(f"\nM3 version: {int(hi.sum())} events with Mw >= {MBIG} "
+          f"(ML >= {MBIG} would give {int((ml >= MBIG).sum())}, "
+          f"{int(((mw >= MBIG) & (ml >= MBIG)).sum())} in both)")
+    idx = np.where(hi)[0]
     for j in idx[np.argsort(-mw[idx])]:
         print(f"    Mw {mw[j]:.2f}  ML {ml[j]:.2f}  t = {t_abs[j]:7.3f} d  "
               f"r = {r[j]:6.0f} m")
 
-    for stars in (False, True):
-        _draw(stars, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back)
+    for big in (False, True):
+        _draw(big, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back)
     return D_trig, D_back
 
 
-def _draw(stars, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
-    """One figure. `stars` adds the Mw >= MSTAR overlay and changes the stem."""
+def _draw(big, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
+    """One figure. `big` adds the Mw >= MBIG overlay and changes the stem."""
     off = T_ON if X_FROM_INJECTION else 0.0
     xlab = ("Days since injection began" if X_FROM_INJECTION
             else "Days since 2012-11-13")
@@ -196,12 +201,14 @@ def _draw(stars, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
     for x in SHUTINS:
         ax.axvline(x - off, color=MARK, lw=1.7, ls="--")
 
-    # The one optional overlay. Mw, not ML -- see fb.catalogue_mag(); the two
-    # scales pick different events, and Mw is the one tied to M0.
-    if stars:
-        k = mw >= MSTAR
-        ax.scatter(t_abs[k] - off, r[k], marker="*", s=300, c=GOLD,
-                   edgecolors=INK, linewidths=0.7, zorder=6)
+    # The one optional overlay: same marker as every other event, magenta and
+    # a little bigger. s = 4 -> 26 is 2.5x the DIAMETER, which is as small as
+    # it can be and still be found on a projected slide. Mw, not ML -- see
+    # fb.catalogue_mag(); at the top of the catalogue the two scales pick
+    # different events.
+    if big:
+        k = mw >= MBIG
+        ax.scatter(t_abs[k] - off, r[k], s=26, c=MAG, lw=0, zorder=6)
 
     ax.set(ylabel="Distance from injection point (m)",
            xlim=(0, t_abs.max() - off), ylim=(0, 1750))
@@ -240,7 +247,7 @@ def _draw(stars, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
         for x in SHUTINS:
             a.axvline(x - off, color=MARK, lw=1.7, ls="--", zorder=1)
 
-    stem = "slide_front_fit_stars" if stars else "slide_front_fit"
+    stem = "slide_front_fit_M3" if big else "slide_front_fit"
     OUT.mkdir(parents=True, exist_ok=True)
     for e in ("png", "pdf"):
         fig.savefig(OUT / f"{stem}.{e}", bbox_inches="tight")
