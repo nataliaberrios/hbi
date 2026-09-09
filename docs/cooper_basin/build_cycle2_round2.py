@@ -325,10 +325,23 @@ def main(argv=None):
                 print("        <-- MAP DOES NOT MATCH THE DECK")
     if nbad:
         sys.exit(f"\n{nbad} problem(s). Fix before submitting.")
+    # -w MUST BE THE DECK'S OWN injection_file, read from the deck rather than
+    # named here. That flag is the only thing that copies it into the rundir,
+    # and HBI's open(77, iostat=) defaults to status='unknown', so a missing
+    # injection file is CREATED EMPTY, returns ios = 0, and then dies with
+    # "end-of-file during read, unit 77" at m_diffusion.f90:59 -- ten seconds
+    # in, with no output and nothing pointing at the real cause. The first
+    # submission of these five runs was lost exactly this way, to
+    # -w wells_so.dat, which is res3000.in's three-well file.
     print(f"\nall {len(made)} decks verified. Submit with, from {IN}:")
     for n, lever, val in made:
+        d = dict(read_deck(IN / f"res{n}.in"))
+        inj = d["injection_file"].strip('"')
+        perm = d["parameter_file"].strip('"')
+        assert (IN / inj).exists() and (IN / inj).stat().st_size > 0, \
+            f"{inj} missing or empty in {IN}"
         print(f"  sbatch march26_submit_hbi_git_scratch.sh -i res{n}.in "
-              f"-w wells_so.dat -p {dict(read_deck(IN / f'res{n}.in'))['parameter_file'].strip(chr(34))}")
+              f"-w {inj} -p {perm}")
 
 
 if __name__ == "__main__":
