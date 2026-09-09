@@ -11,13 +11,18 @@ tau_0, so each panel shows one parameter's whole effect.
 
 FOUR PANELS PER ARM
 
-  (a) front radius vs time. Model fronts are the ds-resolved slip contour at
+  (a) front radius vs time, WITH A DIFFUSIVE SQUARE-ROOT FIT on every curve
+      (dashed, same colour). Model fronts are the ds-resolved slip contour at
       FRONT_THR = 1e-4 m; the observed front is the running maximum of event
-      distance over the full catalogue, monotone by construction.
+      distance over the full catalogue, monotone by construction. D and R^2 are
+      in each legend entry.
 
-  (b) front radius vs cumulative injected volume since t0. Volume rather than
-      time removes the rate steps and the shut-ins, which is what makes the
-      raw r-t curve depart from sqrt(t) even when the physics is diffusive.
+  (b) front radius vs cumulative injected volume since t0, square-root fitted
+      the same way. Volume rather than time removes the rate steps and the
+      shut-ins, which is what makes the raw r-t curve depart from sqrt(t) even
+      when the physics is diffusive -- so R^2 in (b) is the better test of
+      whether the growth is diffusive, and it is consistently higher than in
+      (a) for that reason.
 
   (c) the seismicity itself -- every event after t0 as a dot, with the same
       model fronts over it. This is the panel that says whether a front is
@@ -84,6 +89,34 @@ plt.rcParams.update({"font.size": 10.5, "axes.titlesize": 11.5,
                      "legend.fontsize": 8.5})
 
 
+def sqrt_fit(x, r):
+    """r^2 = b*(x - x_off) by OLS on r^2 against x. Returns (x_off, b, R^2).
+
+    r = sqrt(b*(x - x_off)) is the diffusive square-root law with its origin
+    SHIFTED, and because r^2 is linear in x it is an ordinary least-squares fit
+    whose R^2 is the honest test of whether the law holds at all. Identical to
+    compare_cycle2.sqrt_fit, so the fits on these figures and on the
+    top-5/top-10 figures are the same quantity.
+
+    THE ORIGIN IS NOT FORCED TO ZERO. The textbook form r = sqrt(4 pi D t)
+    requires r(0) = 0, which is wrong here: at sim t = 0 the observed front is
+    already ~420 m and the simulated fronts start from the initial high-k disc
+    edge, both because cycle 1 gave them a head start. Forcing the curve
+    through the origin would absorb that offset into D and bias it. x_off is
+    reported signed and NOT clamped -- every fit here prefers x_off > 0, i.e. a
+    DELAY, because both fronts grow more slowly than sqrt(t) early on.
+    """
+    k = np.isfinite(x) & np.isfinite(r) & (r > 0)
+    x, r = np.asarray(x)[k], np.asarray(r)[k]
+    if len(x) < 5:
+        return np.nan, np.nan, np.nan
+    A = np.vstack([x, np.ones_like(x)]).T
+    (b, c), res, *_ = np.linalg.lstsq(A, r ** 2, rcond=None)
+    ss = np.sum((r ** 2 - np.mean(r ** 2)) ** 2)
+    r2 = float(1 - (res[0] / ss)) if len(res) and ss > 0 else np.nan
+    return float(-c / b) if b else np.nan, float(b), r2
+
+
 def volume_since_t0(obs):
     """(t_sim, cumulative ML) from the injection record, integrated from t0.
 
@@ -122,7 +155,23 @@ def main(argv=None):
         # ---------------------------------------------------------- observed
         art.plot(tcat[kc] - T0, runmax[kc], lw=2.6, color=OBSC,
                  label="observed front (running max)")
+        xo, bo, r2o = sqrt_fit(tcat[kc] - T0, runmax[kc])
+        Do = bo / (4 * np.pi * 86400.0)
+        tf = np.linspace(0.02, TMAX, 300)
+        art.plot(tf, np.sqrt(np.maximum(bo * (tf - xo), 0)), "--", lw=2.0,
+                 color=OBSC, alpha=0.75,
+                 label=r"   $\sqrt{4\pi D(t-t_{off})}$: $D$=" f"{Do:.3f}"
+                       r" m$^2$/s, $t_{off}$=" f"{xo:+.2f} d, "
+                       r"$R^2$=" f"{r2o:.3f}")
         arv.plot(Vobs, runmax[kc], lw=2.6, color=OBSC, label="observed front")
+        xv, bv, r2v = sqrt_fit(Vobs, runmax[kc])
+        vf = np.linspace(0.05, vol.max(), 300)
+        arv.plot(vf, np.sqrt(np.maximum(bv * (vf - xv), 0)), "--", lw=2.0,
+                 color=OBSC, alpha=0.75,
+                 label=r"   $\sqrt{c(V-V_{off})}$: $V_{off}$="
+                       f"{xv:+.1f} ML, " r"$R^2$=" f"{r2v:.3f}")
+        print(f"  observed  R-T: D {Do:.4f} m2/s, t_off {xo:+.2f} d, "
+              f"R2 {r2o:.3f}   R-V: V_off {xv:+.2f} ML, R2 {r2v:.3f}")
         asz.scatter(tcat[kc] - T0, rcat[kc], s=3.0, alpha=0.18, color=MUTED,
                     lw=0, label=f"{int(kc.sum())} events after $t_0$")
         adp.plot(obs["tp"] - T0, obs["pm"] - P_REF, lw=1.2, color=MUTED,
@@ -142,10 +191,27 @@ def main(argv=None):
             Rm = d["R"] * 1000.0                 # run_data returns KILOMETRES
             fr = dpb = dpp = np.nan
             if len(d["T"]) > 2:
-                art.plot(d["T"], Rm, lw=1.9, color=c, label=lab)
+                Vs = np.interp(d["T"], tvol, vol)
+                xt, bt, r2t = sqrt_fit(d["T"], Rm)
+                Dr = bt / (4 * np.pi * 86400.0)
+                xq, bq, r2q = sqrt_fit(Vs, Rm)
+                # fit parameters folded into the run's own legend entry, so
+                # each run costs ONE entry rather than two -- with 5 runs plus
+                # the observed pair a doubled legend covers the curves
+                art.plot(d["T"], Rm, lw=1.9, color=c,
+                         label=lab + f" | $D$={Dr:.3f}, "
+                               r"$t_{off}$=" f"{xt:+.2f} d, "
+                               r"$R^2$=" f"{r2t:.3f}")
+                art.plot(tf, np.sqrt(np.maximum(bt * (tf - xt), 0)), "--",
+                         lw=1.1, color=c, alpha=0.85)
                 asz.plot(d["T"], Rm, lw=1.9, color=c, label=lab)
-                arv.plot(np.interp(d["T"], tvol, vol), Rm, lw=1.9, color=c,
-                         label=lab)
+                arv.plot(Vs, Rm, lw=1.9, color=c,
+                         label=lab + f" | $V_{{off}}$={xq:+.1f} ML, "
+                               r"$R^2$=" f"{r2q:.3f}")
+                arv.plot(vf, np.sqrt(np.maximum(bq * (vf - xq), 0)), "--",
+                         lw=1.1, color=c, alpha=0.85)
+                print(f"    {n}  R-T: D {Dr:.4f}, t_off {xt:+.2f} d, "
+                      f"R2 {r2t:.3f}   R-V: V_off {xq:+.2f} ML, R2 {r2q:.3f}")
                 if d["t_end"] >= 8.7:
                     fr = (float(np.interp(8.7, d["T"], d["R"])) * 1000.0
                           / float(np.interp(8.7 + T0, tcat, runmax)))
