@@ -122,6 +122,18 @@ STAGES = {
                    "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
                    "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
                    "on the fluid at fixed muinit sweep (10 runs)"),
+    23: dict(runs=[632990, 632991, 632992, 632993, 632994],
+             parents={n: 632960 for n in
+                      (632990, 632991, 632992, 632993, 632994)},
+             title="CYCLE 2 Round 2 — break the front/dp trade-off at the "
+                   "MEASURED tau_0 = 10.36 MPa, where the front already matches "
+                   "at 0.97 and dp is +55%. Round 1 showed front and dp respond "
+                   "to tau_0 with OPPOSITE SIGN, coupled through permev "
+                   "(slip -> kp -> injectivity), so both levers here raise "
+                   "near-well injectivity WITHOUT needing slip: skin -0.5/-1.0/"
+                   "-2.0 (Peaceman well-cell only, front should not move) and "
+                   "the initial high-k disc 450/600 m (not clean -- the front "
+                   "will grow) (5 runs)"),
     10: dict(runs=[632900, 632901, 632902],
              parents={n: 632897 for n in (632900, 632901, 632902)},
              title="Stage 10 — muinit raised 0.370 -> 0.385/0.397/0.410 at the "
