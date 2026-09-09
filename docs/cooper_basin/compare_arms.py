@@ -12,10 +12,13 @@ tau_0, so each panel shows one parameter's whole effect.
 FOUR PANELS PER ARM
 
   (a) front radius vs time, WITH A DIFFUSIVE SQUARE-ROOT FIT on every curve
-      (dashed, same colour). Model fronts are the ds-resolved slip contour at
-      FRONT_THR = 1e-4 m; the observed front is the running maximum of event
-      distance over the full catalogue, monotone by construction. D and R^2 are
-      in each legend entry.
+      (dashed, same colour) and the EVENT CLOUD underneath. Model fronts are
+      the ds-resolved slip contour at FRONT_THR = 1e-4 m; the observed front is
+      the running maximum of event distance over the full catalogue, monotone
+      by construction. The dots are there because that running maximum is a
+      summary of them -- without the scatter the observed front reads as a
+      measured curve rather than as the upper envelope of a cloud, which is
+      what it is. D and R^2 are in each legend entry.
 
   (b) front radius vs cumulative injected volume since t0, square-root fitted
       the same way. Volume rather than time removes the rate steps and the
@@ -153,8 +156,16 @@ def main(argv=None):
         (art, arv), (asz, adp) = ax
 
         # ---------------------------------------------------------- observed
+        # The event cloud goes under (a) and (b) as well as (c): the running
+        # maximum is a summary of these dots, and without them the observed
+        # "front" looks like a measured curve rather than the upper envelope of
+        # a scatter. Drawn first, at low alpha, so the fits stay readable.
+        art.scatter(tcat[kc] - T0, rcat[kc], s=2.5, alpha=0.13, color=MUTED,
+                    lw=0, zorder=0)
+        arv.scatter(Vobs, rcat[kc], s=2.5, alpha=0.13, color=MUTED, lw=0,
+                    zorder=0)
         art.plot(tcat[kc] - T0, runmax[kc], lw=2.6, color=OBSC,
-                 label="observed front (running max)")
+                 label=f"observed front (running max of {int(kc.sum())} events)")
         xo, bo, r2o = sqrt_fit(tcat[kc] - T0, runmax[kc])
         Do = bo / (4 * np.pi * 86400.0)
         tf = np.linspace(0.02, TMAX, 300)
