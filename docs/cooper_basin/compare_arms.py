@@ -11,21 +11,30 @@ tau_0, so each panel shows one parameter's whole effect.
 
 FOUR PANELS PER ARM
 
-  (a) front radius vs time, WITH A DIFFUSIVE SQUARE-ROOT FIT on every curve
-      (dashed, same colour) and the EVENT CLOUD underneath. Model fronts are
-      the ds-resolved slip contour at FRONT_THR = 1e-4 m; the observed front is
-      the running maximum of event distance over the full catalogue, monotone
-      by construction. The dots are there because that running maximum is a
-      summary of them -- without the scatter the observed front reads as a
-      measured curve rather than as the upper envelope of a cloud, which is
-      what it is. D and R^2 are in each legend entry.
+  (a) front against time, and (b) front against cumulative injected volume.
+      BOTH USE THE PROJECT'S OWN DEFINITIONS, taken from
+      hbi_analysis/notebooks/cooper_basin_plots-30.cleaned.ipynb rather than
+      reinvented here:
 
-  (b) front radius vs cumulative injected volume since t0, square-root fitted
-      the same way. Volume rather than time removes the rate steps and the
-      shut-ins, which is what makes the raw r-t curve depart from sqrt(t) even
-      when the physics is diffusive -- so R^2 in (b) is the better test of
-      whether the growth is diffusive, and it is consistently higher than in
-      (a) for that reason.
+        observed front   cell 49/51 -- events sorted by time, binned 100 at a
+                         time, keeping those between the 90th and 95th
+                         percentile of each bin's distance, with the initial
+                         cloud radius (median of the first ten) subtracted.
+        model front      cell 50 -- one point per cell, at the first time that
+                         cell's slip exceeds the threshold, plotted against
+                         |x|. This is what run_data already returns.
+        fit              cell 55 -- lambda = sum(sqrt(x) R) / sum(x), least
+                         squares THROUGH THE ORIGIN, which is right because the
+                         cloud radius has already been subtracted.
+
+      Both fronts are SCATTERS of points, so both are drawn as points with one
+      lambda*sqrt line through them. The comparison is the ratio of lambdas,
+      printed and in the legend.
+
+      An earlier version of this figure used a running maximum and a
+      free-offset fit instead. That changed the quantity every number was
+      measured against, and the free offset re-solved a problem the origin
+      subtraction had already solved.
 
   (c) the seismicity itself -- every event after t0 as a dot, with the same
       model fronts over it. This is the panel that says whether a front is
@@ -92,32 +101,55 @@ plt.rcParams.update({"font.size": 10.5, "axes.titlesize": 11.5,
                      "legend.fontsize": 8.5})
 
 
-def sqrt_fit(x, r):
-    """r^2 = b*(x - x_off) by OLS on r^2 against x. Returns (x_off, b, R^2).
+def seismicity_front(t, d, bin_size=100, lower=90, upper=95):
+    """THE PROJECT'S OWN FRONT DEFINITION, not a new one.
 
-    r = sqrt(b*(x - x_off)) is the diffusive square-root law with its origin
-    SHIFTED, and because r^2 is linear in x it is an ordinary least-squares fit
-    whose R^2 is the honest test of whether the law holds at all. Identical to
-    compare_cycle2.sqrt_fit, so the fits on these figures and on the
-    top-5/top-10 figures are the same quantity.
+    Verbatim from calculate_seismicity_front_percentiles in
+    hbi_analysis/notebooks/cooper_basin_plots-30.cleaned.ipynb, cell 49, called
+    at cell 51 with bin_size=100, lower=90, upper=95: sort events by time, take
+    them in bins of 100, and keep those whose distance lies between the 90th
+    and 95th percentile OF THAT BIN. The kept (t, d) pairs ARE the front. It is
+    a scatter, not a curve.
 
-    THE ORIGIN IS NOT FORCED TO ZERO. The textbook form r = sqrt(4 pi D t)
-    requires r(0) = 0, which is wrong here: at sim t = 0 the observed front is
-    already ~420 m and the simulated fronts start from the initial high-k disc
-    edge, both because cycle 1 gave them a head start. Forcing the curve
-    through the origin would absorb that offset into D and bias it. x_off is
-    reported signed and NOT clamped -- every fit here prefers x_off > 0, i.e. a
-    DELAY, because both fronts grow more slowly than sqrt(t) early on.
+    An earlier version of this figure replaced it with a running maximum on the
+    grounds that a percentile front can retreat. That was solving a problem the
+    definition does not have -- the front is a cloud of points to be fitted, so
+    a non-monotone sequence of points is not a defect -- and it silently
+    changed the quantity every number was measured against.
     """
-    k = np.isfinite(x) & np.isfinite(r) & (r > 0)
-    x, r = np.asarray(x)[k], np.asarray(r)[k]
-    if len(x) < 5:
-        return np.nan, np.nan, np.nan
-    A = np.vstack([x, np.ones_like(x)]).T
-    (b, c), res, *_ = np.linalg.lstsq(A, r ** 2, rcond=None)
-    ss = np.sum((r ** 2 - np.mean(r ** 2)) ** 2)
-    r2 = float(1 - (res[0] / ss)) if len(res) and ss > 0 else np.nan
-    return float(-c / b) if b else np.nan, float(b), r2
+    o = np.argsort(t)
+    t, d = np.asarray(t)[o], np.asarray(d)[o]
+    ft, fd = [], []
+    for i in range(0, len(t), bin_size):
+        bt, bd = t[i:i + bin_size], d[i:i + bin_size]
+        if not len(bt):
+            continue
+        lo, hi = np.percentile(bd, lower), np.percentile(bd, upper)
+        m = (bd >= lo) & (bd <= hi)
+        ft.extend(bt[m]); fd.extend(bd[m])
+    return np.array(ft), np.array(fd)
+
+
+def lam(x, R):
+    """lambda in R = lambda*sqrt(x), least squares THROUGH THE ORIGIN.
+
+    fit_sqrt_front from the same notebook, cell 55:
+    lambda = sum(sqrt(x)*R) / sum(x).
+
+    Through the origin is correct here and I had misread why. The observed
+    front distances have origin_distance_km subtracted first -- the median of
+    the first ten event distances -- so the initial cloud radius is already
+    removed and R(0) = 0 is the right constraint, not an approximation. Fitting
+    a free offset instead, as an earlier version did, re-solves a problem the
+    subtraction has already solved and makes lambda incomparable with every
+    lambda in the notebooks.
+    """
+    x, R = np.asarray(x, float), np.asarray(R, float)
+    k = np.isfinite(x) & np.isfinite(R) & (x > 0)
+    if k.sum() < 3:
+        return np.nan
+    b = np.sqrt(x[k])
+    return float(np.sum(b * R[k]) / np.sum(b ** 2))
 
 
 def volume_since_t0(obs):
@@ -141,7 +173,6 @@ def main(argv=None):
 
     obs = sf.observed()
     tcat, rcat, _ = fb.catalogue()
-    runmax = np.maximum.accumulate(rcat)
     kc = (tcat - T0) > 0
     tvol, vol = volume_since_t0(obs)
     Vobs = np.interp(tcat[kc] - T0, tvol, vol)
@@ -156,34 +187,30 @@ def main(argv=None):
         (art, arv), (asz, adp) = ax
 
         # ---------------------------------------------------------- observed
-        # The event cloud goes under (a) and (b) as well as (c): the running
-        # maximum is a summary of these dots, and without them the observed
-        # "front" looks like a measured curve rather than the upper envelope of
-        # a scatter. Drawn first, at low alpha, so the fits stay readable.
-        art.scatter(tcat[kc] - T0, rcat[kc], s=2.5, alpha=0.13, color=MUTED,
-                    lw=0, zorder=0)
-        arv.scatter(Vobs, rcat[kc], s=2.5, alpha=0.13, color=MUTED, lw=0,
-                    zorder=0)
-        art.plot(tcat[kc] - T0, runmax[kc], lw=2.6, color=OBSC,
-                 label=f"observed front (running max of {int(kc.sum())} events)")
-        xo, bo, r2o = sqrt_fit(tcat[kc] - T0, runmax[kc])
-        Do = bo / (4 * np.pi * 86400.0)
-        tf = np.linspace(0.02, TMAX, 300)
-        art.plot(tf, np.sqrt(np.maximum(bo * (tf - xo), 0)), "--", lw=2.0,
-                 color=OBSC, alpha=0.75,
-                 label=f"   sqrt-t fit:  D = {Do:.3f} m$^2$/s,  "
-                       f"starts {xo:.1f} d late,  fit quality {r2o:.2f}")
-        arv.plot(Vobs, runmax[kc], lw=2.6, color=OBSC, label="observed front")
-        xv, bv, r2v = sqrt_fit(Vobs, runmax[kc])
-        vf = np.linspace(0.05, vol.max(), 300)
-        arv.plot(vf, np.sqrt(np.maximum(bv * (vf - xv), 0)), "--", lw=2.0,
-                 color=OBSC, alpha=0.75,
-                 label=f"   sqrt-volume fit:  starts {xv:.1f} ML late,  "
-                       f"fit quality {r2v:.2f}")
-        print(f"  observed  R-T: D {Do:.4f} m2/s, t_off {xo:+.2f} d, "
-              f"R2 {r2o:.3f}   R-V: V_off {xv:+.2f} ML, R2 {r2v:.3f}")
-        asz.scatter(tcat[kc] - T0, rcat[kc], s=3.0, alpha=0.18, color=MUTED,
-                    lw=0, label=f"{int(kc.sum())} events after $t_0$")
+        # The front is the project's own percentile definition, on the shifted
+        # clock, with the initial cloud radius subtracted exactly as cell 51
+        # does: origin = median of the first ten event distances. Plotted as
+        # the SCATTER it is, with one lambda*sqrt(t) line through it.
+        te, re_ = tcat[kc] - T0, rcat[kc]
+        org = float(np.median(re_[np.argsort(te)][:10]))
+        ft, fd = seismicity_front(te, re_ - org)
+        Lo = lam(ft, fd)
+        tf = np.linspace(0.0, TMAX, 300)
+        art.scatter(ft, fd + org, s=13, color=OBSC, alpha=0.75, lw=0,
+                    label=f"observed seismicity front ({len(ft)} points)")
+        art.plot(tf, Lo * np.sqrt(tf) + org, "-", lw=2.4, color=OBSC,
+                 label=f"   $\\lambda$ = {Lo:.1f} m/$\\sqrt{{d}}$")
+        Vf = np.interp(ft, tvol, vol)
+        LoV = lam(Vf, fd)
+        vf = np.linspace(0.0, vol.max(), 300)
+        arv.scatter(Vf, fd + org, s=13, color=OBSC, alpha=0.75, lw=0,
+                    label="observed seismicity front")
+        arv.plot(vf, LoV * np.sqrt(vf) + org, "-", lw=2.4, color=OBSC,
+                 label=f"   $\\lambda_V$ = {LoV:.1f} m/$\\sqrt{{ML}}$")
+        print(f"  observed front: {len(ft)} points, org {org:.0f} m, "
+              f"lambda {Lo:.2f} m/sqrt(d), lambda_V {LoV:.2f} m/sqrt(ML)")
+        asz.scatter(te, re_, s=3.0, alpha=0.18, color=MUTED, lw=0,
+                    label=f"{int(kc.sum())} events after $t_0$")
         adp.plot(obs["tp"] - T0, obs["pm"] - P_REF, lw=1.2, color=MUTED,
                  alpha=0.85, label=r"measured $\Delta p$")
 
@@ -201,39 +228,28 @@ def main(argv=None):
             Rm = d["R"] * 1000.0                 # run_data returns KILOMETRES
             fr = dpb = dpp = np.nan
             if len(d["T"]) > 2:
-                # SORT BY T. run_data returns (T, R) indexed by cell, with
-                # R = |x[i]|, so the raw arrays trace out and back and the
-                # drawn line is two overlapping branches. Ordering matters for
-                # np.interp too -- see score_cycle2.front_at, where the same
-                # unsorted input made every front ratio the run's FINAL front
-                # rather than the front at the scoring time.
+                # SORT BY T -- run_data returns (T, R) indexed by cell, with
+                # R = |x[i]|, so the raw arrays trace out and back. Ordering
+                # also matters for np.interp; see score_cycle2.front_at.
                 _o = np.argsort(d["T"])
-                d = dict(d, T=np.asarray(d["T"])[_o],
-                         R=np.asarray(d["R"])[_o])
-                Rm = d["R"] * 1000.0
-                Vs = np.interp(d["T"], tvol, vol)
-                xt, bt, r2t = sqrt_fit(d["T"], Rm)
-                Dr = bt / (4 * np.pi * 86400.0)
-                xq, bq, r2q = sqrt_fit(Vs, Rm)
-                # fit parameters folded into the run's own legend entry, so
-                # each run costs ONE entry rather than two -- with 5 runs plus
-                # the observed pair a doubled legend covers the curves
-                art.plot(d["T"], Rm, lw=1.9, color=c,
-                         label=lab + f"   |   D = {Dr:.3f} m$^2$/s,  "
-                               f"{xt:.1f} d late,  fit {r2t:.2f}")
-                art.plot(tf, np.sqrt(np.maximum(bt * (tf - xt), 0)), "--",
-                         lw=1.1, color=c, alpha=0.85)
-                asz.plot(d["T"], Rm, lw=1.9, color=c, label=lab)
-                arv.plot(Vs, Rm, lw=1.9, color=c,
-                         label=lab + f"   |   {xq:.1f} ML late,  "
-                               f"fit {r2q:.2f}")
-                arv.plot(vf, np.sqrt(np.maximum(bq * (vf - xq), 0)), "--",
-                         lw=1.1, color=c, alpha=0.85)
-                print(f"    {n}  R-T: D {Dr:.4f}, t_off {xt:+.2f} d, "
-                      f"R2 {r2t:.3f}   R-V: V_off {xq:+.2f} ML, R2 {r2q:.3f}")
-                if d["t_end"] >= 8.7:
-                    fr = (float(np.interp(8.7, d["T"], d["R"])) * 1000.0
-                          / float(np.interp(8.7 + T0, tcat, runmax)))
+                Tm, Rm = np.asarray(d["T"])[_o], np.asarray(d["R"])[_o] * 1000.0
+                Vs = np.interp(Tm, tvol, vol)
+                # The model slip front is the same kind of object as the
+                # observed one -- one (first-exceedance time, |x|) point per
+                # cell, calculate_slip_front in the notebook's cell 50 -- so it
+                # is plotted the same way, as points with one lambda*sqrt line.
+                Lr, LrV = lam(Tm, Rm), lam(Vs, Rm)
+                art.scatter(Tm, Rm, s=9, color=c, alpha=0.7, lw=0,
+                            label=lab + f"   |   $\\lambda$ = {Lr:.1f}"
+                                  f"  ({Lr/Lo:.2f}$\\times$ observed)")
+                art.plot(tf, Lr * np.sqrt(tf), "-", lw=1.4, color=c, alpha=0.9)
+                arv.scatter(Vs, Rm, s=9, color=c, alpha=0.7, lw=0,
+                            label=lab + f"   |   $\\lambda_V$ = {LrV:.1f}"
+                                  f"  ({LrV/LoV:.2f}$\\times$)")
+                arv.plot(vf, LrV * np.sqrt(vf), "-", lw=1.4, color=c, alpha=0.9)
+                asz.plot(Tm, Rm, lw=1.9, color=c, label=lab)
+                print(f"    {n}  lambda {Lr:7.2f} ({Lr/Lo:.2f}x obs)   "
+                      f"lambda_V {LrV:7.2f} ({LrV/LoV:.2f}x)")
             else:
                 # arm 3's lowest tau_0 never slips, so it has no front at all;
                 # say so on the figure rather than leaving a silent gap
