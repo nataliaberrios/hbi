@@ -10,7 +10,9 @@ regenerated or checked. This is the reproducible version.
 THREE TARGETS, each evaluated on the shifted clock where sim t = 0 is data-day
 4.300:
 
-  front     R_sim / R_obs at T_EVAL. R_obs is the RUNNING MAXIMUM of event
+  front     R_sim / R_obs at T_EVAL, via front_at() -- NOT np.interp on
+            run_data's raw output, which is unsorted in T and returns the final
+            front for any time asked. See front_at's docstring. R_obs is the RUNNING MAXIMUM of event
             distance over the full 20 735-event catalogue, monotone by
             construction. A per-bin percentile is not a front and retreats four
             times on this catalogue. No sqrt(t) fit is involved: the ratio is
@@ -123,6 +125,39 @@ def observed_slip_increment(t_eval):
             - float(np.interp(T0, OT, peak)))
 
 
+def front_at(d, t_eval):
+    """Model front radius in METRES at t_eval, or NaN if it has not arrived.
+
+    THIS EXISTS BECAUSE np.interp ON run_data's OUTPUT IS WRONG. run_data
+    returns its (T, R) pairs indexed by CELL i, with R = |x[i]| -- which falls
+    to zero at the injector and rises again on the far side -- and T the first
+    time that cell exceeded the slip threshold. So T IS NOT SORTED, and
+    np.interp requires sorted x. Given that V-shaped input it silently returns
+    a value near the array endpoint, i.e. the MAXIMUM front reached by t_end,
+    for any t_eval whatsoever.
+
+    Measured on 632960: the unsorted call returns 831 m at t_eval = 8.7 d,
+    which is the 13.1 d front; sorting first gives 594 m. Every front number
+    quoted for cycle 2 before this fix was the run's final front, not the front
+    at the scoring time, and was therefore too large by 30-40%.
+
+    Two guards, both needed:
+      - sort by T before interpolating;
+      - return NaN when t_eval precedes the first exceedance, instead of
+        clamping to R[0]. 632994 never slips past the threshold until 8.98 d,
+        and clamping reported it as an 811 m front at 8.7 d while its peak slip
+        was 34 microns.
+    """
+    T, R = np.asarray(d["T"], float), np.asarray(d["R"], float) * 1000.0
+    if len(T) < 2:
+        return np.nan
+    o = np.argsort(T)
+    T, R = T[o], R[o]
+    if t_eval < T[0] or t_eval > d["t_end"]:
+        return np.nan
+    return float(np.interp(t_eval, T, R))
+
+
 def score(n, obs, t_eval):
     """One run. Returns a dict, or None if it produced no usable output."""
     dk = sf.deck(n)
@@ -133,9 +168,9 @@ def score(n, obs, t_eval):
              tau0=_ff(dk["muinit"]) * _ff(dk["sigmainit"]))
 
     # --- front. run_data returns R in KILOMETRES; the observed front is metres.
-    if d["t_end"] >= t_eval and len(d["T"]) > 2:
-        rs = float(np.interp(t_eval, d["T"], d["R"])) * 1000.0
-        ro = observed_front(t_eval)
+    rs = front_at(d, t_eval)
+    ro = observed_front(t_eval)
+    if np.isfinite(rs):
         r.update(R_sim=rs, R_obs=ro, front=rs / ro if ro > 0 else np.nan)
 
     # --- wellhead, flowing mask only, on the shifted observed series

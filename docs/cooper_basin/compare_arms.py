@@ -202,6 +202,16 @@ def main(argv=None):
             Rm = d["R"] * 1000.0                 # run_data returns KILOMETRES
             fr = dpb = dpp = np.nan
             if len(d["T"]) > 2:
+                # SORT BY T. run_data returns (T, R) indexed by cell, with
+                # R = |x[i]|, so the raw arrays trace out and back and the
+                # drawn line is two overlapping branches. Ordering matters for
+                # np.interp too -- see score_cycle2.front_at, where the same
+                # unsorted input made every front ratio the run's FINAL front
+                # rather than the front at the scoring time.
+                _o = np.argsort(d["T"])
+                d = dict(d, T=np.asarray(d["T"])[_o],
+                         R=np.asarray(d["R"])[_o])
+                Rm = d["R"] * 1000.0
                 Vs = np.interp(d["T"], tvol, vol)
                 xt, bt, r2t = sqrt_fit(d["T"], Rm)
                 Dr = bt / (4 * np.pi * 86400.0)
