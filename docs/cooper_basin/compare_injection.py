@@ -141,43 +141,58 @@ def main(argv=None):
           f"{td[np.max(np.where(qd > 0))]:.3f} d; last point ({td[-1]:.2f} d, "
           f"{qd[-1]:.1f} L/s) is padding")
 
-    fig, ax = plt.subplots(3, 1, figsize=(12.0, 10.5), dpi=200, sharex=True,
-                           gridspec_kw=dict(height_ratios=[1.5, 1.2, 1.0],
-                                            hspace=0.30))
+    # THREE PANELS, ONE QUESTION EACH, and no twin axes. The previous version
+    # put the volume DIFFERENCE on a twin axis inside the volume panel, where a
+    # red curve crossed two overlapping curves and read as a third dataset in
+    # the same space; and it gave a whole panel to the rate residual, which is
+    # a field of spikes at rate steps and looks like noise rather than a
+    # result. The difference now gets its own panel, in PERCENT, which is the
+    # number anyone actually wants.
+    fig, ax = plt.subplots(3, 1, figsize=(12.0, 10.0), dpi=200, sharex=True,
+                           gridspec_kw=dict(height_ratios=[1.5, 1.1, 1.1],
+                                            hspace=0.28))
     aq, av, ar = ax
+    SCORE_T = 8.7
 
-    aq.plot(to, qo, lw=1.4, color=MEAS, alpha=0.9,
-            label=f"measured, {len(to)} samples")
-    aq.plot(td, qd, lw=1.6, color=DECK, ls="-",
-            label=f"deck {DECK_Q}, {len(td)} points")
-    aq.plot(td, qd, "o", ms=2.6, color=DECK, alpha=0.65, lw=0)
+    # (a) the measured record raw and pale, the deck bold over it. The grey
+    # hash is the record's own momentary dropouts, ~1.1 M samples of it; the
+    # point of the panel is that the blue line follows the BODY of the grey.
+    aq.plot(to, qo, lw=1.0, color=MEAS, alpha=0.40,
+            label=f"measured, {len(to):,} samples".replace(",", " "))
+    aq.plot(td, qd, lw=2.0, color=DECK,
+            label=f"deck file, {len(td)} points")
     aq.set(ylabel="Injection rate (L/s)", ylim=(0, 55))
-    aq.set_title("(a)  Rate — does the 285-point file follow the record")
-    aq.legend(loc="lower center", framealpha=0.93)
+    aq.set_title("(a)  Injection rate")
+    aq.legend(loc="lower center", framealpha=0.95, ncol=2)
 
-    av.plot(to, Vo, lw=2.2, color=MEAS, label="measured")
-    av.plot(td, Vd, lw=1.4, color=DECK, ls="--", label="deck")
+    # (b) the integral. The two curves lying on top of each other IS the
+    # result, so nothing is added to make them look different.
+    av.plot(to, Vo, lw=3.0, color=MEAS, alpha=0.55, label="measured")
+    av.plot(td, Vd, lw=1.5, color=DECK, label="deck file")
     av.set(ylabel="Cumulative volume (ML)")
-    av.set_title(f"(b)  Cumulative volume — the integral that drives the "
-                 f"pressure field  ({100*(vd-vo)/vo:+.4f}% at {hi:.2f} d)")
-    av.legend(loc="upper left", framealpha=0.93)
-    # The two volume curves are indistinguishable at this scale, which is the
-    # result -- so the DIFFERENCE goes on a twin axis, otherwise the panel
-    # shows agreement without showing how much or where it accrues.
-    av2 = av.twinx()
-    Vdg = np.interp(gr, td, Vd) - np.interp(gr, to, Vo)
-    av2.plot(gr, Vdg * 1000.0, lw=1.3, color="#a8071a")
-    av2.axhline(0, color="#a8071a", lw=0.8, alpha=0.4)
-    av2.set_ylabel("deck − measured (kL)", color="#a8071a")
-    av2.tick_params(axis="y", color="#a8071a", labelcolor="#a8071a")
-    av2.spines["right"].set_color("#a8071a")
-    av2.spines["top"].set_visible(False)
+    av.set_title("(b)  Cumulative volume — the quantity that drives the "
+                 "pressure field")
+    av.legend(loc="upper left", framealpha=0.95)
 
+    # (c) how wrong, as a percentage of the measured volume to that time.
+    pct = 100.0 * (np.interp(gr, td, Vd) - np.interp(gr, to, Vo)) \
+        / np.maximum(np.interp(gr, to, Vo), 1e-9)
     ar.axhline(0, color=MUTED, lw=1.0)
-    ar.plot(gr, res, lw=1.0, color=DECK)
+    ar.plot(gr, pct, lw=1.8, color="#a8071a")
+    ar.axvline(SCORE_T, color=INK, lw=1.4, ls="--")
+    p_at = float(np.interp(SCORE_T, gr, pct))
+    ar.annotate(f"scored here: {p_at:+.2f}%",
+                xy=(SCORE_T, p_at), xytext=(SCORE_T - 0.4, 1.05),
+                ha="right", fontsize=10, color=INK,
+                arrowprops=dict(arrowstyle="-|>", color=INK, lw=1.2))
+    ar.annotate("shut-in tail:\ndeck ramps down over 2.4 h,\nrecord stops "
+                "abruptly", xy=(12.87, pct[-1]), xytext=(11.6, 0.30),
+                ha="right", fontsize=9.5, color="#a8071a", linespacing=1.35,
+                arrowprops=dict(arrowstyle="-|>", color="#a8071a", lw=1.1))
     ar.set(xlabel="Days since injection resumed (data-day 4.300)",
-           ylabel="Deck − measured (L/s)", xlim=(0, hi))
-    ar.set_title("(c)  Rate residual — where the disagreement sits")
+           ylabel="Volume error (%)", xlim=(0, hi), ylim=(-0.35, 1.25))
+    ar.set_title("(c)  Volume error — deck relative to measured, "
+                 "cumulative to each time")
 
     OUT.mkdir(parents=True, exist_ok=True)
     for e in ("png", "pdf"):
