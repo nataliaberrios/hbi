@@ -160,7 +160,7 @@ def main(argv=None):
     aq.plot(to, qo, lw=1.0, color=MEAS, alpha=0.40,
             label=f"measured, {len(to):,} samples".replace(",", " "))
     aq.plot(td, qd, lw=2.0, color=DECK,
-            label=f"deck file, {len(td)} points")
+            label=f"{DECK_Q}, {len(td)} points")
     aq.set(ylabel="Injection rate (L/s)", ylim=(0, 55))
     aq.set_title("(a)  Injection rate")
     aq.legend(loc="lower center", framealpha=0.95, ncol=2)
@@ -168,10 +168,9 @@ def main(argv=None):
     # (b) the integral. The two curves lying on top of each other IS the
     # result, so nothing is added to make them look different.
     av.plot(to, Vo, lw=3.0, color=MEAS, alpha=0.55, label="measured")
-    av.plot(td, Vd, lw=1.5, color=DECK, label="deck file")
+    av.plot(td, Vd, lw=1.5, color=DECK, label=DECK_Q)
     av.set(ylabel="Cumulative volume (ML)")
-    av.set_title("(b)  Cumulative volume — the quantity that drives the "
-                 "pressure field")
+    av.set_title("(b)  Cumulative volume")
     av.legend(loc="upper left", framealpha=0.95)
 
     # (c) how wrong, as a percentage of the measured volume to that time.
@@ -180,19 +179,13 @@ def main(argv=None):
     ar.axhline(0, color=MUTED, lw=1.0)
     ar.plot(gr, pct, lw=1.8, color="#a8071a")
     ar.axvline(SCORE_T, color=INK, lw=1.4, ls="--")
+    # NO IN-PANEL TEXT. The dashed vertical marks the scoring time; what it
+    # is worth there, and what the step at 12.85 d is, are printed by main()
+    # and belong in whatever the figure is placed into.
     p_at = float(np.interp(SCORE_T, gr, pct))
-    ar.annotate(f"scored here: {p_at:+.2f}%",
-                xy=(SCORE_T, p_at), xytext=(SCORE_T - 0.4, 1.05),
-                ha="right", fontsize=10, color=INK,
-                arrowprops=dict(arrowstyle="-|>", color=INK, lw=1.2))
-    ar.annotate("shut-in tail:\ndeck ramps down over 2.4 h,\nrecord stops "
-                "abruptly", xy=(12.87, pct[-1]), xytext=(11.6, 0.30),
-                ha="right", fontsize=9.5, color="#a8071a", linespacing=1.35,
-                arrowprops=dict(arrowstyle="-|>", color="#a8071a", lw=1.1))
     ar.set(xlabel="Days since injection resumed (data-day 4.300)",
            ylabel="Volume error (%)", xlim=(0, hi), ylim=(-0.35, 1.25))
-    ar.set_title("(c)  Volume error — deck relative to measured, "
-                 "cumulative to each time")
+    ar.set_title("(c)  Volume error, file relative to measured")
 
     OUT.mkdir(parents=True, exist_ok=True)
     for e in ("png", "pdf"):
