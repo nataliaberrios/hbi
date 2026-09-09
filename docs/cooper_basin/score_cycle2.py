@@ -16,14 +16,40 @@ THREE TARGETS, each evaluated on the shifted clock where sim t = 0 is data-day
             times on this catalogue. No sqrt(t) fit is involved: the ratio is
             read at matched times, because neither front starts at the origin.
 
-  wellhead  mean(p_sim - p_obs) in MPa and as a percentage of the observed
-            mean, over FLOWING intervals only, reusing sf.pressure_score's mask
-            (q > 25% of peak AND p_obs > 5 MPa) so this number is comparable to
-            every score in the earlier 86-run study. During shut-ins the gauge
-            reads atmospheric -- it falls to -0.2 MPa absolute, 35 MPa below its
-            starting value, within 26 minutes of the first shut-in -- so
-            unmasked intervals would be scoring the model against a vented
+  wellhead  THE PRESSURE CHANGE, decomposed so it cannot be confused with the
+            absolute pressure. Over FLOWING intervals only, reusing
+            sf.pressure_score's mask (q > 25% of peak AND p_obs > 5 MPa) so the
+            interval selection stays comparable to the earlier 86-run study.
+            The mask is not optional: within 26 minutes of the first shut-in
+            the gauge falls to -0.2 MPa absolute, 35 MPa below its starting
+            value, so unmasked intervals score the model against a vented
             wellhead rather than against the reservoir.
+
+            THREE BASELINES EXIST AND MIXING THEM IS THE TRAP:
+
+                33.805  the MODEL's static wellhead, P0 - rho g H with
+                        P0 = 73.8 MPa, rho = 1000, H = 4077 m
+                        (make_sweep_figures.py:55, applied in run_data)
+                34.412  the observed record's first sample -- Wang & Dunham's
+                        reference, and what the slide figure uses
+                33.970  the observed pre-injection median over t < 0.501 d
+
+            sf.pressure_score returns mean(p_sim - p_obs), which is the SUM of
+            a static mismatch (33.805 - P_REF = -0.607 MPa, identical in every
+            run, not a model error) and the dp error. Quoting that total and
+            then dividing it by dp measured from 34.412 mixes the model's
+            baseline with the observed one and UNDERSTATES the dp error by
+            0.607 MPa -- about 8 percentage points, enough to move the
+            best-fitting tau_0 from 13.86 to 13.3. Both parts are printed
+            separately, and an assert checks they sum to the total.
+
+            SCORING ABSOLUTE PRESSURE IS NOT DEFENSIBLE ANYWAY. The 33.805
+            assumes 4077 m of pure water. At 1050 kg/m3 it is 31.8 MPa, at 950
+            it is 35.8 -- a +-2 MPa baseline uncertainty from the column
+            density alone, against a mean observed dp of 7.9 MPa. Absolute
+            agreement inside 2 MPa is therefore unfalsifiable. dp is the
+            target; the absolute total is printed only for continuity with the
+            older scores.
 
   slip      slip_sim / (obs(t + 4.300) - obs(4.300)) at T_EVAL. The
             SUBTRACTION IS REQUIRED, not a convenience: main_LH.f90:923 sets
@@ -63,6 +89,8 @@ _f = iu.spec_from_file_location(
 fb = iu.module_from_spec(_f); _f.loader.exec_module(fb)
 
 T0 = 4.300                                  # sim t = 0, in data-days
+P_STATIC = sf.P0 - sf.RHO * sf.G * sf.HW / 1e6      # 33.805 MPa, the model's
+P_REF = 34.412                              # observed first sample; see docstring
 T_EVAL = 8.7                                # sim time at which to score
 OBS_SLIP = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
 OT = [3, 5, 7, 9, 11, 13, 15, 17]           # data-days of the slip profiles
@@ -116,15 +144,24 @@ def score(n, obs, t_eval):
         sh["tp"] = obs["tp"] - T0
         sh["ti"] = obs["ti"] - T0
         bias, rms = sf.pressure_score(sh, d["tpw"], d["ppw"], t_eval)
-        # the same mask again, to express the bias as a percentage
         hi = min(d["tpw"][-1], sh["tp"].max(), t_eval)
         if hi > 0.2 and np.isfinite(bias):
             gr = np.linspace(0.05, hi, 2000)
+            ps = np.interp(gr, d["tpw"], d["ppw"])
             ob = np.interp(gr, sh["tp"], sh["pm"])
             qg = np.interp(gr, sh["ti"], sh["q"])
             fl = (qg > 0.25 * np.nanmax(obs["q"])) & (ob > 5.0)
-            r.update(p_bias=bias, p_rms=rms,
-                     p_pct=100.0 * bias / float(np.mean(ob[fl])))
+            # decomposed: total = static mismatch + dp error, and the static
+            # part is a fixed offset that no model parameter can address
+            dp_sim = float(np.mean(ps[fl])) - P_STATIC
+            dp_obs = float(np.mean(ob[fl])) - P_REF
+            r.update(p_total=bias, p_rms=rms,
+                     p_static=P_STATIC - P_REF,
+                     p_bias=dp_sim - dp_obs,
+                     p_pct=100.0 * (dp_sim - dp_obs) / dp_obs,
+                     dp_obs=dp_obs)
+            assert abs(bias - (r["p_static"] + r["p_bias"])) < 1e-6, \
+                "decomposition does not sum to pressure_score's total"
 
     # --- slip at the injector, against the increment since t0
     try:
@@ -144,6 +181,7 @@ def _row(r):
     return (f"  {r['n']}  {r['arm']}   {r['tau0']:5.2f}  "
             f"{g('front', '6.2f')}  {g('R_sim', '7.0f')}  "
             f"{g('p_pct', '+7.1f')}  {g('p_bias', '+7.2f')}  "
+            f"{g('p_total', '+7.2f')}  "
             f"{g('slip', '6.2f')}  {g('slip_sim', '7.2f')}   {r['t_end']:5.1f}")
 
 
@@ -161,8 +199,12 @@ def main(argv=None):
     print(f"scored at sim t = {a.at:.2f} d (data-day {a.at + T0:.2f})")
     print(f"  observed front {ro:.0f} m, observed slip increment {so:.3f} cm "
           f"(absolute {so + np.interp(T0, OT, [np.loadtxt(OBS_SLIP)[:, 1+i].max() for i in range(8)]):.3f} cm)")
-    print(f"\n     run arm  tau_0   front   R_sim   wellhd    bias    slip  "
-          f"slip_cm   t_end")
+    print(f"  wellhead: model static {P_STATIC:.3f} MPa vs observed reference "
+          f"{P_REF:.3f}, a fixed {P_STATIC - P_REF:+.3f} MPa offset in EVERY run.")
+    print(f"  'dp%' is the pressure-CHANGE error with that offset removed; "
+          f"'total' is sf.pressure_score's raw number.")
+    print(f"\n     run arm  tau_0   front   R_sim      dp%   dp MPa   total  "
+          f"  slip  slip_cm   t_end")
     rows = []
     for n in a.jobs:
         r = score(n, obs, a.at)
