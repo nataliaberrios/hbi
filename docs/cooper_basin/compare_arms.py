@@ -171,16 +171,15 @@ def main(argv=None):
         tf = np.linspace(0.02, TMAX, 300)
         art.plot(tf, np.sqrt(np.maximum(bo * (tf - xo), 0)), "--", lw=2.0,
                  color=OBSC, alpha=0.75,
-                 label=r"   $\sqrt{4\pi D(t-t_{off})}$: $D$=" f"{Do:.3f}"
-                       r" m$^2$/s, $t_{off}$=" f"{xo:+.2f} d, "
-                       r"$R^2$=" f"{r2o:.3f}")
+                 label=f"   sqrt-t fit:  D = {Do:.3f} m$^2$/s,  "
+                       f"starts {xo:.1f} d late,  fit quality {r2o:.2f}")
         arv.plot(Vobs, runmax[kc], lw=2.6, color=OBSC, label="observed front")
         xv, bv, r2v = sqrt_fit(Vobs, runmax[kc])
         vf = np.linspace(0.05, vol.max(), 300)
         arv.plot(vf, np.sqrt(np.maximum(bv * (vf - xv), 0)), "--", lw=2.0,
                  color=OBSC, alpha=0.75,
-                 label=r"   $\sqrt{c(V-V_{off})}$: $V_{off}$="
-                       f"{xv:+.1f} ML, " r"$R^2$=" f"{r2v:.3f}")
+                 label=f"   sqrt-volume fit:  starts {xv:.1f} ML late,  "
+                       f"fit quality {r2v:.2f}")
         print(f"  observed  R-T: D {Do:.4f} m2/s, t_off {xo:+.2f} d, "
               f"R2 {r2o:.3f}   R-V: V_off {xv:+.2f} ML, R2 {r2v:.3f}")
         asz.scatter(tcat[kc] - T0, rcat[kc], s=3.0, alpha=0.18, color=MUTED,
@@ -220,15 +219,14 @@ def main(argv=None):
                 # each run costs ONE entry rather than two -- with 5 runs plus
                 # the observed pair a doubled legend covers the curves
                 art.plot(d["T"], Rm, lw=1.9, color=c,
-                         label=lab + f" | $D$={Dr:.3f}, "
-                               r"$t_{off}$=" f"{xt:+.2f} d, "
-                               r"$R^2$=" f"{r2t:.3f}")
+                         label=lab + f"   |   D = {Dr:.3f} m$^2$/s,  "
+                               f"{xt:.1f} d late,  fit {r2t:.2f}")
                 art.plot(tf, np.sqrt(np.maximum(bt * (tf - xt), 0)), "--",
                          lw=1.1, color=c, alpha=0.85)
                 asz.plot(d["T"], Rm, lw=1.9, color=c, label=lab)
                 arv.plot(Vs, Rm, lw=1.9, color=c,
-                         label=lab + f" | $V_{{off}}$={xq:+.1f} ML, "
-                               r"$R^2$=" f"{r2q:.3f}")
+                         label=lab + f"   |   {xq:.1f} ML late,  "
+                               f"fit {r2q:.2f}")
                 arv.plot(vf, np.sqrt(np.maximum(bq * (vf - xq), 0)), "--",
                          lw=1.1, color=c, alpha=0.85)
                 print(f"    {n}  R-T: D {Dr:.4f}, t_off {xt:+.2f} d, "
