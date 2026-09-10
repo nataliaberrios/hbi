@@ -97,7 +97,34 @@ P_STATIC = sf.P0 - sf.RHO * sf.G * sf.HW / 1e6      # 33.805 MPa
 # double-count it.
 #
 # Computed from the record rather than hard-coded, so it cannot drift.
-P_REF = None                                # set in main(), from the record
+# THE DATUM IS THE INITIAL FAULT PRESSURE FROM HOLL & BARTON (2015).
+#
+#     Pp   = 72.70 MPa at 4100 mSS      (fault median depth)
+#     rho g z                            = 40.221 MPa hydrostatic
+#     overpressure                       = 32.479 MPa
+#
+# Recorded in docs/figs/cooper_grid/CONCLUSIONS.md:1001-1002. Expressed at the
+# wellhead, where the data lives, the datum is 72.70 - 40.221 = 32.479 MPa.
+#
+# NOT 73.82. That value comes from taiyi-wang-seis3D/source_code/setup_model.m:112
+# and is 1.12 MPa above what Holl reports; it was used here until the datum was
+# derived properly. NOT 34.412 either -- the record's first sample is a wellhead
+# pressure that happens to lie near the datum, not the datum itself.
+#
+# Referencing the measured dp to this raises the observed curve by 1.93 MPa at
+# sim t = 0, falling to 1.30 MPa by 10 d because the pipe-friction term grows
+# with q^2. The mean observed dp over the flowing window to 8.7 d goes from
+# 7.886 to 9.611 MPa.
+#
+# CONSEQUENCE WORTH SEEING: dp at sim t = 0 is +0.795 MPa, i.e. the fault sits
+# ABOVE virgin pressure when injection resumes even though the well had been
+# vented. That is cycle 1's residual formation overpressure, and it is why this
+# datum lifts the curve instead of dropping it.
+#
+# This is a plotting/scoring datum. No simulation changes; pfinit stays 0.
+P_F0 = 72.70            # MPa, Holl & Barton, at Z_FAULT
+Z_FAULT = 4100.0        # m, fault median depth (setup_model.m:108)
+P_REF = None                                # wellhead-equivalent datum
 OUT = Path(H) / "figures" / "cycle2"
 INK, MUTED, GRID, OBSC = "#1a1a19", "#6b6b66", "#d8d8d4", "#a8071a"
 
@@ -192,9 +219,9 @@ def main(argv=None):
 
     global P_REF
     obs = sf.observed()
-    P_REF = float(np.interp(T0, obs["tp"], obs["pm"]))
-    print(f"observed dp referenced to {P_REF:.3f} MPa, the measured wellhead "
-          f"at sim t = 0 (data-day {T0})")
+    P_REF = P_F0 - sf.RHO * sf.G * Z_FAULT / 1e6
+    print(f"datum: Holl & Barton p_f0 = {P_F0} MPa at {Z_FAULT:.0f} m; at the "
+          f"wellhead that is {P_REF:.3f} MPa")
     tcat, rcat, _ = fb.catalogue()
     kc = (tcat - T0) > 0
     tvol, vol = volume_since_t0(obs)
@@ -308,9 +335,9 @@ def main(argv=None):
         asz.legend(loc="upper left", framealpha=0.93)
 
         adp.set(xlabel="Days since injection resumed",
-                ylabel="Wellhead pressure change (MPa)",
+                ylabel="Pressure change from $p_{f0}$ (MPa)",
                 xlim=(0, TMAX), ylim=(-2, 30))
-        adp.set_title("(d)  Wellhead pressure change")
+        adp.set_title("(d)  Pressure change from the initial fault pressure")
         adp.legend(loc="upper left", framealpha=0.93)
 
         fig.suptitle(title, fontsize=13)

@@ -27,30 +27,26 @@ THREE TARGETS, each evaluated on the shifted clock where sim t = 0 is data-day
             value, so unmasked intervals score the model against a vented
             wellhead rather than against the reservoir.
 
-            FOUR CANDIDATE BASELINES EXIST AND MIXING THEM IS THE TRAP:
+            THE DATUM IS THE INITIAL FAULT PRESSURE, DERIVED FROM THE FIELD
+            MEASUREMENTS rather than picked off the wellhead record. Holl &
+            Barton report Pp = 72.70 MPa at the fault's 4100 mSS median depth;
+            hydrostatic there is 40.221, so the overpressure is 32.479 MPa and
+            that is the datum expressed at the wellhead.
 
-                33.805  the MODEL's static wellhead, P0 - rho g H with
-                        P0 = 73.8 MPa, rho = 1000, H = 4077 m
-                        (make_sweep_figures.py:55, applied in run_data)
-                34.412  the observed record's FIRST SAMPLE, at data-day 0
-                33.970  the observed pre-injection median over t < 0.501 d
-                33.271  the observed wellhead AT SIM t = 0, data-day 4.300
-                        <- P_REF, and the only one referenced to the same
-                           instant the model's dp is measured from
+            Three wellhead values were used before this, all of them wrong for
+            the purpose because all of them are wellhead pressures that merely
+            lie NEAR the datum: 34.412 (the record's first sample), 33.970 (the
+            pre-injection median), 33.271 (the record at data-day 4.300). A
+            fourth, 33.805, is the MODEL's own static and is still subtracted
+            from the model side. Referencing the data to 32.479 instead of
+            34.412 raises the observed dp by 1.93 MPa at sim t = 0, easing to
+            1.30 MPa by 10 d as the q^2 pipe-friction term grows.
 
-            All four are within 1.2 MPa of each other and every one of them is,
-            physically, THE RESERVOIR OVERPRESSURE: 73.8 MPa at 4077 m against
-            40.0 MPa hydrostatic leaves 33.8 MPa, which a static water column
-            carries to surface. The absolute record's baseline is a measurement
-            of that overpressure, not an offset to be discarded.
-
-            P_REF = 33.271 because HBI sets pfinit = 0, so the model's dp is
-            measured from the fault's state at sim t = 0. An earlier version
-            used 34.412, which referenced the two curves to DIFFERENT INSTANTS
-            and made every observed dp 1.141 MPa too small -- the well had been
-            vented during the shut-in and had not recovered by data-day 4.300.
-            Correcting it moves the dp error at tau_0 10.36 from +55.3% to
-            +35.6% and the dp = 0 crossing from tau_0 13.86 to about 12.95.
+            p_f0 IS NOT 73.82. That figure is
+            taiyi-wang-seis3D/source_code/setup_model.m:112 and sits 1.12 MPa
+            above what Holl reports. It was used here until the datum was
+            derived, and the difference is most of the gap between the 0.8 MPa
+            shift first computed and the ~2 MPa expected.
 
             sf.pressure_score returns mean(p_sim - p_obs), the SUM of a static
             mismatch (33.805 - P_REF = +0.534 MPa, identical in every run and
@@ -123,7 +119,34 @@ P_STATIC = sf.P0 - sf.RHO * sf.G * sf.HW / 1e6      # 33.805 MPa, the model's
 # double-count it.
 #
 # Computed from the record rather than hard-coded, so it cannot drift.
-P_REF = None                                # set in main(), from the record
+# THE DATUM IS THE INITIAL FAULT PRESSURE FROM HOLL & BARTON (2015).
+#
+#     Pp   = 72.70 MPa at 4100 mSS      (fault median depth)
+#     rho g z                            = 40.221 MPa hydrostatic
+#     overpressure                       = 32.479 MPa
+#
+# Recorded in docs/figs/cooper_grid/CONCLUSIONS.md:1001-1002. Expressed at the
+# wellhead, where the data lives, the datum is 72.70 - 40.221 = 32.479 MPa.
+#
+# NOT 73.82. That value comes from taiyi-wang-seis3D/source_code/setup_model.m:112
+# and is 1.12 MPa above what Holl reports; it was used here until the datum was
+# derived properly. NOT 34.412 either -- the record's first sample is a wellhead
+# pressure that happens to lie near the datum, not the datum itself.
+#
+# Referencing the measured dp to this raises the observed curve by 1.93 MPa at
+# sim t = 0, falling to 1.30 MPa by 10 d because the pipe-friction term grows
+# with q^2. The mean observed dp over the flowing window to 8.7 d goes from
+# 7.886 to 9.611 MPa.
+#
+# CONSEQUENCE WORTH SEEING: dp at sim t = 0 is +0.795 MPa, i.e. the fault sits
+# ABOVE virgin pressure when injection resumes even though the well had been
+# vented. That is cycle 1's residual formation overpressure, and it is why this
+# datum lifts the curve instead of dropping it.
+#
+# This is a plotting/scoring datum. No simulation changes; pfinit stays 0.
+P_F0 = 72.70            # MPa, Holl & Barton, at Z_FAULT
+Z_FAULT = 4100.0        # m, fault median depth (setup_model.m:108)
+P_REF = None                                # wellhead-equivalent datum
 T_EVAL = 8.7                                # sim time at which to score
 OBS_SLIP = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
 OT = [3, 5, 7, 9, 11, 13, 15, 17]           # data-days of the slip profiles
@@ -142,9 +165,13 @@ def arm_of(n):
     return 2
 
 
-def pressure_reference(obs):
-    """Observed wellhead pressure at sim t = 0, i.e. at data-day T0."""
-    return float(np.interp(T0, obs["tp"], obs["pm"]))
+def pressure_reference(obs=None):
+    """The datum, expressed at the wellhead: P_F0 - rho g Z_FAULT.
+
+    obs is accepted and unused -- the datum comes from the field measurements,
+    not from the record, which is the whole point of deriving it.
+    """
+    return P_F0 - sf.RHO * sf.G * Z_FAULT / 1e6
 
 
 def observed_front(t_eval):
@@ -272,9 +299,10 @@ def main(argv=None):
     print(f"scored at sim t = {a.at:.2f} d (data-day {a.at + T0:.2f})")
     print(f"  observed front {ro:.0f} m, observed slip increment {so:.3f} cm "
           f"(absolute {so + np.interp(T0, OT, [np.loadtxt(OBS_SLIP)[:, 1+i].max() for i in range(8)]):.3f} cm)")
-    print(f"  wellhead: model static {P_STATIC:.3f} MPa vs observed reference "
-          f"{P_REF:.3f} MPa,\n            the measured wellhead at sim t = 0 "
-          f"(data-day {T0}); fixed offset {P_STATIC - P_REF:+.3f} MPa.")
+    print(f"  datum: Holl & Barton p_f0 = {P_F0} MPa at {Z_FAULT:.0f} m -> "
+          f"{P_REF:.3f} MPa at the wellhead")
+    print(f"         model static is {P_STATIC:.3f}, a fixed "
+          f"{P_STATIC - P_REF:+.3f} MPa offset in every run")
     print(f"  'dp%' is the pressure-CHANGE error with that offset removed; "
           f"'total' is sf.pressure_score's raw number.")
     print(f"\n     run arm  tau_0   front   R_sim      dp%   dp MPa   total  "
