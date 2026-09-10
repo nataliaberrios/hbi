@@ -122,6 +122,19 @@ STAGES = {
                    "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
                    "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
                    "on the fluid at fixed muinit sweep (10 runs)"),
+    26: dict(runs=list(range(633060, 633078)),
+             parents={**{n: 632960 for n in range(633060, 633066)},
+                      **{n: 632961 for n in range(633066, 633072)},
+                      **{n: 632962 for n in range(633072, 633078)}},
+             title="CYCLE 2 Round 4 \u2014 the STORAGE sweep. The model "
+                   "pressurises too fast in the first two days (9.4x too high "
+                   "at 6 h, 2.5x at 1 d, but only 1.25x by the 4-8 d plateau), "
+                   "so the error is a TRANSIENT and not an injectivity error. "
+                   "Two one-key sweeps at each of tau_0 10.36/11.53/12.71: "
+                   "phi x2/x5/x10 (formation storage, must also slow the "
+                   "front) and Sw_fwid x10/x100/x1000 (wellbore storage, "
+                   "CANNOT touch the front). Distinguishable for exactly that "
+                   "reason (18 runs)"),
     25: dict(runs=[633040, 633041, 633042, 633043, 633044, 633045, 633046, 633047, 633048, 633049, 633050, 633051, 633052, 633053, 633054, 633056, 633057, 633058, 633059],
              parents={n: 632960 for n in [633040, 633041, 633042, 633043, 633044, 633045, 633046, 633047, 633048, 633049, 633050, 633051, 633052, 633053, 633054, 633056, 633057, 633058, 633059]},
              title="CYCLE 2 Round 3b — the rest of the (tau_0 x disc) GRID at "
