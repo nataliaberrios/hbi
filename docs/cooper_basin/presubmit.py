@@ -122,6 +122,14 @@ STAGES = {
                    "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
                    "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
                    "on the fluid at fixed muinit sweep (10 runs)"),
+    25: dict(runs=[633040, 633041, 633042, 633043, 633044, 633045, 633046, 633047, 633048, 633049, 633050, 633051, 633052, 633053, 633054, 633056, 633057, 633058, 633059],
+             parents={n: 632960 for n in [633040, 633041, 633042, 633043, 633044, 633045, 633046, 633047, 633048, 633049, 633050, 633051, 633052, 633053, 633054, 633056, 633057, 633058, 633059]},
+             title="CYCLE 2 Round 3b — the rest of the (tau_0 x disc) GRID at "
+                   "arm 2: disc 150, 200, 250 and 450 m x five tau_0, "
+                   "completing 150-450 m together with the 300 m column "
+                   "(632960-4) and the 350/400 m columns (633000-9). "
+                   "633055 is absent because disc 450 x tau_0 10.36 already "
+                   "exists as 632993 (19 runs)"),
     24: dict(runs=list(range(633000, 633010)),
              parents={n: 632960 for n in range(633000, 633010)},
              title="CYCLE 2 Round 3 — fill the (tau_0 x disc radius) GRID at "

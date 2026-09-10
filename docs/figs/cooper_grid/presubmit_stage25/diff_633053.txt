@@ -1,0 +1,15 @@
+res632960.in  ->  res633053.in   (comments stripped)
+============================================================
+1c1
+< filenumber 632960
+---
+> filenumber 633053
+12c12
+< parameter_file "perm_2zone_601_ds10_disc300_kmax2.5e-13.txt"
+---
+> parameter_file "perm_2zone_601_ds10_disc250_kmax2.5e-13.txt"
+20c20
+< muinit 0.3700
+---
+> muinit 0.4950
+

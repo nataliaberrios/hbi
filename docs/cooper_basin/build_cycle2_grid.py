@@ -68,13 +68,30 @@ import numpy as np
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 PARENT = 632960                       # arm 2, tau_0 10.36, disc 300
 DAYS, SAFE = 13.1, 0.8
-DISC_MAX = 400.0
-DISCS = [350.0, 400.0]
+DISC_MAX = 450.0        # raised from 400 by instruction; 632994 at 600 m
+                        # exists but nothing new goes past this
 MUINIT = [0.3700, 0.4120, 0.4540, 0.4950, 0.5360]
-FIRST = 633000
 # measured, from the existing cross -- used only for the domain check
 R_MAX_300 = {0.3700: 831.0, 0.4120: 932.0, 0.4540: 1082.0,
              0.4950: 1312.0, 0.5360: 1713.0}
+# lambda against disc radius, MEASURED at tau_0 10.36: 300 m -> 187.8,
+# 450 -> 154.4, 600 -> 129.1. Nearly linear, slope -0.1957 m/sqrt(d) per metre
+# of disc. Used to scale the disc-300 front to other radii for the domain
+# check, because SHRINKING the disc GROWS the front and the check has to bound
+# it from above.
+LAM_300, LAM_SLOPE = 187.8, (129.1 - 187.8) / (600.0 - 300.0)
+
+
+def front_bound(mu, disc):
+    """Upper bound on the 13.1 d front in metres at (mu, disc).
+
+    R_max_300(mu) scaled by lambda(disc)/lambda(300). EXTRAPOLATING THE
+    MEASURED lambda-vs-disc LINE BELOW 300 m IS THE WEAKEST STEP HERE, so it is
+    used only to refuse decks and never to interpret one. A too-large estimate
+    costs a run that might have fitted; a too-small one costs a run to the
+    boundary, which is the worse failure.
+    """
+    return R_MAX_300[mu] * (LAM_300 + LAM_SLOPE * (disc - 300.0)) / LAM_300
 
 
 def read_deck(p):
@@ -92,10 +109,41 @@ def ff(x):
     return float(str(x).replace("d", "e").replace("D", "e"))
 
 
+def existing_cells():
+    """{(disc, muinit)} already covered by an arm-2 deck, so the grid does not
+    re-run them.
+
+    Matches only decks that are otherwise comparable: eta 1.27e-4, beta 2.25e-8,
+    no skin, and the d4300 injection file. 632993 sits at (450, 0.3700) and
+    632960-4 at (300, the five muinit), so asking for those columns again would
+    silently duplicate five runs.
+    """
+    import glob
+    import re
+    out = {}
+    for f in glob.glob(str(IN / "res*.in")):
+        d = dict(read_deck(f))
+        try:
+            if abs(ff(d["eta"]) - 1.27e-4) > 1e-12: continue
+            if abs(ff(d["beta"]) - 2.25e-8) > 1e-12: continue
+            if "skin" in d: continue
+            if "d4300" not in d.get("injection_file", ""): continue
+            m = re.search(r"disc(\d+)", d["parameter_file"])
+            if not m: continue
+            out[(float(m.group(1)), round(ff(d["muinit"]), 4))] = int(d["filenumber"])
+        except KeyError:
+            continue
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--discs", nargs="+", type=float,
+                    default=[50., 100., 150., 200., 250.])
+    ap.add_argument("--first", type=int, default=633010)
     a = ap.parse_args(argv)
+    DISCS, FIRST = a.discs, a.first
 
     pairs = read_deck(IN / f"res{PARENT}.in")
     base = dict(pairs)
@@ -118,24 +166,40 @@ def main(argv=None):
     print(f"{'run':>7} {'disc':>6} {'muinit':>7} {'tau_0':>7} {'R pred':>7} "
           f"{'L/half':>7}")
 
-    rows, bad, n = [], 0, FIRST
+    have = existing_cells()
+    if have:
+        print("already covered, and therefore skipped:")
+        for (dr, mu), n0 in sorted(have.items()):
+            if dr in DISCS:
+                print(f"  disc {dr:.0f} m, muinit {mu:.4f}  ->  res{n0}.in")
+        print()
+    rows, bad, skip, n = [], 0, 0, FIRST
     for dr in DISCS:
         for mu in MUINIT:
             tau = mu * sig
-            # the disc reduces the front, so the disc-300 measurement is an
-            # UPPER bound for any larger disc at the same tau_0
-            R = R_MAX_300[mu]
+            if (dr, round(mu, 4)) in have:
+                skip += 1
+                n += 1
+                continue
+            R = front_bound(mu, dr)
             ratio = (R + Ld) / half
-            bad += ratio >= SAFE
-            rows.append((n, dr, mu, tau, R, ratio))
+            if ratio >= SAFE:
+                bad += 1
+            else:
+                rows.append((n, dr, mu, tau, R, ratio))
             print(f"{n:>7} {dr:>5.0f}m {mu:>7.4f} {tau:>6.2f}M {R:>6.0f}m "
                   f"{ratio:>7.2f}" + ("" if ratio < SAFE else "  <-- BREACH"))
             n += 1
+    if skip:
+        print(f"\n  {skip} cell(s) skipped as already run.")
     if bad:
-        sys.exit(f"\n{bad} deck(s) breach L/half = {SAFE}. Nothing written.")
-    print(f"\n  all {len(rows)} within L/half < {SAFE}; bounds are the measured "
-          f"disc-300 fronts,\n  which over-estimate because a larger disc "
-          f"SHRINKS the front")
+        print(f"  {bad} cell(s) REFUSED at L/half >= {SAFE}; the other "
+              f"{len(rows)} are written.")
+        print(f"  A refused cell needs imax 901 (half 4505 m) or a shorter "
+              f"tmax, either of which\n  is a second changed key -- so they "
+              f"are left out rather than quietly altered.")
+    else:
+        print(f"\n  all {len(rows)} within L/half < {SAFE}")
 
     if not a.write:
         print("\ndry run -- nothing written. re-run with --write")
