@@ -11,7 +11,7 @@ The measurement is an **absolute wellhead pressure**. The model computes a **cha
 p_fault(t) = p_wh(t) + rho*g*Z - friction(q(t))
 dp(t)      = p_fault(t) - p_f0
 ```
-with `Z` = 4100 m the fault's median depth and `friction` the Darcy-Weisbach pipe loss, up to 1.03 MPa at the 60.9 L/s peak and zero when shut in.
+with `Z` = 4182.5 m the gauge-to-fault column and `friction` the Darcy-Weisbach loss over the WCR's real segmented geometry — 2.03 MPa at the 60.9 L/s peak, against 1.03 MPa for the uniform 0.178 m pipe previously assumed, and zero when shut in.
 
 **The head does not cancel.** Substituting,
 
@@ -26,55 +26,56 @@ so `rho*g*Z` enters **once, additively**. It would only cancel if the datum were
 
 | quantity | value | source |
 |---|---|---|
-| `p_f0` | 72.70 MPa | Holl & Barton (2015), at 4100 mSS — `CONCLUSIONS.md:1001` |
-| `rho*g*Z` | 40.221 MPa | rho = 1000 kg/m³, `make_sweep_figures.py:55` |
-| overpressure | 32.479 MPa | `p_f0 - rho*g*Z` |
-| **datum at the wellhead** | **32.479 MPa** | |
+| `p_f0` | 72.70 MPa | Holl & Barton (2015), at −4100 mAHD — `CONCLUSIONS.md:1001` |
+| column length | 4182.5 m | 4100 m below AHD + gauge at 82.48 m AHD (WCR: GL 73.34 m, RT−GL 9.14 m) |
+| `rho*g*Z` | 41.071 MPa | rho = 1001 kg/m³ — **measured**, WCR §4.5.3, 8.35 ppg |
+| overpressure | 31.629 MPa | `p_f0 - rho*g*Z` |
+| **datum at the wellhead** | **31.629 MPa** | |
 
-Previously the data was referenced to 34.412 MPa, so the observed curve moves **up by +1.933 MPa** at `sim t = 0`, easing to +1.29 MPa by 10 d as the q² friction term grows.
+Previously the data was referenced to 34.412 MPa, so the observed curve moves **up by +2.783 MPa** at `sim t = 0`, easing to +1.53 MPa by 10 d as the q² friction term grows.
 
 
 ## 3. The column is not one fluid, and that is where the shift comes from
 
-The datum is `p_f0 - rho*g*Z`, so the column density acts directly on the answer at **2.01 MPa per 50 kg/m³** over 4100 m:
+The datum is `p_f0 - rho*g*Z`, so the column density acts directly on the answer at **2.05 MPa per 50 kg/m³** over 4182 m:
 
 | rho kg/m³ | head MPa | datum MPa | move-up |
 |---|---|---|---|
-| 830 | 33.383 | 39.317 | -4.905 |
-| 900 | 36.199 | 36.501 | -2.089 |
-| 950 | 38.210 | 34.490 | -0.078 |
-| 963 | 38.733 | 33.967 | +0.445 ← implied by the well, see below |
-| 1000 | 40.221 | 32.479 | +1.933 ← used |
-| 1050 | 42.232 | 30.468 | +3.944 |
+| 900 | 36.927 | 35.773 | -1.361 |
+| 949 | 38.938 | 33.762 | +0.650 |
+| 944 | 38.732 | 33.968 | +0.444 ← implied by our record's static wellhead |
+| 983 | 40.333 | 32.367 | +2.045 ← Hogarth Table 3, cold limb |
+| 1001 | 41.071 | 31.629 | +2.783 ← **MEASURED**, WCR completion fluid 8.35 ppg |
+| 1006 | 41.276 | 31.424 | +2.988 ← Hogarth Table 3, cold limb |
 
-That is **2.01 MPa per 50 kg/m³**. The whole "couple of MPa" lies inside the density uncertainty.
+That is **2.05 MPa per 50 kg/m³**. The whole "couple of MPa" lies inside the density uncertainty.
 
 ### Two fluid states, not one
 
 | | condition | rho | why |
 |---|---|---|---|
-| **static** | pre-injection, shut in | **963** | had been sitting in a 240–250 °C reservoir and reheating — hot and light. A mean column temperature near 90–100 °C. |
-| **flowing** | during injection | **1000** | surface water at 25–50 L/s with almost no residence time to heat — cold and dense. Water at 40 MPa is 992 kg/m³ at 60 °C and 1008 at 20 °C. |
+| **static** | pre-injection, shut in | **944** | had been sitting in a 240–250 °C reservoir and reheating — hot and light. A mean column temperature near 90–100 °C. |
+| **flowing** | during injection | **1001** | surface water at 25–50 L/s with almost no residence time to heat — cold and dense. Water at 40 MPa is 992 kg/m³ at 60 °C and 1008 at 20 °C. |
 
 The record being converted is the **flowing** one, so `RHO_FLOW` sets the plotted dp. The static density is a *result*, not an input:
 
 ```
 measured pre-injection wellhead (median, t < 0.501 d) = 33.970 MPa
-rho = (72.70 - 33.970)e6 / (9.81 x 4100) = 963 kg/m3
+rho = (72.70 - 33.970)e6 / (9.81 x 4182) = 944 kg/m3
 ```
-That 963 kg/m³ is a **consistency check on `p_f0`**, and it passes: a shut-in well in a 240 °C reservoir should have a column averaging around 90–100 °C, which is what 963 corresponds to. If Holl's `p_f0` were badly wrong this number would come out unphysical.
+That 944 kg/m³ is a **consistency check on `p_f0`**, and it passes: a shut-in well in a 240 °C reservoir should have a column averaging around 90–100 °C, which is what 944 corresponds to. If Holl's `p_f0` were badly wrong this number would come out unphysical.
 
 ### The move-up, and its bracket
 
-The static and flowing columns differ by 1.49 MPa of head, and **that difference is the move-up**:
+The static and flowing columns differ by 2.34 MPa of head, and **that difference is the move-up**:
 
 | injectate | rho | datum MPa | move-up |
 |---|---|---|---|
-| 60 °C | 992 | 32.801 | +1.611 |
-| ~40 °C, used | 1000 | 32.479 | +1.933 |
-| 20 °C | 1008 | 32.157 | +2.255 |
+| 60 °C | 983 | 32.367 | +2.045 |
+| ~40 °C, used | 1001 | 31.629 | +2.783 |
+| 20 °C | 1006 | 31.424 | +2.988 |
 
-So **1.61 to 2.25 MPa** is the defensible range, and 1.93 MPa is what is plotted.
+So **2.04 to 2.99 MPa** is the defensible range, and 2.78 MPa is what is plotted.
 
 **The justification is independent of the outcome, which is the only thing that makes it safe.** The thermal argument is about the wellbore, not about the fit; it would hold whether or not it improved the match. Choosing `rho` because it improves the match would be the first thing a reviewer pulls on, and it would take the arm-2 result with it.
 
@@ -99,17 +100,17 @@ An earlier version of this document claimed `p_f0` = 73.82 was confirmed two ind
 
 | sim t (d) | p_wh | p_fault | dp old | dp new | shift |
 |---|---|---|---|---|---|
-| 0.00 | 33.274 | 73.495 | -1.138 | +0.795 | +1.933 |
-| 1.00 | 34.184 | 74.310 | -0.228 | +1.610 | +1.838 |
-| 2.00 | 39.307 | 79.292 | +4.895 | +6.592 | +1.697 |
-| 4.00 | 43.492 | 83.514 | +9.080 | +10.814 | +1.734 |
-| 6.00 | 43.437 | 83.514 | +9.025 | +10.814 | +1.789 |
-| 8.00 | 43.430 | 83.507 | +9.018 | +10.807 | +1.789 |
-| 8.70 | 45.112 | 84.952 | +10.700 | +12.252 | +1.551 |
-| 10.00 | 52.035 | 91.618 | +17.623 | +18.918 | +1.295 |
-| 12.00 | 48.608 | 88.447 | +14.196 | +15.747 | +1.551 |
+| 0.00 | 33.274 | 74.345 | -1.138 | +1.645 | +2.783 |
+| 1.00 | 34.184 | 75.067 | -0.228 | +2.367 | +2.595 |
+| 2.00 | 39.307 | 79.914 | +4.895 | +7.214 | +2.319 |
+| 4.00 | 43.492 | 84.172 | +9.080 | +11.472 | +2.392 |
+| 6.00 | 43.437 | 84.224 | +9.025 | +11.524 | +2.499 |
+| 8.00 | 43.430 | 84.217 | +9.018 | +11.517 | +2.499 |
+| 8.70 | 45.112 | 85.432 | +10.700 | +12.732 | +2.031 |
+| 10.00 | 52.035 | 91.849 | +17.623 | +19.149 | +1.526 |
+| 12.00 | 48.608 | 88.927 | +14.196 | +16.227 | +2.031 |
 
-`dp` at `sim t = 0` is **+0.792 MPa**, not zero: the fault sits above virgin pressure when injection resumes even though the well had been vented, which is cycle 1's residual formation overpressure. That is why this datum lifts the curve rather than dropping it.
+`dp` at `sim t = 0` is **+1.642 MPa**, not zero: the fault sits above virgin pressure when injection resumes even though the well had been vented, which is cycle 1's residual formation overpressure. That is why this datum lifts the curve rather than dropping it.
 
 This is a plotting and scoring datum. **No simulation changes**; `pfinit` stays 0.
 

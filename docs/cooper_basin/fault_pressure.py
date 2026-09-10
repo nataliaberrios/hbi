@@ -33,8 +33,17 @@ T0 = 4.300
 INK, MUTED, OBSC = "#1a1a19", "#6b6b66", "#a8071a"
 
 # Holl & Barton (2015), as recorded in CONCLUSIONS.md:1001-1002
-P_F0 = 72.70            # MPa, reservoir pressure at fault depth
-Z_FAULT = 4100.0        # m subsea, fault median depth
+P_F0 = 72.70            # MPa, reservoir pressure at -4100 mAHD
+Z_AHD = 4100.0          # m below AHD (~sea level), fault datum
+# THE GAUGE IS NOT AT THE FAULT DATUM. Habanero-4 Well Completion Report
+# (HPP-FN-OT-RPT-00492-1.0, 8 Jan 2013; PEPS-SA well 2739, Open File):
+# ground level 73.34 m AHD, RT-GL 9.14 m, so the wellhead gauge sits 82.48 m
+# ABOVE the datum Holl quotes. The static column between them is therefore
+# 4182.5 m, not 4100 -- worth 0.81 MPa at rho 1000, all of it lowering the
+# datum and so raising the observed dp. An earlier version of this script used
+# 4100 and guessed the elevation at "~60 m".
+GL, RT_GL = 73.34, 9.14
+Z_COLUMN = Z_AHD + GL + RT_GL
 # the stress state, setup_model.m:110-113, for the sigmabar_0 cross-check
 S_V, S_HMAX, DIP = 100.0, 160.0, 10.0
 SIGMAINIT = 27.99       # this project's decks
@@ -59,9 +68,15 @@ P_F0_TAIYI = 73.82      # setup_model.m:112
 # An earlier version of this script used the 963 to argue that rho = 1000 was
 # "contradicted by the well". That was wrong: it compared two different fluid
 # states. The difference between them, 1.49 MPa, IS the move-up.
-RHO_FLOW = 1000.0
-RHO_BRACKET = (992.0, 1008.0)   # 60 C and 20 C injectate at 40 MPa
-RHO_ASSUMED = RHO_FLOW          # kept for the figure code below
+# RHO_FLOW IS NOW MEASURED, NOT ASSUMED. The WCR gives the completion fluid
+# left in the well as 8.35 ppg ambient = 1001 kg/m3 (section 4.5.3), and that
+# is the wellbore column immediately before the Oct/Nov 2012 stimulation.
+# Independently, Hogarth & Bour (2015, WGC 31006) Table 3 measures the cold
+# limb of the 2013 closed loop at 983-1006 kg/m3 for 80 C brine. So 1001 is
+# not a choice between plausible values; it is the reported number.
+RHO_FLOW = 1001.0
+RHO_BRACKET = (983.0, 1006.0)   # Hogarth Table 3, cold limb of the loop
+RHO_ASSUMED = RHO_FLOW
 G = 9.81
 OLD_REF = 34.412        # the record's first sample
 
@@ -73,15 +88,50 @@ plt.rcParams.update({"font.size": 11, "axes.titlesize": 12,
                      "legend.fontsize": 9.5})
 
 
-def head(rho, z=Z_FAULT):
-    """Static head in MPa."""
-    return rho * G * z / 1e6
+def head(rho, z=None):
+    """Static head in MPa over the gauge-to-fault column."""
+    return rho * G * (Z_COLUMN if z is None else z) / 1e6
+
+
+# THE FLOW PATH IS NOT ONE PIPE, AND THE OLD DIAMETER WAS THE WRONG ONE.
+# make_sweep_figures.py uses DW = 0.178 m uniformly over 4077 m -- but 0.1778
+# is the 7 in tubing OUTSIDE diameter. The WCR's Appendix K tally gives 7 in
+# 41# T95SS with ID 5.820 in = 0.14783 m, run to the production packer at
+# 3005.37 mMDRT, below which the 9-7/8 in casing is much wider. Friction goes
+# as D^-5, so using the OD instead of the ID understates it badly.
+FRIC_SEGMENTS = ((3005.0, 5.820 * 0.0254),           # tubing, ID
+                 (Z_COLUMN - 3005.0, 8.625 * 0.0254))  # casing below the packer
 
 
 def friction(q_Ls):
-    """Darcy-Weisbach pipe loss in MPa, the form run_data uses."""
+    """Darcy-Weisbach loss in MPa over the real segmented geometry.
+
+    At the 60.9 L/s peak this gives 2.03 MPa against the 1.03 MPa the uniform
+    0.178 m pipe gives -- a factor 1.97, and 1.92 MPa of it is the tubing
+    alone. It enters dp(t) = p_wh + rho g Z - friction directly, so a 1 MPa
+    error at peak rate was a 1 MPa error in the observed dp at peak rate. It
+    matters least where it was checked (the plateau, q ~ 23 L/s, 0.28 MPa) and
+    most at the 2.5 d rate peak.
+    """
     q = np.asarray(q_Ls, float) / 1000.0
-    return sf.FD * 8.0 * sf.HW * sf.RHO * q ** 2 / (np.pi ** 2 * sf.DW ** 5) / 1e6
+    return sum(sf.FD * 8.0 * L * RHO_FLOW * q ** 2 / (np.pi ** 2 * D ** 5)
+               for L, D in FRIC_SEGMENTS) / 1e6
+
+
+def datum():
+    """The pressure datum expressed at the wellhead gauge, in MPa."""
+    return P_F0 - head(RHO_FLOW)
+
+
+def dp_observed(obs, t0=T0):
+    """(t_sim, dp) -- the measured pressure change from p_f0.
+
+    THE one place this conversion lives. score_cycle2.py and compare_arms.py
+    import it so the datum, the column length, the density and the friction
+    cannot drift between the scorer and the figures.
+    """
+    q = np.interp(obs["tp"], obs["ti"], obs["q"])
+    return obs["tp"] - t0, obs["pm"] + head(RHO_FLOW) - friction(q) - P_F0
 
 
 def main(argv=None):
@@ -90,12 +140,12 @@ def main(argv=None):
     q = np.interp(tp, obs["ti"], obs["q"])
     t = tp - T0
     p_static = float(np.median(pm[tp < 0.501]))
-    rho_implied = (P_F0 - p_static) * 1e6 / (G * Z_FAULT)
+    rho_implied = (P_F0 - p_static) * 1e6 / (G * Z_COLUMN)
     th = np.radians(DIP)
     snn = S_HMAX * np.sin(th) ** 2 + S_V * np.cos(th) ** 2
 
     datum = P_F0 - head(RHO_ASSUMED)
-    p_fault = pm + head(RHO_ASSUMED) - friction(q)
+    p_fault = pm + head(RHO_FLOW) - friction(q)
     dp = p_fault - P_F0
     dp_old = pm - OLD_REF
 
@@ -114,9 +164,11 @@ def main(argv=None):
     A("p_fault(t) = p_wh(t) + rho*g*Z - friction(q(t))")
     A("dp(t)      = p_fault(t) - p_f0")
     A("```")
-    A(f"with `Z` = {Z_FAULT:.0f} m the fault's median depth and `friction` the "
-      f"Darcy-Weisbach pipe loss, up to {friction(obs['q'].max()):.2f} MPa at "
-      f"the {obs['q'].max():.1f} L/s peak and zero when shut in.\n")
+    A(f"with `Z` = {Z_COLUMN:.1f} m the gauge-to-fault column and `friction` "
+      f"the Darcy-Weisbach loss over the WCR's real segmented geometry — "
+      f"{friction(obs['q'].max()):.2f} MPa at the {obs['q'].max():.1f} L/s "
+      f"peak, against 1.03 MPa for the uniform 0.178 m pipe previously "
+      f"assumed, and zero when shut in.\n")
     A("**The head does not cancel.** Substituting,\n")
     A("```")
     A("dp(t) = p_wh(t) - friction(q(t)) - [p_f0 - rho*g*Z]")
@@ -129,11 +181,13 @@ def main(argv=None):
     A("\n## 2. The datum from the measurements\n")
     A("| quantity | value | source |")
     A("|---|---|---|")
-    A(f"| `p_f0` | {P_F0:.2f} MPa | Holl & Barton (2015), at {Z_FAULT:.0f} mSS "
+    A(f"| `p_f0` | {P_F0:.2f} MPa | Holl & Barton (2015), at −{Z_AHD:.0f} mAHD "
       f"— `CONCLUSIONS.md:1001` |")
-    A(f"| `rho*g*Z` | {head(RHO_ASSUMED):.3f} MPa | rho = "
-      f"{RHO_ASSUMED:.0f} kg/m³, `make_sweep_figures.py:55` |")
-    A(f"| overpressure | {P_F0 - head(RHO_ASSUMED):.3f} MPa | `p_f0 - rho*g*Z` |")
+    A(f"| column length | {Z_COLUMN:.1f} m | {Z_AHD:.0f} m below AHD + gauge at "
+      f"{GL+RT_GL:.2f} m AHD (WCR: GL {GL} m, RT−GL {RT_GL} m) |")
+    A(f"| `rho*g*Z` | {head(RHO_FLOW):.3f} MPa | rho = "
+      f"{RHO_FLOW:.0f} kg/m³ — **measured**, WCR §4.5.3, 8.35 ppg |")
+    A(f"| overpressure | {P_F0 - head(RHO_FLOW):.3f} MPa | `p_f0 - rho*g*Z` |")
     A(f"| **datum at the wellhead** | **{datum:.3f} MPa** | |")
     A("")
     A(f"Previously the data was referenced to {OLD_REF:.3f} MPa, so the "
@@ -145,17 +199,19 @@ def main(argv=None):
     A("\n## 3. The column is not one fluid, and that is where the shift "
       "comes from\n")
     A("The datum is `p_f0 - rho*g*Z`, so the column density acts directly on "
-      f"the answer at **{50*G*Z_FAULT/1e6:.2f} MPa per 50 kg/m³** over "
-      f"{Z_FAULT:.0f} m:\n")
+      f"the answer at **{50*G*Z_COLUMN/1e6:.2f} MPa per 50 kg/m³** over "
+      f"{Z_COLUMN:.0f} m:\n")
     A("| rho kg/m³ | head MPa | datum MPa | move-up |")
     A("|---|---|---|---|")
-    for r in (830, 900, 950, int(round(rho_implied)), 1000, 1050):
-        mark = " ← implied by the well, see below" if abs(r - rho_implied) < 1 \
-            else (" ← used" if r == 1000 else "")
+    for r in (900, 949, int(round(rho_implied)), 983, 1001, 1006):
+        mark = " ← implied by our record's static wellhead" \
+            if abs(r - rho_implied) < 1 else \
+            (" ← **MEASURED**, WCR completion fluid 8.35 ppg" if r == 1001
+             else (" ← Hogarth Table 3, cold limb" if r in (983, 1006) else ""))
         A(f"| {r} | {head(r):.3f} | {P_F0-head(r):.3f} | "
           f"{OLD_REF-(P_F0-head(r)):+.3f}{mark} |")
     A("")
-    A(f"That is **{50*G*Z_FAULT/1e6:.2f} MPa per 50 kg/m³**. The whole "
+    A(f"That is **{50*G*Z_COLUMN/1e6:.2f} MPa per 50 kg/m³**. The whole "
       f"\"couple of MPa\" lies inside the density uncertainty.\n")
     A("### Two fluid states, not one\n")
     A("| | condition | rho | why |")
@@ -171,7 +227,7 @@ def main(argv=None):
       "the plotted dp. The static density is a *result*, not an input:\n")
     A("```")
     A(f"measured pre-injection wellhead (median, t < 0.501 d) = {p_static:.3f} MPa")
-    A(f"rho = ({P_F0:.2f} - {p_static:.3f})e6 / (9.81 x {Z_FAULT:.0f}) "
+    A(f"rho = ({P_F0:.2f} - {p_static:.3f})e6 / (9.81 x {Z_COLUMN:.0f}) "
       f"= {rho_implied:.0f} kg/m3")
     A("```")
     A(f"That {rho_implied:.0f} kg/m³ is a **consistency check on `p_f0`**, and "
@@ -181,7 +237,7 @@ def main(argv=None):
       f"unphysical.\n")
     A("### The move-up, and its bracket\n")
     A(f"The static and flowing columns differ by "
-      f"{(RHO_FLOW-rho_implied)*G*Z_FAULT/1e6:.2f} MPa of head, and **that "
+      f"{(RHO_FLOW-rho_implied)*G*Z_COLUMN/1e6:.2f} MPa of head, and **that "
       f"difference is the move-up**:\n")
     A("| injectate | rho | datum MPa | move-up |")
     A("|---|---|---|---|")
