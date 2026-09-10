@@ -34,7 +34,7 @@ import argparse
 from pathlib import Path
 
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
-OUT = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cycle2/PARAMS_cycle2.md")
+OUTDIR = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cycle2")
 
 RUNS = (list(range(632950, 632955)) + list(range(632960, 632965))
         + list(range(632970, 632975)) + list(range(632980, 632985))
@@ -163,19 +163,33 @@ def ff(x):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", nargs="+", type=int, default=RUNS)
+    ap.add_argument("--arm", type=int,
+                    help="only this arm, and print the FULL matrix with no "
+                         "columns collapsed")
     a = ap.parse_args(argv)
 
+    runs = a.runs
+    if a.arm:
+        runs = [n for n in runs if ARM.get(n) == str(a.arm)]
     decks, missing = {}, []
-    for n in a.runs:
+    for n in runs:
         p = IN / f"res{n}.in"
         if p.exists():
             decks[n] = read_deck(p)
         else:
             missing.append(n)
     keys = sorted({k for d in decks.values() for k in d})
-    varying = [k for k in keys
-               if len({d.get(k, "-") for d in decks.values()}) > 1]
-    common = [k for k in keys if k not in varying and k != "filenumber"]
+    if a.arm:
+        # NOTHING COLLAPSED. Collapsing the invariant columns into a separate
+        # list is fine for 26 runs across four arms, but it put permev -- the
+        # single key that says whether permeability enhancement is on at all --
+        # into a footnote where nobody would look for it.
+        varying = [k for k in keys if k != "filenumber"]
+        common = []
+    else:
+        varying = [k for k in keys
+                   if len({d.get(k, "-") for d in decks.values()}) > 1]
+        common = [k for k in keys if k not in varying and k != "filenumber"]
 
     L = []
     L.append("# Cycle-2 parameters, every run\n")
@@ -184,21 +198,41 @@ def main(argv=None):
     if missing:
         L.append(f"Decks not found: {missing}\n")
 
-    L.append("\n## What varies between runs\n")
-    hdr = ["run", "arm", "tau_0 MPa"] + [k for k in varying if k != "filenumber"]
-    L.append("| " + " | ".join(hdr) + " |")
-    L.append("|" + "---|" * len(hdr))
-    for n, d in decks.items():
-        tau = ff(d["muinit"]) * ff(d["sigmainit"])
-        row = [str(n), ARM.get(n, "?"), f"{tau:.2f}"]
-        row += [d.get(k, "—") for k in varying if k != "filenumber"]
-        L.append("| " + " | ".join(row) + " |")
+    if a.arm:
+        # TRANSPOSED: parameters down, runs across. 51 keys in one row is not a
+        # table anyone can read, and the collapsed version had hidden permev in
+        # a footnote. Rows carrying different values across runs are marked.
+        L.append(f"\n## Every parameter, arm {a.arm}\n")
+        ns = list(decks)
+        L.append("| parameter | " + " | ".join(str(n) for n in ns) + " |")
+        L.append("|" + "---|" * (len(ns) + 1))
+        L.append("| **tau_0 MPa** | " + " | ".join(
+            f"{ff(decks[n]['muinit'])*ff(decks[n]['sigmainit']):.2f}"
+            for n in ns) + " |")
+        for k in varying:
+            vals = [decks[n].get(k, "—") for n in ns]
+            mark = "**" if len(set(vals)) > 1 else ""
+            L.append(f"| {mark}`{k}`{mark} | " + " | ".join(vals) + " |")
+        L.append(f"\n**Bold** rows differ between runs; the rest are identical "
+                 f"across all {len(ns)}.")
+    else:
+        L.append("\n## What varies between runs\n")
+        hdr = ["run", "arm", "tau_0 MPa"] + [k for k in varying
+                                             if k != "filenumber"]
+        L.append("| " + " | ".join(hdr) + " |")
+        L.append("|" + "---|" * len(hdr))
+        for n, d in decks.items():
+            tau = ff(d["muinit"]) * ff(d["sigmainit"])
+            row = [str(n), ARM.get(n, "?"), f"{tau:.2f}"]
+            row += [d.get(k, "—") for k in varying if k != "filenumber"]
+            L.append("| " + " | ".join(row) + " |")
 
-    L.append(f"\n## Common to all {len(decks)} runs\n")
-    L.append("| key | value |")
-    L.append("|---|---|")
-    for k in common:
-        L.append(f"| `{k}` | {next(iter(decks.values()))[k]} |")
+    if common:
+        L.append(f"\n## Common to all {len(decks)} runs\n")
+        L.append("| key | value |")
+        L.append("|---|---|")
+        for k in common:
+            L.append(f"| `{k}` | {next(iter(decks.values()))[k]} |")
 
     L.append("\n## Where each value comes from\n")
     L.append("`MEASURED` traceable to a field measurement or the record  ·  "
@@ -222,8 +256,10 @@ def main(argv=None):
              f"`beta`, `phi`, `kpmin`, `kL`/`kT`, `a`/`b`, `Sw_fwid`.")
 
     txt = "\n".join(L) + "\n"
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(txt)
+    out = OUTDIR / (f"PARAMS_arm{a.arm}.md" if a.arm else "PARAMS_cycle2.md")
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    out.write_text(txt)
+    OUT = out
     print(txt)
     print(f"wrote {OUT}")
 
