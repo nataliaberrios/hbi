@@ -39,7 +39,29 @@ Z_FAULT = 4100.0        # m subsea, fault median depth
 S_V, S_HMAX, DIP = 100.0, 160.0, 10.0
 SIGMAINIT = 27.99       # this project's decks
 P_F0_TAIYI = 73.82      # setup_model.m:112
-RHO_ASSUMED = 1000.0    # make_sweep_figures.py:55, and what the model uses
+# THE COLUMN IS NOT ONE FLUID. The static column, pre-injection, had been
+# sitting in a 240-250 C reservoir and reheating: hot and light. The flowing
+# column is surface water pumped at 25-50 L/s with almost no residence time to
+# heat: cold and dense. A single density is wrong, and the two states differ by
+# enough to matter -- 2.01 MPa per 50 kg/m3 over 4100 m.
+#
+# RHO_FLOW converts the record DURING INJECTION and is the one that sets the
+# plotted dp. Cold water at ~40 MPa is 992 kg/m3 at 60 C and 1008 at 20 C, so
+# 1000 is the middle of the plausible injectate range and is also what
+# make_sweep_figures.py:55 uses.
+#
+# RHO_STATIC is a RESULT, not an input: the measured pre-injection wellhead of
+# 33.970 MPa implies 963 kg/m3, i.e. a mean column temperature near 90-100 C,
+# which is what a shut-in well in this reservoir should look like. It is
+# reported as a consistency check on p_f0, NOT used to convert the flowing
+# record.
+#
+# An earlier version of this script used the 963 to argue that rho = 1000 was
+# "contradicted by the well". That was wrong: it compared two different fluid
+# states. The difference between them, 1.49 MPa, IS the move-up.
+RHO_FLOW = 1000.0
+RHO_BRACKET = (992.0, 1008.0)   # 60 C and 20 C injectate at 40 MPa
+RHO_ASSUMED = RHO_FLOW          # kept for the figure code below
 G = 9.81
 OLD_REF = 34.412        # the record's first sample
 
@@ -120,8 +142,11 @@ def main(argv=None):
       f"{dp[int(np.argmin(np.abs(t-10.0)))] - dp_old[int(np.argmin(np.abs(t-10.0)))]:+.2f}"
       f" MPa by 10 d as the q² friction term grows.\n")
 
-    A("\n## 3. How much of that is measured, and how much assumed\n")
-    A("**Most of it is the column density.** The datum is `p_f0 - rho*g*Z`, so:\n")
+    A("\n## 3. The column is not one fluid, and that is where the shift "
+      "comes from\n")
+    A("The datum is `p_f0 - rho*g*Z`, so the column density acts directly on "
+      f"the answer at **{50*G*Z_FAULT/1e6:.2f} MPa per 50 kg/m³** over "
+      f"{Z_FAULT:.0f} m:\n")
     A("| rho kg/m³ | head MPa | datum MPa | move-up |")
     A("|---|---|---|---|")
     for r in (830, 900, 950, int(round(rho_implied)), 1000, 1050):
@@ -132,36 +157,53 @@ def main(argv=None):
     A("")
     A(f"That is **{50*G*Z_FAULT/1e6:.2f} MPa per 50 kg/m³**. The whole "
       f"\"couple of MPa\" lies inside the density uncertainty.\n")
-    A("**And the well constrains `rho`.** Before any injection the well should "
-      "be in equilibrium with the virgin reservoir, so "
-      "`p_wh_static = p_f0 - rho*g*Z`:\n")
+    A("### Two fluid states, not one\n")
+    A("| | condition | rho | why |")
+    A("|---|---|---|---|")
+    A(f"| **static** | pre-injection, shut in | **{rho_implied:.0f}** | had been "
+      f"sitting in a 240–250 °C reservoir and reheating — hot and light. A mean "
+      f"column temperature near 90–100 °C. |")
+    A(f"| **flowing** | during injection | **{RHO_FLOW:.0f}** | surface water at "
+      f"25–50 L/s with almost no residence time to heat — cold and dense. Water "
+      f"at 40 MPa is 992 kg/m³ at 60 °C and 1008 at 20 °C. |")
+    A("")
+    A("The record being converted is the **flowing** one, so `RHO_FLOW` sets "
+      "the plotted dp. The static density is a *result*, not an input:\n")
     A("```")
     A(f"measured pre-injection wellhead (median, t < 0.501 d) = {p_static:.3f} MPa")
     A(f"rho = ({P_F0:.2f} - {p_static:.3f})e6 / (9.81 x {Z_FAULT:.0f}) "
       f"= {rho_implied:.0f} kg/m3")
     A("```")
-    A(f"With that `rho` the datum **is** the measured static wellhead, "
-      f"{p_static:.3f} MPa, and the move-up is only "
-      f"**{OLD_REF-p_static:+.3f} MPa**.\n")
-    A("So the accounting is:\n")
-    A(f"| | MPa |")
-    A("|---|---|")
-    A(f"| real — Holl's `p_f0` vs the record's first sample | "
-      f"**{OLD_REF-p_static:+.2f}** |")
-    A(f"| the rho = 1000 assumption, which the well's own static pressure "
-      f"contradicts | **{p_static-datum:+.2f}** |")
-    A(f"| total as plotted | {OLD_REF-datum:+.2f} |")
+    A(f"That {rho_implied:.0f} kg/m³ is a **consistency check on `p_f0`**, and "
+      f"it passes: a shut-in well in a 240 °C reservoir should have a column "
+      f"averaging around 90–100 °C, which is what {rho_implied:.0f} corresponds "
+      f"to. If Holl's `p_f0` were badly wrong this number would come out "
+      f"unphysical.\n")
+    A("### The move-up, and its bracket\n")
+    A(f"The static and flowing columns differ by "
+      f"{(RHO_FLOW-rho_implied)*G*Z_FAULT/1e6:.2f} MPa of head, and **that "
+      f"difference is the move-up**:\n")
+    A("| injectate | rho | datum MPa | move-up |")
+    A("|---|---|---|---|")
+    for r, lab in ((RHO_BRACKET[0], "60 °C"), (RHO_FLOW, "~40 °C, used"),
+                   (RHO_BRACKET[1], "20 °C")):
+        A(f"| {lab} | {r:.0f} | {P_F0-head(r):.3f} | "
+          f"{OLD_REF-(P_F0-head(r)):+.3f} |")
     A("")
-    A("**The move-up is therefore not a free lever.** It measures how far out "
-      "of equilibrium the well was at data-day 0. To justify the full 2 MPa "
-      "one has to argue the column was denser than "
-      f"{rho_implied:.0f} kg/m³ — cooler or more saline than its own static "
-      "pressure implies. Three things would settle it, in order of strength: a "
-      "downhole gauge or temperature log from the completion report; the "
-      "wellhead elevation, since Holl's depth is mSS and a ~60 m surface "
-      "elevation adds another "
-      f"{head(RHO_ASSUMED, 60.0):.2f} MPa of column; and whether Habanero 4 "
-      "was in equilibrium at all in Nov 2012, having been stimulated before.\n")
+    A(f"So **{OLD_REF-(P_F0-head(RHO_BRACKET[0])):.2f} to "
+      f"{OLD_REF-(P_F0-head(RHO_BRACKET[1])):.2f} MPa** is the defensible "
+      f"range, and {OLD_REF-datum:.2f} MPa is what is plotted.\n")
+    A("**The justification is independent of the outcome, which is the only "
+      "thing that makes it safe.** The thermal argument is about the wellbore, "
+      "not about the fit; it would hold whether or not it improved the match. "
+      "Choosing `rho` because it improves the match would be the first thing a "
+      "reviewer pulls on, and it would take the arm-2 result with it.\n")
+    A("What would settle it outright, in order of strength: a **downhole gauge "
+      "or temperature log** from the Habanero 4 completion report (cited at "
+      "`setup_model.m:92`, so it exists); the **injectate temperature** from "
+      "the operational record; and the **wellhead elevation**, since Holl's "
+      f"depth is mSS and ~60 m of surface elevation adds another "
+      f"{head(RHO_FLOW, 60.0):.2f} MPa of column on top of everything above.\n")
 
     A("\n## 4. An inconsistency this exposes\n")
     A(f"With the measured stress state — `S_v` = {S_V:.0f} MPa, `S_Hmax` = "

@@ -34,9 +34,9 @@ so `rho*g*Z` enters **once, additively**. It would only cancel if the datum were
 Previously the data was referenced to 34.412 MPa, so the observed curve moves **up by +1.933 MPa** at `sim t = 0`, easing to +1.29 MPa by 10 d as the q² friction term grows.
 
 
-## 3. How much of that is measured, and how much assumed
+## 3. The column is not one fluid, and that is where the shift comes from
 
-**Most of it is the column density.** The datum is `p_f0 - rho*g*Z`, so:
+The datum is `p_f0 - rho*g*Z`, so the column density acts directly on the answer at **2.01 MPa per 50 kg/m³** over 4100 m:
 
 | rho kg/m³ | head MPa | datum MPa | move-up |
 |---|---|---|---|
@@ -49,23 +49,36 @@ Previously the data was referenced to 34.412 MPa, so the observed curve moves **
 
 That is **2.01 MPa per 50 kg/m³**. The whole "couple of MPa" lies inside the density uncertainty.
 
-**And the well constrains `rho`.** Before any injection the well should be in equilibrium with the virgin reservoir, so `p_wh_static = p_f0 - rho*g*Z`:
+### Two fluid states, not one
+
+| | condition | rho | why |
+|---|---|---|---|
+| **static** | pre-injection, shut in | **963** | had been sitting in a 240–250 °C reservoir and reheating — hot and light. A mean column temperature near 90–100 °C. |
+| **flowing** | during injection | **1000** | surface water at 25–50 L/s with almost no residence time to heat — cold and dense. Water at 40 MPa is 992 kg/m³ at 60 °C and 1008 at 20 °C. |
+
+The record being converted is the **flowing** one, so `RHO_FLOW` sets the plotted dp. The static density is a *result*, not an input:
 
 ```
 measured pre-injection wellhead (median, t < 0.501 d) = 33.970 MPa
 rho = (72.70 - 33.970)e6 / (9.81 x 4100) = 963 kg/m3
 ```
-With that `rho` the datum **is** the measured static wellhead, 33.970 MPa, and the move-up is only **+0.442 MPa**.
+That 963 kg/m³ is a **consistency check on `p_f0`**, and it passes: a shut-in well in a 240 °C reservoir should have a column averaging around 90–100 °C, which is what 963 corresponds to. If Holl's `p_f0` were badly wrong this number would come out unphysical.
 
-So the accounting is:
+### The move-up, and its bracket
 
-| | MPa |
-|---|---|
-| real — Holl's `p_f0` vs the record's first sample | **+0.44** |
-| the rho = 1000 assumption, which the well's own static pressure contradicts | **+1.49** |
-| total as plotted | +1.93 |
+The static and flowing columns differ by 1.49 MPa of head, and **that difference is the move-up**:
 
-**The move-up is therefore not a free lever.** It measures how far out of equilibrium the well was at data-day 0. To justify the full 2 MPa one has to argue the column was denser than 963 kg/m³ — cooler or more saline than its own static pressure implies. Three things would settle it, in order of strength: a downhole gauge or temperature log from the completion report; the wellhead elevation, since Holl's depth is mSS and a ~60 m surface elevation adds another 0.59 MPa of column; and whether Habanero 4 was in equilibrium at all in Nov 2012, having been stimulated before.
+| injectate | rho | datum MPa | move-up |
+|---|---|---|---|
+| 60 °C | 992 | 32.801 | +1.611 |
+| ~40 °C, used | 1000 | 32.479 | +1.933 |
+| 20 °C | 1008 | 32.157 | +2.255 |
+
+So **1.61 to 2.25 MPa** is the defensible range, and 1.93 MPa is what is plotted.
+
+**The justification is independent of the outcome, which is the only thing that makes it safe.** The thermal argument is about the wellbore, not about the fit; it would hold whether or not it improved the match. Choosing `rho` because it improves the match would be the first thing a reviewer pulls on, and it would take the arm-2 result with it.
+
+What would settle it outright, in order of strength: a **downhole gauge or temperature log** from the Habanero 4 completion report (cited at `setup_model.m:92`, so it exists); the **injectate temperature** from the operational record; and the **wellhead elevation**, since Holl's depth is mSS and ~60 m of surface elevation adds another 0.59 MPa of column on top of everything above.
 
 
 ## 4. An inconsistency this exposes
