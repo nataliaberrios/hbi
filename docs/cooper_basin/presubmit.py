@@ -122,6 +122,15 @@ STAGES = {
                    "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
                    "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
                    "on the fluid at fixed muinit sweep (10 runs)"),
+    24: dict(runs=list(range(633000, 633010)),
+             parents={n: 632960 for n in range(633000, 633010)},
+             title="CYCLE 2 Round 3 — fill the (tau_0 x disc radius) GRID at "
+                   "arm 2, disc capped at 400 m. What existed was a CROSS: "
+                   "tau_0 swept at disc 300 only, disc swept at tau_0 10.36 "
+                   "only. tau_0 raises lambda and lowers dp; the disc lowers "
+                   "BOTH, so a combination can reach lambda 1.0x at dp 0 where "
+                   "neither lever alone can. disc 350/400 m x five tau_0 "
+                   "(10 runs)"),
     23: dict(runs=[632990, 632991, 632992, 632993, 632994],
              parents={n: 632960 for n in
                       (632990, 632991, 632992, 632993, 632994)},
