@@ -27,31 +27,43 @@ THREE TARGETS, each evaluated on the shifted clock where sim t = 0 is data-day
             value, so unmasked intervals score the model against a vented
             wellhead rather than against the reservoir.
 
-            THREE BASELINES EXIST AND MIXING THEM IS THE TRAP:
+            FOUR CANDIDATE BASELINES EXIST AND MIXING THEM IS THE TRAP:
 
                 33.805  the MODEL's static wellhead, P0 - rho g H with
                         P0 = 73.8 MPa, rho = 1000, H = 4077 m
                         (make_sweep_figures.py:55, applied in run_data)
-                34.412  the observed record's first sample -- Wang & Dunham's
-                        reference, and what the slide figure uses
+                34.412  the observed record's FIRST SAMPLE, at data-day 0
                 33.970  the observed pre-injection median over t < 0.501 d
+                33.271  the observed wellhead AT SIM t = 0, data-day 4.300
+                        <- P_REF, and the only one referenced to the same
+                           instant the model's dp is measured from
 
-            sf.pressure_score returns mean(p_sim - p_obs), which is the SUM of
-            a static mismatch (33.805 - P_REF = -0.607 MPa, identical in every
-            run, not a model error) and the dp error. Quoting that total and
-            then dividing it by dp measured from 34.412 mixes the model's
-            baseline with the observed one and UNDERSTATES the dp error by
-            0.607 MPa -- about 8 percentage points, enough to move the
-            best-fitting tau_0 from 13.86 to 13.3. Both parts are printed
-            separately, and an assert checks they sum to the total.
+            All four are within 1.2 MPa of each other and every one of them is,
+            physically, THE RESERVOIR OVERPRESSURE: 73.8 MPa at 4077 m against
+            40.0 MPa hydrostatic leaves 33.8 MPa, which a static water column
+            carries to surface. The absolute record's baseline is a measurement
+            of that overpressure, not an offset to be discarded.
 
-            SCORING ABSOLUTE PRESSURE IS NOT DEFENSIBLE ANYWAY. The 33.805
-            assumes 4077 m of pure water. At 1050 kg/m3 it is 31.8 MPa, at 950
-            it is 35.8 -- a +-2 MPa baseline uncertainty from the column
-            density alone, against a mean observed dp of 7.9 MPa. Absolute
-            agreement inside 2 MPa is therefore unfalsifiable. dp is the
-            target; the absolute total is printed only for continuity with the
-            older scores.
+            P_REF = 33.271 because HBI sets pfinit = 0, so the model's dp is
+            measured from the fault's state at sim t = 0. An earlier version
+            used 34.412, which referenced the two curves to DIFFERENT INSTANTS
+            and made every observed dp 1.141 MPa too small -- the well had been
+            vented during the shut-in and had not recovered by data-day 4.300.
+            Correcting it moves the dp error at tau_0 10.36 from +55.3% to
+            +35.6% and the dp = 0 crossing from tau_0 13.86 to about 12.95.
+
+            sf.pressure_score returns mean(p_sim - p_obs), the SUM of a static
+            mismatch (33.805 - P_REF = +0.534 MPa, identical in every run and
+            not a model error) and the dp error. Both are printed separately
+            and an assert checks they sum to the total.
+
+            SCORING ABSOLUTE PRESSURE IS NOT DEFENSIBLE EITHER WAY. The 33.805
+            assumes 4077 m of pure water; at 1050 kg/m3 it is 31.8 MPa and at
+            950 it is 35.8 -- a +-2 MPa baseline uncertainty from the column
+            density alone, against a mean observed dp of 9.0 MPa. Absolute
+            agreement inside 2 MPa is unfalsifiable, so dp is the target and
+            the absolute total is printed only for continuity with the older
+            scores.
 
   slip      slip_sim / (obs(t + 4.300) - obs(4.300)) at T_EVAL. The
             SUBTRACTION IS REQUIRED, not a convenience: main_LH.f90:923 sets
@@ -92,7 +104,26 @@ fb = iu.module_from_spec(_f); _f.loader.exec_module(fb)
 
 T0 = 4.300                                  # sim t = 0, in data-days
 P_STATIC = sf.P0 - sf.RHO * sf.G * sf.HW / 1e6      # 33.805 MPa, the model's
-P_REF = 34.412                              # observed first sample; see docstring
+# THE OBSERVED PRESSURE REFERENCE IS THE RECORD'S VALUE AT SIM t = 0, not at
+# the start of the record. HBI sets pfinit = 0, so the model's dp is measured
+# from the fault's state at sim t = 0 = data-day 4.300. Measuring the observed
+# dp from data-day 0 instead -- 34.412 MPa, the record's first sample -- was
+# referencing the two curves to DIFFERENT INSTANTS, and subtracting a baseline
+# 1.141 MPa too high made every observed dp that much too small.
+#
+# The well was vented during the shut-in and had not recovered when injection
+# resumed, so at data-day 4.300 it sits at 33.271 MPa. Referencing to that
+# raises the observed dp by 1.141 MPa everywhere and lowers the model's
+# over-prediction correspondingly: at tau_0 10.36, +55.3% -> +35.6%, and the
+# dp = 0 crossing moves from tau_0 13.86 to about 12.95.
+#
+# THIS IS A PLOTTING/SCORING REFERENCE, NOT A CHANGE TO THE SIMULATIONS.
+# pfinit stays 0. Setting pfinit = -1.14 would encode the same physical fact a
+# second time, in the model rather than in the comparison, and doing both would
+# double-count it.
+#
+# Computed from the record rather than hard-coded, so it cannot drift.
+P_REF = None                                # set in main(), from the record
 T_EVAL = 8.7                                # sim time at which to score
 OBS_SLIP = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
 OT = [3, 5, 7, 9, 11, 13, 15, 17]           # data-days of the slip profiles
@@ -109,6 +140,11 @@ def arm_of(n):
     if b < 1e-8:
         return 4
     return 2
+
+
+def pressure_reference(obs):
+    """Observed wellhead pressure at sim t = 0, i.e. at data-day T0."""
+    return float(np.interp(T0, obs["tp"], obs["pm"]))
 
 
 def observed_front(t_eval):
@@ -229,13 +265,16 @@ def main(argv=None):
                     help="also print the front ratio at 2,4,...,12 d")
     a = ap.parse_args(argv)
 
+    global P_REF
     obs = sf.observed()
+    P_REF = pressure_reference(obs)
     ro, so = observed_front(a.at), observed_slip_increment(a.at)
     print(f"scored at sim t = {a.at:.2f} d (data-day {a.at + T0:.2f})")
     print(f"  observed front {ro:.0f} m, observed slip increment {so:.3f} cm "
           f"(absolute {so + np.interp(T0, OT, [np.loadtxt(OBS_SLIP)[:, 1+i].max() for i in range(8)]):.3f} cm)")
     print(f"  wellhead: model static {P_STATIC:.3f} MPa vs observed reference "
-          f"{P_REF:.3f}, a fixed {P_STATIC - P_REF:+.3f} MPa offset in EVERY run.")
+          f"{P_REF:.3f} MPa,\n            the measured wellhead at sim t = 0 "
+          f"(data-day {T0}); fixed offset {P_STATIC - P_REF:+.3f} MPa.")
     print(f"  'dp%' is the pressure-CHANGE error with that offset removed; "
           f"'total' is sf.pressure_score's raw number.")
     print(f"\n     run arm  tau_0   front   R_sim      dp%   dp MPa   total  "

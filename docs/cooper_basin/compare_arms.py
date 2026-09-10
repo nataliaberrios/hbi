@@ -78,7 +78,26 @@ fb = iu.module_from_spec(_f); _f.loader.exec_module(fb)
 T0 = 4.300
 TMAX = 13.2
 P_STATIC = sf.P0 - sf.RHO * sf.G * sf.HW / 1e6      # 33.805 MPa
-P_REF = 34.412
+# THE OBSERVED PRESSURE REFERENCE IS THE RECORD'S VALUE AT SIM t = 0, not at
+# the start of the record. HBI sets pfinit = 0, so the model's dp is measured
+# from the fault's state at sim t = 0 = data-day 4.300. Measuring the observed
+# dp from data-day 0 instead -- 34.412 MPa, the record's first sample -- was
+# referencing the two curves to DIFFERENT INSTANTS, and subtracting a baseline
+# 1.141 MPa too high made every observed dp that much too small.
+#
+# The well was vented during the shut-in and had not recovered when injection
+# resumed, so at data-day 4.300 it sits at 33.271 MPa. Referencing to that
+# raises the observed dp by 1.141 MPa everywhere and lowers the model's
+# over-prediction correspondingly: at tau_0 10.36, +55.3% -> +35.6%, and the
+# dp = 0 crossing moves from tau_0 13.86 to about 12.95.
+#
+# THIS IS A PLOTTING/SCORING REFERENCE, NOT A CHANGE TO THE SIMULATIONS.
+# pfinit stays 0. Setting pfinit = -1.14 would encode the same physical fact a
+# second time, in the model rather than in the comparison, and doing both would
+# double-count it.
+#
+# Computed from the record rather than hard-coded, so it cannot drift.
+P_REF = None                                # set in main(), from the record
 OUT = Path(H) / "figures" / "cycle2"
 INK, MUTED, GRID, OBSC = "#1a1a19", "#6b6b66", "#d8d8d4", "#a8071a"
 
@@ -171,7 +190,11 @@ def main(argv=None):
     a = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)
 
+    global P_REF
     obs = sf.observed()
+    P_REF = float(np.interp(T0, obs["tp"], obs["pm"]))
+    print(f"observed dp referenced to {P_REF:.3f} MPa, the measured wellhead "
+          f"at sim t = 0 (data-day {T0})")
     tcat, rcat, _ = fb.catalogue()
     kc = (tcat - T0) > 0
     tvol, vol = volume_since_t0(obs)
