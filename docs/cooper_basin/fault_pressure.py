@@ -1,59 +1,17 @@
 #!/usr/bin/env python3
-"""Solve for the initial fault pressure from the Cooper Basin measurements, then
-plot the measured pressure change relative to it.
+"""The pressure datum: derive it from the Cooper Basin measurements, and show
+exactly how much of the resulting curve shift is measured and how much assumed.
 
-THE POINT. Every dp in this project has been referenced to some value picked
-off the wellhead record -- its first sample, its pre-injection median, its value
-at data-day 4.300. None of those is the initial fault pressure; they are
-wellhead pressures that happen to be near it. The fault pressure is a quantity
-the field measurements DETERMINE, and once solved for it fixes the reference
-without any choice being made.
+Writes docs/figs/cycle2/DATUM.md and figures/cycle2/fault_pressure.png. Every
+number in the markdown is computed here, so the document cannot drift from the
+arithmetic.
 
-STEP 1, SOLVE FOR p_f0. Two independent routes, and they must agree or the
-stress state and the pore pressure in this project are inconsistent:
-
-  A. from the measured stress state and this project's own sigmainit.
-     Holl & Barton (2015): s_v = 100 MPa, s_Hmax = 160 MPa, fault dip 10 deg
-     (encoded at setup_model.m:110-113). Resolving onto the fault,
-
-         sigma_nn = s_Hmax sin^2(theta) + s_v cos^2(theta) = 101.809 MPa
-
-     and our decks set sigmainit = 27.99 MPa, which is the EFFECTIVE normal
-     stress. So
-
-         p_f0 = sigma_nn - sigmainit = 101.809 - 27.99 = 73.819 MPa
-
-  B. stated directly. setup_model.m:112, p_pore = 73.82 MPa, commented
-     "hydrostatic pressure + over pressure".
-
-They agree to 0.001 MPa. That is not a coincidence and it is worth stating
-plainly: sigmainit = 27.99 IS the measured stress state minus the measured pore
-pressure. It was never an independent parameter, which also means p_f0 cannot
-be adjusted without moving sigmainit and therefore tau_0.
-
-At the fault's 4100 m median depth (setup_model.m:108), hydrostatic is
-40.221 MPa, so the reservoir is OVERPRESSURED BY 33.599 MPa. That overpressure
-is why a shut-in well reads ~34 MPa at surface, and it is what Holl reports.
-
-STEP 2, CONVERT THE WELLHEAD RECORD TO FAULT PRESSURE.
-
-    p_fault(t) = p_wh(t) + rho g z_fault - friction(q(t))
-
-The static head is the dominant term, 40.221 MPa. The friction loss is the
-Darcy-Weisbach pipe term already used in make_sweep_figures.run_data, worth up
-to 0.64 MPa at the peak 48 L/s and zero when shut in -- so it matters for the
-shape at high rate, not for the reference.
-
-STEP 3, PLOT dp = p_fault(t) - p_f0. This is directly what HBI computes: its pf
-starts at pfinit = 0 and sigmainit already contains p_f0, so the model's dp and
-this dp are the same quantity measured from the same zero. No baseline mismatch
-term survives.
-
-WHAT COMES OUT. At sim t = 0 the measured fault pressure is 0.345 MPa BELOW
-p_f0 -- the well was vented during the shut-in and had not fully recovered. That
-0.345 MPa is the physically meaningful residual depletion, and it is much
-smaller than the 1.141 MPa I had been applying by referencing to the record's
-first sample instead.
+THE PROBLEM. Every dp in this project had been referenced to a value read off
+the wellhead record -- its first sample (34.412 MPa), its pre-injection median
+(33.970), its value at data-day 4.300 (33.271). Those are wellhead pressures
+that lie NEAR the initial fault pressure; none of them is it. The initial fault
+pressure is a quantity the field measurements determine, so it should be derived
+and then used, which is what this does.
 
 Usage:  python fault_pressure.py
 """
@@ -69,17 +27,21 @@ H = "/home/users/nberrios/3dhbi/hbi_analysis"
 _s = iu.spec_from_file_location("sf", H + "/make_sweep_figures.py")
 sf = iu.module_from_spec(_s); _s.loader.exec_module(sf)
 
-OUT = Path(H) / "figures" / "cycle2"
+FIG = Path(H) / "figures" / "cycle2"
+MD = Path("/home/users/nberrios/3dhbi/hbi_git/docs/figs/cycle2/DATUM.md")
 T0 = 4.300
-INK, MUTED, GRID = "#1a1a19", "#6b6b66", "#d8d8d4"
-OBSC = "#a8071a"
+INK, MUTED, OBSC = "#1a1a19", "#6b6b66", "#a8071a"
 
-# Cooper Basin measurements, Holl & Barton (2015) as encoded in
-# taiyi-wang-seis3D/source_code/setup_model.m:108-113
-S_V, S_HMAX, DIP_DEG = 100.0, 160.0, 10.0
-Z_FAULT, Z_WELL = 4100.0, 4077.0        # fault median depth; well depth
-SIGMAINIT = 27.99                       # our decks' effective normal stress
-P_PORE_STATED = 73.82                   # setup_model.m:112
+# Holl & Barton (2015), as recorded in CONCLUSIONS.md:1001-1002
+P_F0 = 72.70            # MPa, reservoir pressure at fault depth
+Z_FAULT = 4100.0        # m subsea, fault median depth
+# the stress state, setup_model.m:110-113, for the sigmabar_0 cross-check
+S_V, S_HMAX, DIP = 100.0, 160.0, 10.0
+SIGMAINIT = 27.99       # this project's decks
+P_F0_TAIYI = 73.82      # setup_model.m:112
+RHO_ASSUMED = 1000.0    # make_sweep_figures.py:55, and what the model uses
+G = 9.81
+OLD_REF = 34.412        # the record's first sample
 
 plt.rcParams.update({"font.size": 11, "axes.titlesize": 12,
                      "axes.labelsize": 11.5, "axes.edgecolor": MUTED,
@@ -89,103 +51,195 @@ plt.rcParams.update({"font.size": 11, "axes.titlesize": 12,
                      "legend.fontsize": 9.5})
 
 
-def solve_p_f0():
-    """(p_f0, sigma_nn) in MPa, with the two routes cross-checked."""
-    th = np.radians(DIP_DEG)
-    snn = S_HMAX * np.sin(th) ** 2 + S_V * np.cos(th) ** 2
-    p_a = snn - SIGMAINIT
-    assert abs(p_a - P_PORE_STATED) < 0.01, (
-        f"the two routes to p_f0 disagree: sigma_nn - sigmainit = {p_a:.3f} "
-        f"but setup_model.m states {P_PORE_STATED}. Either the stress state or "
-        f"sigmainit is inconsistent and the reference cannot be trusted.")
-    return p_a, snn
+def head(rho, z=Z_FAULT):
+    """Static head in MPa."""
+    return rho * G * z / 1e6
 
 
 def friction(q_Ls):
-    """Darcy-Weisbach pipe loss in MPa, same form as run_data uses."""
-    q = np.asarray(q_Ls, float) / 1000.0        # m^3/s
-    return (sf.FD * 8.0 * sf.HW * sf.RHO * q ** 2
-            / (np.pi ** 2 * sf.DW ** 5) / 1e6)
-
-
-def fault_pressure(obs, p_f0):
-    """(t_sim, p_fault MPa, dp MPa) from the wellhead record."""
-    tp, pm = obs["tp"], obs["pm"]
-    q = np.interp(tp, obs["ti"], obs["q"])
-    head = sf.RHO * sf.G * Z_FAULT / 1e6
-    p_fault = pm + head - friction(q)
-    return tp - T0, p_fault, p_fault - p_f0
+    """Darcy-Weisbach pipe loss in MPa, the form run_data uses."""
+    q = np.asarray(q_Ls, float) / 1000.0
+    return sf.FD * 8.0 * sf.HW * sf.RHO * q ** 2 / (np.pi ** 2 * sf.DW ** 5) / 1e6
 
 
 def main(argv=None):
-    p_f0, snn = solve_p_f0()
     obs = sf.observed()
-    t, p_fault, dp = fault_pressure(obs, p_f0)
-    head = sf.RHO * sf.G * Z_FAULT / 1e6
+    tp, pm = obs["tp"], obs["pm"]
+    q = np.interp(tp, obs["ti"], obs["q"])
+    t = tp - T0
+    p_static = float(np.median(pm[tp < 0.501]))
+    rho_implied = (P_F0 - p_static) * 1e6 / (G * Z_FAULT)
+    th = np.radians(DIP)
+    snn = S_HMAX * np.sin(th) ** 2 + S_V * np.cos(th) ** 2
 
-    print(f"sigma_nn = {S_HMAX} sin^2({DIP_DEG}) + {S_V} cos^2({DIP_DEG}) "
-          f"= {snn:.3f} MPa")
-    print(f"p_f0 = sigma_nn - sigmainit = {snn:.3f} - {SIGMAINIT} = {p_f0:.3f} MPa")
-    print(f"     cross-check, setup_model.m:112 states {P_PORE_STATED} MPa\n")
-    print(f"hydrostatic at {Z_FAULT:.0f} m = {head:.3f} MPa   ->  "
-          f"OVERPRESSURE {p_f0 - head:.3f} MPa")
-    print(f"wellhead-equivalent reference, p_f0 - rho g z = "
-          f"{p_f0 - head:.3f} MPa\n")
-    print(f"peak pipe friction at {obs['q'].max():.1f} L/s = "
-          f"{friction(obs['q'].max()):.3f} MPa\n")
+    datum = P_F0 - head(RHO_ASSUMED)
+    p_fault = pm + head(RHO_ASSUMED) - friction(q)
+    dp = p_fault - P_F0
+    dp_old = pm - OLD_REF
 
-    k = t >= 0
-    print(f"{'sim t':>7} {'p_wh':>8} {'p_fault':>9} {'dp':>8}")
+    L = []
+    A = L.append
+    A("# The pressure datum, and how much of the shift is real\n")
+    A("Generated by `docs/cooper_basin/fault_pressure.py`. Every number below "
+      "is computed there.\n")
+
+    A("\n## 1. What is being plotted\n")
+    A("The measurement is an **absolute wellhead pressure**. The model computes "
+      "a **change in fault pore pressure** from `pfinit = 0`. To compare them, "
+      "the record has to be carried down the well and referenced to the fault's "
+      "initial pressure:\n")
+    A("```")
+    A("p_fault(t) = p_wh(t) + rho*g*Z - friction(q(t))")
+    A("dp(t)      = p_fault(t) - p_f0")
+    A("```")
+    A(f"with `Z` = {Z_FAULT:.0f} m the fault's median depth and `friction` the "
+      f"Darcy-Weisbach pipe loss, up to {friction(obs['q'].max()):.2f} MPa at "
+      f"the {obs['q'].max():.1f} L/s peak and zero when shut in.\n")
+    A("**The head does not cancel.** Substituting,\n")
+    A("```")
+    A("dp(t) = p_wh(t) - friction(q(t)) - [p_f0 - rho*g*Z]")
+    A("                                   ^^^^^^^^^^^^^^^^ the datum")
+    A("```")
+    A("so `rho*g*Z` enters **once, additively**. It would only cancel if the "
+      "datum were itself defined as a wellhead pressure. It is not — it is "
+      "derived from `p_f0`, which is why `rho` matters directly.\n")
+
+    A("\n## 2. The datum from the measurements\n")
+    A("| quantity | value | source |")
+    A("|---|---|---|")
+    A(f"| `p_f0` | {P_F0:.2f} MPa | Holl & Barton (2015), at {Z_FAULT:.0f} mSS "
+      f"— `CONCLUSIONS.md:1001` |")
+    A(f"| `rho*g*Z` | {head(RHO_ASSUMED):.3f} MPa | rho = "
+      f"{RHO_ASSUMED:.0f} kg/m³, `make_sweep_figures.py:55` |")
+    A(f"| overpressure | {P_F0 - head(RHO_ASSUMED):.3f} MPa | `p_f0 - rho*g*Z` |")
+    A(f"| **datum at the wellhead** | **{datum:.3f} MPa** | |")
+    A("")
+    A(f"Previously the data was referenced to {OLD_REF:.3f} MPa, so the "
+      f"observed curve moves **up by {OLD_REF - datum:+.3f} MPa** at "
+      f"`sim t = 0`, easing to "
+      f"{dp[int(np.argmin(np.abs(t-10.0)))] - dp_old[int(np.argmin(np.abs(t-10.0)))]:+.2f}"
+      f" MPa by 10 d as the q² friction term grows.\n")
+
+    A("\n## 3. How much of that is measured, and how much assumed\n")
+    A("**Most of it is the column density.** The datum is `p_f0 - rho*g*Z`, so:\n")
+    A("| rho kg/m³ | head MPa | datum MPa | move-up |")
+    A("|---|---|---|---|")
+    for r in (830, 900, 950, int(round(rho_implied)), 1000, 1050):
+        mark = " ← implied by the well, see below" if abs(r - rho_implied) < 1 \
+            else (" ← used" if r == 1000 else "")
+        A(f"| {r} | {head(r):.3f} | {P_F0-head(r):.3f} | "
+          f"{OLD_REF-(P_F0-head(r)):+.3f}{mark} |")
+    A("")
+    A(f"That is **{50*G*Z_FAULT/1e6:.2f} MPa per 50 kg/m³**. The whole "
+      f"\"couple of MPa\" lies inside the density uncertainty.\n")
+    A("**And the well constrains `rho`.** Before any injection the well should "
+      "be in equilibrium with the virgin reservoir, so "
+      "`p_wh_static = p_f0 - rho*g*Z`:\n")
+    A("```")
+    A(f"measured pre-injection wellhead (median, t < 0.501 d) = {p_static:.3f} MPa")
+    A(f"rho = ({P_F0:.2f} - {p_static:.3f})e6 / (9.81 x {Z_FAULT:.0f}) "
+      f"= {rho_implied:.0f} kg/m3")
+    A("```")
+    A(f"With that `rho` the datum **is** the measured static wellhead, "
+      f"{p_static:.3f} MPa, and the move-up is only "
+      f"**{OLD_REF-p_static:+.3f} MPa**.\n")
+    A("So the accounting is:\n")
+    A(f"| | MPa |")
+    A("|---|---|")
+    A(f"| real — Holl's `p_f0` vs the record's first sample | "
+      f"**{OLD_REF-p_static:+.2f}** |")
+    A(f"| the rho = 1000 assumption, which the well's own static pressure "
+      f"contradicts | **{p_static-datum:+.2f}** |")
+    A(f"| total as plotted | {OLD_REF-datum:+.2f} |")
+    A("")
+    A("**The move-up is therefore not a free lever.** It measures how far out "
+      "of equilibrium the well was at data-day 0. To justify the full 2 MPa "
+      "one has to argue the column was denser than "
+      f"{rho_implied:.0f} kg/m³ — cooler or more saline than its own static "
+      "pressure implies. Three things would settle it, in order of strength: a "
+      "downhole gauge or temperature log from the completion report; the "
+      "wellhead elevation, since Holl's depth is mSS and a ~60 m surface "
+      "elevation adds another "
+      f"{head(RHO_ASSUMED, 60.0):.2f} MPa of column; and whether Habanero 4 "
+      "was in equilibrium at all in Nov 2012, having been stimulated before.\n")
+
+    A("\n## 4. An inconsistency this exposes\n")
+    A(f"With the measured stress state — `S_v` = {S_V:.0f} MPa, `S_Hmax` = "
+      f"{S_HMAX:.0f} MPa, dip {DIP:.0f}° — the resolved normal stress is\n")
+    A("```")
+    A(f"sigma_nn = {S_HMAX:.0f} sin^2({DIP:.0f}) + {S_V:.0f} cos^2({DIP:.0f}) "
+      f"= {snn:.3f} MPa")
+    A("```")
+    A(f"so Holl's `p_f0` = {P_F0:.2f} implies an effective normal stress of "
+      f"{snn-P_F0:.2f} MPa. **This project's decks set `sigmainit` = "
+      f"{SIGMAINIT:.2f}**, which instead implies `p_f0` = {snn-SIGMAINIT:.2f} — "
+      f"i.e. Taiyi's {P_F0_TAIYI:.2f} (`setup_model.m:112`), not Holl's.\n")
+    A(f"So `sigmainit` = {SIGMAINIT:.2f} and a datum built on Holl's "
+      f"{P_F0:.2f} MPa are inconsistent by {abs((snn-SIGMAINIT)-P_F0):.2f} MPa. "
+      "One or the other should move, and they cannot move independently, since "
+      "`tau_0 = muinit * sigmainit`. Recorded, not acted on.\n")
+    A("An earlier version of this document claimed `p_f0` = 73.82 was confirmed "
+      "two independent ways, by `sigma_nn - sigmainit` and by the stated "
+      "`p_pore`. **That was circular** — `sigmainit` was itself derived from "
+      "that `p_pore`, so the 0.001 MPa agreement proved nothing. Withdrawn.\n")
+
+    A("\n## 5. The corrected series\n")
+    A("| sim t (d) | p_wh | p_fault | dp old | dp new | shift |")
+    A("|---|---|---|---|---|---|")
     for ts in (0.0, 1.0, 2.0, 4.0, 6.0, 8.0, 8.7, 10.0, 12.0):
         i = int(np.argmin(np.abs(t - ts)))
-        print(f"{ts:>7.2f} {obs['pm'][i]:>8.3f} {p_fault[i]:>9.3f} {dp[i]:>+8.3f}")
-    d0 = float(np.interp(0.0, t[k], dp[k]))
-    print(f"\nat sim t = 0 the fault sits {d0:+.3f} MPa relative to p_f0 -- the")
-    print(f"residual depletion from the vented shut-in. Referencing to the "
-          f"record's\nfirst sample instead implied {-1.141:+.3f} MPa, i.e. "
-          f"{abs(-1.141-d0):.3f} MPa too much.")
+        A(f"| {ts:.2f} | {pm[i]:.3f} | {p_fault[i]:.3f} | {dp_old[i]:+.3f} | "
+          f"{dp[i]:+.3f} | {dp[i]-dp_old[i]:+.3f} |")
+    A("")
+    A(f"`dp` at `sim t = 0` is **{float(np.interp(0.0,t,dp)):+.3f} MPa**, not "
+      "zero: the fault sits above virgin pressure when injection resumes even "
+      "though the well had been vented, which is cycle 1's residual formation "
+      "overpressure. That is why this datum lifts the curve rather than "
+      "dropping it.\n")
+    A("This is a plotting and scoring datum. **No simulation changes**; "
+      "`pfinit` stays 0.\n")
 
+    MD.parent.mkdir(parents=True, exist_ok=True)
+    MD.write_text("\n".join(L) + "\n")
+
+    # ------------------------------------------------------------------ figure
     fig, ax = plt.subplots(2, 1, figsize=(11.5, 8.4), dpi=200, sharex=True,
                            gridspec_kw=dict(height_ratios=[1.0, 1.3],
                                             hspace=0.22))
     aa, ad = ax
-
-    aa.plot(t[k], obs["pm"][k], lw=1.3, color=MUTED, alpha=0.85,
-            label="measured wellhead")
+    k = t >= 0
+    aa.plot(t[k], pm[k], lw=1.3, color=MUTED, alpha=0.85, label="measured wellhead")
     aa.plot(t[k], p_fault[k], lw=1.6, color=OBSC,
-            label=f"fault pressure = wellhead + {head:.2f} MPa − friction")
-    aa.axhline(p_f0, color=INK, lw=1.4, ls="--")
+            label=f"fault pressure = wellhead + {head(RHO_ASSUMED):.2f} − friction")
+    aa.axhline(P_F0, color=INK, lw=1.4, ls="--")
     aa.set(ylabel="Absolute pressure (MPa)", ylim=(25, 95))
     aa.set_title("(a)  Measured wellhead, and the fault pressure it implies")
     aa.legend(loc="lower right", framealpha=0.95)
 
     ad.axhline(0, color=INK, lw=1.2, ls="--")
     ad.plot(t[k], dp[k], lw=1.6, color=OBSC, label="measured")
-    cols = plt.cm.viridis(np.linspace(0.05, 0.85, 5))
-    for c, n in zip(cols, range(632960, 632965)):
+    for c, n in zip(plt.cm.viridis(np.linspace(0.05, 0.85, 5)),
+                    range(632960, 632965)):
         d = sf.run_data(n, sf.deck(n))
         if d is None or d.get("tpw") is None:
             continue
         dk = sf.deck(n)
         tau = sf.ffloat(dk["muinit"]) * sf.ffloat(dk["sigmainit"])
-        # the model's wellhead already carries P0 - rho g H_well; its dp is
-        # what remains once that is removed
-        dpm = d["ppw"] - (sf.P0 - sf.RHO * sf.G * sf.HW / 1e6)
-        ad.plot(d["tpw"], dpm, lw=1.6, color=c,
-                label=r"$\tau_0$ = " f"{tau:.2f} MPa")
+        ad.plot(d["tpw"], d["ppw"] - (sf.P0 - sf.RHO * sf.G * sf.HW / 1e6),
+                lw=1.6, color=c, label=r"$\tau_0$ = " f"{tau:.2f} MPa")
     ad.set(xlabel="Days since injection resumed (data-day 4.300)",
            ylabel="Pressure change from $p_{f0}$ (MPa)", xlim=(0, 13.2),
            ylim=(-3, 25))
-    ad.set_title(f"(b)  Pressure change relative to the initial fault "
-                 f"pressure, $p_{{f0}}$ = {p_f0:.2f} MPa")
+    ad.set_title(f"(b)  Pressure change from $p_{{f0}}$ = {P_F0:.2f} MPa")
     ad.legend(loc="upper left", framealpha=0.95, ncol=2)
-
-    OUT.mkdir(parents=True, exist_ok=True)
+    FIG.mkdir(parents=True, exist_ok=True)
     for e in ("png", "pdf"):
-        fig.savefig(OUT / f"fault_pressure.{e}", bbox_inches="tight")
+        fig.savefig(FIG / f"fault_pressure.{e}", bbox_inches="tight")
     plt.close(fig)
-    print(f"\nwrote {OUT}/fault_pressure.png")
-    return p_f0
+
+    print(MD.read_text())
+    print(f"wrote {MD}")
+    print(f"wrote {FIG}/fault_pressure.png")
 
 
 if __name__ == "__main__":
