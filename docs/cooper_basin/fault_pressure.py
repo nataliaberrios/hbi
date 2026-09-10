@@ -255,11 +255,33 @@ def main(argv=None):
             label=f"fault pressure = wellhead + {head(RHO_ASSUMED):.2f} − friction")
     aa.axhline(P_F0, color=INK, lw=1.4, ls="--")
     aa.set(ylabel="Absolute pressure (MPa)", ylim=(25, 95))
-    aa.set_title("(a)  Measured wellhead, and the fault pressure it implies")
+    aa.set_title(f"(a)  Measured wellhead, and the fault pressure it implies "
+                 f"at rho = {RHO_FLOW:.0f}")
     aa.legend(loc="lower right", framealpha=0.95)
 
     ad.axhline(0, color=INK, lw=1.2, ls="--")
-    ad.plot(t[k], dp[k], lw=1.6, color=OBSC, label="measured")
+    # THE BRACKET, drawn. The observed dp under each plausible injectate
+    # density: the band is the column-density uncertainty, and it is the
+    # dominant uncertainty on the observed curve -- wider than anything else
+    # done to the data.
+    dp_lo = pm + head(RHO_BRACKET[0]) - friction(q) - P_F0
+    dp_hi = pm + head(RHO_BRACKET[1]) - friction(q) - P_F0
+    ad.fill_between(t[k], dp_lo[k], dp_hi[k], color=OBSC, alpha=0.22, lw=0)
+    ad.plot(t[k], dp_lo[k], lw=0.9, ls=":", color=OBSC, alpha=0.9)
+    ad.plot(t[k], dp_hi[k], lw=0.9, ls=":", color=OBSC, alpha=0.9)
+    ad.plot(t[k], dp[k], lw=2.0, color=OBSC,
+            label=f"measured, flowing column rho {RHO_BRACKET[0]:.0f}–"
+                  f"{RHO_BRACKET[1]:.0f}\n   (20–60 °C injectate; the band is "
+                  f"only {head(RHO_BRACKET[1])-head(RHO_BRACKET[0]):.2f} MPa wide)")
+    # The comparison that IS visible: what the curve would be if the column
+    # were still the hot, light one the shut-in pressure implies. The gap
+    # between this and the solid curve is the whole move-up, and it dwarfs the
+    # injectate-temperature bracket.
+    dp_hot = pm + head(rho_implied) - friction(q) - P_F0
+    ad.plot(t[k], dp_hot[k], lw=1.5, ls="--", color="#8E44AD",
+            label=f"if the column were still hot, rho = {rho_implied:.0f}\n"
+                  f"   ({head(RHO_FLOW)-head(rho_implied):.2f} MPa lower — this "
+                  f"is the move-up)")
     for c, n in zip(plt.cm.viridis(np.linspace(0.05, 0.85, 5)),
                     range(632960, 632965)):
         d = sf.run_data(n, sf.deck(n))
@@ -271,15 +293,19 @@ def main(argv=None):
                 lw=1.6, color=c, label=r"$\tau_0$ = " f"{tau:.2f} MPa")
     ad.set(xlabel="Days since injection resumed (data-day 4.300)",
            ylabel="Pressure change from $p_{f0}$ (MPa)", xlim=(0, 13.2),
-           ylim=(-3, 25))
-    ad.set_title(f"(b)  Pressure change from $p_{{f0}}$ = {P_F0:.2f} MPa")
-    ad.legend(loc="upper left", framealpha=0.95, ncol=2)
+           ylim=(-2, 21))
+    ad.set_title(f"(b)  Pressure change from $p_{{f0}}$ = {P_F0:.2f} MPa, "
+                 f"with the column-density bracket")
+    ad.legend(loc="upper left", framealpha=0.95, ncol=2, fontsize=8.5)
     FIG.mkdir(parents=True, exist_ok=True)
     for e in ("png", "pdf"):
         fig.savefig(FIG / f"fault_pressure.{e}", bbox_inches="tight")
     plt.close(fig)
 
-    print(MD.read_text())
+    print(f"bracket width, rho {RHO_BRACKET[0]:.0f}-{RHO_BRACKET[1]:.0f}: "
+          f"{head(RHO_BRACKET[1])-head(RHO_BRACKET[0]):.3f} MPa")
+    print(f"hot-vs-flowing gap, rho {rho_implied:.0f}-{RHO_FLOW:.0f}: "
+          f"{head(RHO_FLOW)-head(rho_implied):.3f} MPa\n")
     print(f"wrote {MD}")
     print(f"wrote {FIG}/fault_pressure.png")
 
