@@ -51,6 +51,17 @@ _f = iu.spec_from_file_location(
     "fp", "/home/users/nberrios/3dhbi/hbi_git/docs/cooper_basin/fault_pressure.py")
 fp = iu.module_from_spec(_f); _f.loader.exec_module(fp)
 
+# ONE COLOUR PER DISC RADIUS, FIXED ACROSS ALL FIVE FIGURES. Allocating a
+# ramp across len(members) instead made "disc 300 m" the 4th of 8 colours on
+# the tau_0 10.36 figure and the 4th of 7 elsewhere -- a different shade for
+# the same thing, which makes the figures actively misleading side by side.
+DISCS = (150, 200, 250, 300, 350, 400, 450)
+# 632994 at disc 600 m is EXCLUDED. It exists at tau_0 10.36 only, so including
+# it gave that one figure an extra curve and shifted every colour; and it
+# produced no slip at all, so it carries no front to compare. It predates the
+# 450 m cap and stays on the record in RANKING.md.
+DISC_MAX = 450
+
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 OUTD = Path("/scratch/users/nberrios/3dhbi/output")
 FIG = Path(H) / "figures" / "cycle2"
@@ -82,7 +93,7 @@ def discover():
             if "skin" in d: continue
             if "d4300" not in d["injection_file"]: continue
             m = re.search(r"disc(\d+)", d["parameter_file"])
-            if not m: continue
+            if not m or int(m.group(1)) > DISC_MAX: continue
         except KeyError:
             continue
         tau = round(sf.ffloat(d["muinit"]) * sf.ffloat(d["sigmainit"]), 2)
@@ -115,8 +126,9 @@ def main(argv=None):
     print(f"observed lambda {LOBS:.1f} m/sqrt(d), lambda_V {LOBSV:.1f}; "
           f"datum {fp.datum():.3f} MPa")
 
+    cmap = dict(zip(DISCS, plt.cm.plasma(np.linspace(0.05, 0.85, len(DISCS)))))
     for tau, members in groups.items():
-        cols = plt.cm.plasma(np.linspace(0.05, 0.85, len(members)))
+        cols = [cmap[d] for d, _ in members]
         fig, ax = plt.subplots(2, 2, figsize=(15.0, 9.6), dpi=200,
                                constrained_layout=True)
         (art, arv), (asz, adp) = ax
