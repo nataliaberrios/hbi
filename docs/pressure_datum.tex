@@ -1,0 +1,294 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\pf}{p_{\mathrm{f}}}
+\newcommand{\pfz}{p_{\mathrm{f}0}}
+\newcommand{\pwh}{p_{\mathrm{wh}}}
+
+\title{Referencing the Habanero~4 wellhead record to the initial fault
+       pressure}
+\author{Cooper Basin / HBI cycle-2 modelling}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+The Habanero~4 pressure record is an \emph{absolute wellhead} pressure, while
+HBI computes a \emph{change in fault pore pressure} from $\pf = 0$. Comparing
+them requires the record to be carried down the wellbore and referenced to the
+fault's initial pore pressure $\pfz$. This note derives that conversion,
+assembles every term from reported field measurements, and states the resulting
+shift. Referencing to $\pfz$ rather than to the first sample of the wellhead
+record raises the observed pressure change by $2.78$~MPa at the start of the
+modelled window, easing to $1.53$~MPa by day~10 as the rate-dependent pipe
+friction grows. No simulation input is altered; this is a correction to how the
+\emph{data} are reduced.
+\end{abstract}
+
+\section{The quantity each side computes}
+
+The field measurement is $\pwh(t)$, an absolute pressure at the wellhead gauge.
+HBI initialises its pore-pressure perturbation to zero (\code{pfinit = 0}) and
+its effective normal stress \code{sigmainit} already contains the initial fault
+pore pressure, so the model's output is
+\begin{equation}
+  \Delta p_{\mathrm{sim}}(t) \;=\; \pf(t) - \pfz .
+\end{equation}
+To place the measurement on the same footing, the wellhead pressure must be
+carried to the fault and referenced to the same $\pfz$:
+\begin{equation}
+  \pf(t) \;=\; \pwh(t) \;+\; \rho g Z \;-\; \Delta p_{\mathrm{fric}}\!\left(q(t)\right),
+  \label{eq:carry}
+\end{equation}
+\begin{equation}
+  \boxed{\;\Delta p_{\mathrm{obs}}(t) \;=\; \pwh(t)
+         \;-\; \Delta p_{\mathrm{fric}}\!\left(q(t)\right)
+         \;-\; \underbrace{\left[\,\pfz - \rho g Z\,\right]}_{\textstyle \text{datum}}\;}
+  \label{eq:dp}
+\end{equation}
+where $Z$ is the vertical distance from the gauge to the fault, $\rho$ the mean
+density of the fluid column, and $\Delta p_{\mathrm{fric}}$ the frictional loss
+along the flow path.
+
+\paragraph{The hydrostatic head does not cancel.}
+It is tempting to assume the $\rho g Z$ term drops out of a difference. It does
+so only if the reference is \emph{itself} defined as a wellhead pressure. Here
+the reference is derived from $\pfz$, a pressure at depth, so as
+Eq.~\eqref{eq:dp} shows $\rho g Z$ enters once and additively. Over
+$Z \approx 4.2$~km this makes the answer directly sensitive to $\rho$, at
+\begin{equation}
+  \frac{\partial (\text{datum})}{\partial \rho} \, \delta\rho
+  \;=\; -g Z \, \delta\rho
+  \;=\; -2.05~\mathrm{MPa} \quad \text{per } 50~\mathrm{kg\,m^{-3}} .
+  \label{eq:sens}
+\end{equation}
+Every term in Eq.~\eqref{eq:dp} is therefore assembled below from a reported
+measurement rather than assumed.
+
+\section{The initial fault pressure $\pfz$}
+
+Holl \& Barton \cite{holl2015} report a reservoir pressure of
+\begin{equation}
+  \pfz = 72.70~\mathrm{MPa} \quad \text{at } -4100~\mathrm{m\,AHD},
+\end{equation}
+the median depth of the Habanero Fault, corresponding to roughly $34$~MPa of
+overpressure above hydrostatic. Hogarth \& Bour \cite{hogarth2015} quote
+$73.0$~MPa at $-4140$~m~BSL for the same reservoir, consistent to $0.3$~MPa
+once the $40$~m datum difference is allowed for.
+
+\paragraph{A caution on circularity.}
+The model's effective normal stress, \code{sigmainit} $=27.99$~MPa, is
+\emph{not} an independent check on $\pfz$. Resolving the measured stress state
+($S_v = 100$, $S_{H\max} = 160$~MPa, fault dip $10^\circ$) gives
+$\sigma_{nn} = 101.81$~MPa, so $\sigma_{nn} - \code{sigmainit} = 73.82$~MPa ---
+but that is the value used by Wang \& Dunham \cite{wang2022}, from which
+\code{sigmainit} was itself derived. The agreement is therefore definitional,
+not evidential. Note also that adopting Holl's $72.70$~MPa implies an effective
+normal stress of $29.11$~MPa rather than $27.99$; the two differ by
+$1.12$~MPa and cannot be varied independently, since
+$\tau_0 = \mu_0\,\code{sigmainit}$.
+
+\section{The column length $Z$}
+
+Holl's datum is referenced to AHD (approximately sea level), whereas the
+pressure gauge sits at the wellhead. The Habanero~4 Well Completion Report
+\cite{wcr} gives a ground level of $73.34$~m~AHD and a rotary-table-to-ground
+distance of $9.14$~m, placing the gauge $82.48$~m \emph{above} the datum.
+Hence
+\begin{equation}
+  Z = 4100.0 + 73.34 + 9.14 = 4182.5~\mathrm{m},
+\end{equation}
+$82.5$~m longer than the fault depth alone. By Eq.~\eqref{eq:sens} that is
+worth $0.81$~MPa, all of it lowering the datum and so raising
+$\Delta p_{\mathrm{obs}}$.
+
+\section{The column density $\rho$: two fluid states}
+
+The wellbore does not contain one fluid. Before injection the column had been
+standing in a reservoir at $240$--$250^\circ$C and had warmed towards the
+geothermal profile: hot and light. During injection it carries surface water at
+$25$--$50$~L\,s$^{-1}$, with a transit time of order twenty minutes and
+correspondingly little opportunity to heat: cold and dense. A single $\rho$
+cannot represent both, and by Eq.~\eqref{eq:sens} the difference is not small.
+
+\paragraph{Flowing column (the one that matters).}
+The WCR \cite{wcr} records the completion fluid left in the well as
+$8.35$~ppg ambient, i.e.
+\begin{equation}
+  \rho_{\mathrm{flow}} = 1001~\mathrm{kg\,m^{-3}},
+\end{equation}
+which is the wellbore column immediately before the October/November~2012
+stimulation. Independently, Hogarth \& Bour \cite{hogarth2015} Table~3 measures
+the cold limb of the 2013 closed loop at $983$--$1006$~kg\,m$^{-3}$ for
+$80^\circ$C brine. The value used is therefore reported, not selected.
+
+\paragraph{Static column (a consistency check).}
+Inverting Eq.~\eqref{eq:dp} at $t<0$, when the well was shut and in equilibrium
+with the reservoir, the measured pre-injection wellhead pressure of
+$33.970$~MPa requires
+\begin{equation}
+  \rho_{\mathrm{static}}
+  = \frac{\left(\pfz - \pwh^{\,\mathrm{static}}\right)}{g Z}
+  = \frac{(72.70 - 33.970)\times 10^{6}}{9.81 \times 4182.5}
+  = 944~\mathrm{kg\,m^{-3}},
+\end{equation}
+consistent with a mean column temperature near $90$--$100^\circ$C, which is
+what a shut-in well in this reservoir should exhibit. Hogarth \& Bour's
+independently measured static surface pressure of $33.7$~MPa gives $949$. Had
+$\pfz$ been badly wrong, this inversion would have returned an unphysical
+density; that it does not is the check.
+
+The head difference between the two states,
+$(1001-944)\,g Z = 2.34$~MPa, is the physical origin of the shift reported
+here. It is not an assumption layered on top of the correction: it \emph{is}
+the correction.
+
+\section{Frictional loss $\Delta p_{\mathrm{fric}}$}
+
+The flow path is not a single pipe, and the diameter previously used was the
+wrong one. The Darcy--Weisbach loss over a segment of length $L$ and internal
+diameter $D$ at volumetric rate $q$ is
+\begin{equation}
+  \Delta p_{\mathrm{fric}} = f\,\frac{8 L \rho q^{2}}{\pi^{2} D^{5}},
+  \qquad f = 0.015 .
+  \label{eq:fric}
+\end{equation}
+The $D^{-5}$ dependence makes the choice of diameter decisive. The WCR
+\cite{wcr} completion tally gives $7''$ $41\#$ tubing of \emph{internal}
+diameter $5.820'' = 0.14783$~m run to the production packer at
+$3005.37$~m~MDRT, with wider $9\text{-}7/8''$ casing below. Earlier work used
+$D = 0.1778$~m uniformly, which is the tubing \emph{outside} diameter, over the
+whole $4077$~m. Summing Eq.~\eqref{eq:fric} over the two real segments:
+
+\begin{center}
+\begin{tabular}{lrrr}
+  \toprule
+  & $L$ (m) & $D$ (m) & $\Delta p_{\mathrm{fric}}$ at $60.9$~L\,s$^{-1}$ (MPa) \\
+  \midrule
+  tubing, $5.820''$ ID   & 3005.0 & 0.14783 & 1.93 \\
+  casing, $8.625''$ ID   & 1177.5 & 0.21908 & 0.10 \\
+  \midrule
+  total                  &        &         & \textbf{2.03} \\
+  previous, uniform $0.1778$~m & 4077.0 & 0.17780 & 1.03 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+a factor of $1.97$, essentially all of it in the tubing. Because
+$\Delta p_{\mathrm{fric}}$ enters Eq.~\eqref{eq:dp} directly, the previous
+value was a $1$~MPa error in the observed pressure change at peak rate. It
+scales as $q^{2}$, so it matters least on the $4$--$8$~d plateau
+($q \approx 23$~L\,s$^{-1}$, $0.28$~MPa) and most at the day-2.5 rate peak.
+
+\section{The datum, and the resulting shift}
+
+Collecting the terms,
+\begin{equation}
+  \text{datum} = \pfz - \rho_{\mathrm{flow}} g Z
+               = 72.70 - 41.071
+               = \boxed{31.629~\mathrm{MPa}}
+\end{equation}
+expressed at the wellhead gauge. Table~\ref{tab:series} gives the resulting
+series against the previous convention, in which the record's first sample
+($34.412$~MPa, at data-day~0) was subtracted. Simulation time is measured from
+data-day~$4.300$, where injection resumes.
+
+\begin{table}[htbp]
+\centering
+\caption{Measured pressure change on the two conventions. ``previous''
+subtracts the record's first sample; ``this note'' applies
+Eq.~\eqref{eq:dp}. The shift is not constant because
+$\Delta p_{\mathrm{fric}} \propto q^{2}$.}
+\label{tab:series}
+\begin{tabular}{rrrrr}
+  \toprule
+  $t_{\mathrm{sim}}$ (d) & $\pwh$ (MPa) & previous (MPa) & this note (MPa) & shift (MPa) \\
+  \midrule
+   0.00 & 33.274 & $-1.138$ & $+1.645$ & $+2.783$ \\
+   1.00 & 34.184 & $-0.228$ & $+2.367$ & $+2.595$ \\
+   2.00 & 39.307 & $+4.895$ & $+7.214$ & $+2.319$ \\
+   4.00 & 43.492 & $+9.080$ & $+11.472$ & $+2.392$ \\
+   6.00 & 43.437 & $+9.025$ & $+11.524$ & $+2.499$ \\
+   8.00 & 43.430 & $+9.018$ & $+11.517$ & $+2.499$ \\
+   8.70 & 45.112 & $+10.700$ & $+12.732$ & $+2.031$ \\
+  10.00 & 52.035 & $+17.623$ & $+19.149$ & $+1.526$ \\
+  12.00 & 48.608 & $+14.196$ & $+16.227$ & $+2.031$ \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The fault begins above virgin pressure.}
+At $t_{\mathrm{sim}} = 0$ the measured $\Delta p$ is $+1.65$~MPa, not zero: the
+fault is above its virgin pressure when injection resumes, notwithstanding that
+the well had been vented during the preceding shut-in. This is the residual
+formation overpressure left by the first injection cycle, and it is why
+referencing to $\pfz$ \emph{raises} the curve rather than lowering it. A
+convention that forces $\Delta p(0) = 0$ discards this information.
+
+\section{What remains assumed}
+
+\begin{itemize}
+\item \textbf{$\rho$ is a depth-averaged constant.} The real column has a
+      temperature profile, so $\rho$ varies with depth and, during injection,
+      with time as the cold front advances down the tubing. The WCR contains a
+      full-well temperature log (as a vector plot requiring digitisation) and a
+      Core Labs PVT study with lab-measured brine density
+      ($0.9193$~g\,cm$^{-3}$ at $200^\circ$C, $0.9990$ at $100^\circ$C, both at
+      $10\,600$~psig); either would replace the constant with a profile.
+\item \textbf{$f = 0.015$} is inherited, not measured. The WCR reports it as
+      determined ``from trial and error''.
+\item \textbf{$\pfz$ and \code{sigmainit} are mutually inconsistent by
+      $1.12$~MPa}, as noted in \S2. Resolving this requires moving both
+      $\pfz$ and $\tau_0$ together.
+\item \textbf{Two-phase or gas effects} in the column are neglected entirely.
+\end{itemize}
+
+\section*{Reproducibility}
+
+Every number above is computed by
+\code{docs/cooper\_basin/fault\_pressure.py}, which parses the reported values
+and writes \code{docs/figs/cycle2/DATUM.md} together with the figure
+\code{docs/figs/cycle2/fault\_pressure.pdf}. The scoring script
+(\code{score\_cycle2.py}) and the comparison figures
+(\code{compare\_arms.py}, \code{compare\_disc.py}) import the datum from that
+module rather than restating it.
+
+\begin{thebibliography}{9}
+
+\bibitem{holl2015}
+H.-G.~Holl and C.~Barton,
+\emph{Habanero Field --- Structure and State of Stress},
+Proc.\ World Geothermal Congress 2015, paper 31034.
+\url{https://pangea.stanford.edu/ERE/db/WGC/papers/WGC/2015/31034.pdf}
+
+\bibitem{hogarth2015}
+R.~A.~Hogarth and D.~Bour,
+\emph{Flow Performance of the Habanero EGS Closed Loop},
+Proc.\ World Geothermal Congress 2015, paper 31006.
+\url{https://pangea.stanford.edu/ERE/db/WGC/papers/WGC/2015/31006.pdf}
+
+\bibitem{wcr}
+F.~Walsh (Geodynamics Ltd),
+\emph{Well Completion Report, Habanero-4},
+HPP-FN-OT-RPT-00492-1.0, 8 January 2013. PEPS South Australia well~2739,
+open file.
+\url{https://onepeps-api.azurewebsites.net/api/file/WellCompletionReport/2739/Habanero4_report.pdf}
+
+\bibitem{wang2022}
+T.~Wang and E.~M.~Dunham,
+\emph{Hydraulic stimulation and fault slip in the Cooper Basin},
+Scientific Reports \textbf{12}, 2022.
+
+\end{thebibliography}
+
+\end{document}
