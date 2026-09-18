@@ -122,6 +122,17 @@ STAGES = {
                    "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
                    "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
                    "on the fluid at fixed muinit sweep (10 runs)"),
+    27: dict(runs=list(range(633080, 633087)),
+             parents={n: 632960 for n in range(633080, 633087)},
+             title="CYCLE 2 Round 5 \u2014 kpmax SWEEP at the MEASURED "
+                   "tau_0 = 10.36 MPa, kpmin held at 1e-15. Contrast 2.75x "
+                   "(Taiyi's own, his zone being nearly uniform at 1.1e-12 / "
+                   "4.0e-13) to 400x (his far-field over our kpmin), seven "
+                   "values log-spaced, bracketing the present 250x. kpmax has "
+                   "been 2.5e-13 in all ~90 runs of this project with no "
+                   "recorded justification, and it is constrained by pressure "
+                   "alone \u2014 which has since been recalibrated twice "
+                   "(7 runs)"),
     26: dict(runs=list(range(633060, 633078)),
              parents={**{n: 632960 for n in range(633060, 633066)},
                       **{n: 632961 for n in range(633066, 633072)},
