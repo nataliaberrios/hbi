@@ -1,0 +1,54 @@
+\begin{table}[t]
+\centering
+\caption{Model parameters. Values are those of the reference simulation; ranges beneath the swept parameters give the span explored. Derived quantities are not independent inputs.}
+\label{tab:params}
+\begin{tabular}{llrll}
+\toprule
+Symbol & Description & Value & Units & Source \\
+\midrule
+\multicolumn{5}{l}{\textit{Elasticity and geometry}} \\
+$G$ & Shear modulus & $24$ & GPa & chosen \\
+$\Delta s$ & Cell size & $10$ & m & chosen \\
+$N$ & Cells per side & $601\times601$ & -- & chosen \\
+$L$ & Fault half-length & $3005$ & m & chosen \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Initial stress}} \\
+$\bar\sigma_0$ & Effective normal stress & $27.99$ & MPa & measured \\
+$\mu_0$ & Initial friction coefficient & $0.412$ & -- & swept \\
+  & \quad swept range & 0.370--0.536 & -- &   \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Rate-and-state friction}} \\
+$a$ & Direct-effect parameter & $0.015$ & -- & chosen \\
+$b$ & Evolution-effect parameter & $0.012$ & -- & chosen \\
+$D_c$ & State-evolution distance & $1\times10^{-4}$ & m & chosen \\
+$f_0$ & Reference friction coefficient & $0.60$ & -- & lab \\
+$V_0$ & Initial slip rate & $1\times10^{-12}$ & m\,s$^{-1}$ & chosen \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Fluid and pore properties}} \\
+$\eta$ & Fluid viscosity & $1.27\times10^{-4}$ & Pa\,s & measured \\
+$\beta$ & Fluid compressibility & $2.25\times10^{-8}$ & Pa$^{-1}$ & chosen \\
+$\phi$ & Porosity & $0.01$ & -- & chosen \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Fault-zone permeability}} \\
+$k_{p,\min}$ & Background permeability & $1\times10^{-15}$ & m$^2$ & chosen \\
+$k_{p,\max}$ & Enhanced permeability & $2.5\times10^{-13}$ & m$^2$ & swept \\
+  & \quad swept range & $2.75\times10^{-15}$--$4.0\times10^{-13}$ & m$^2$ &   \\
+$R_{\rm disc}$ & Initial enhanced-zone radius & $350$ & m & swept \\
+  & \quad swept range & 150--450 & m &   \\
+$k_L$ & Permeability-enhancement slip scale & $1\times10^{-3}$ & m & chosen \\
+$k_T$ & Permeability-healing time scale & $1\times10^{15}$ & s & chosen \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Wellbore}} \\
+$r_w$ & Wellbore radius & $0.089$ & m & measured \\
+$S_w$ & Wellbore storage per unit fault width & $7.4\times10^{-9}$ & m$^2$\,Pa$^{-1}$ & chosen \\
+$s$ & Skin factor & $0$ & -- & chosen \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Derived}} \\
+$\tau_0$ & Initial shear stress, $\mu_0\bar\sigma_0$ & $11.53$ & MPa &   \\
+$\Delta p_{\rm crit}$ & Overpressure to reach failure, $\bar\sigma_0(1-\mu_0/f_0)$ & $8.77$ & MPa &   \\
+$D_{\rm disc}$ & Diffusivity in the enhanced zone, $k_{p,\max}/\eta\phi\beta$ & $8.75$ & m$^2$\,s$^{-1}$ &   \\
+$D_{\rm far}$ & Background diffusivity, $k_{p,\min}/\eta\phi\beta$ & $0.0350$ & m$^2$\,s$^{-1}$ &   \\
+$k_{p,\max}/k_{p,\min}$ & Permeability contrast & $250$ & -- &   \\
+\bottomrule
+\end{tabular}
+\end{table}
