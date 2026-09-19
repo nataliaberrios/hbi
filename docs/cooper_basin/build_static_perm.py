@@ -84,7 +84,7 @@ import numpy as np
 
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
 PARENT = 633001
-NEW = 633120
+NEW_DEFAULT = 633120
 DAYS, SAFE = 13.1, 0.8
 R_OBS, T_OBS = 763.1, 8.7          # percentile front, metres, at sim days
 
@@ -107,6 +107,15 @@ def ff(x):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
+    # ROUND 7b. 633120 came out +28.3% on pressure and 0.79x on radius, so the
+    # sqrt(4 pi D t) inversion below UNDERESTIMATED the background -- exactly
+    # the failure flagged in the header, since HBI puts the front where slip
+    # crosses a threshold, not where pressure does. Raising the background
+    # lowers dp (~1/k) and lengthens the front (~sqrt k), so ONE knob moves both
+    # errors the right way: k x 1.283 predicts dp ~0% and R/R_obs 0.89x.
+    ap.add_argument("--background", type=float, default=None,
+                    help="override the inverted background, m^2")
+    ap.add_argument("--filenumber", type=int, default=None)
     a = ap.parse_args(argv)
 
     pairs = read_deck(IN / f"res{PARENT}.in")
@@ -121,7 +130,7 @@ def main(argv=None):
 
     # --- invert the observed front for the background it implies
     D_new = R_OBS ** 2 / (4 * np.pi * T_OBS * 86400.0)
-    km_new = float(f"{D_new * den:.3g}")          # 1.76e-15
+    km_new = float(f"{a.background if a.background else D_new * den:.3g}")
     D_chk = km_new / den
 
     print(f"parent res{PARENT}.in: ds {ds:.0f} m, imax {IMAX}, "
@@ -150,6 +159,7 @@ def main(argv=None):
 
     mn = (f"perm_2zone_{IMAX}_ds{int(ds)}_disc{disc}_kmax{kx:.2e}"
           f"_kmin{km_new:.2e}.txt")
+    NEW = a.filenumber or NEW_DEFAULT
     over = {"filenumber": str(NEW),
             "permev": "F",
             "kpmin": f"{km_new:.2e}",
@@ -285,6 +295,12 @@ def main(argv=None):
     out = [f"{k} {over.get(k, v)}" for k, v in pairs]
     assert out[0].startswith("filenumber "), \
         f"filenumber must be the first deck line, got {out[0]!r}"
+    # Moving filenumber to line 1 protects filenumber and nothing else: hdr
+    # still ENDED in a bare "!", which now sits immediately before out[1] and
+    # would swallow 'problem' by the same list-directed read. Drop any trailing
+    # bare comment so no key is ever the record after a lone "!".
+    while hdr and hdr[-1].strip() == "!":
+        hdr.pop()
     body = out[:1] + hdr + out[1:]
     for i, (a_, b_) in enumerate(zip(body, body[1:])):
         assert not (a_.strip() == "!" and not b_.startswith("!")), (
