@@ -122,6 +122,29 @@ STAGES = {
                    "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
                    "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
                    "on the fluid at fixed muinit sweep (10 runs)"),
+    29: dict(runs=[633120],
+             parents={633120: 633001},
+             title="CYCLE 2 Round 7 \u2014 permeability EVOLUTION OFF, "
+                   "background raised 1.76x so static diffusion carries the "
+                   "front. 633001 matches the wellhead plateau to +2.4% then "
+                   "misses the day-9 step: across it the observed dp rises "
+                   "+4.64 MPa and the model +1.68, and from 9.6 to 12.5 d the "
+                   "rate FALLS 44.5->37.8 L/s while the observed dp RISES "
+                   "14.63->16.29 and the model's FALLS 14.80->13.44. Measured, "
+                   "the well is LINEAR (dp/q 439 then 431 kPa per L/s across a "
+                   "1.4x rate change) and the model is not (443 then 355). The "
+                   "cause is the mechanism that makes the front: inside the "
+                   "disc kp already starts AT kpmax, so the softening is the "
+                   "enhanced ZONE growing, which is also what propagates the "
+                   "front -- so kL cannot separate them. A closed compartment "
+                   "was tested and rejected (d(dp)/dV 0.015 / 1.13 / -0.24 "
+                   "MPa/ML over 4-8 / 8-10 / 10-12.6 d). This takes the front "
+                   "from a static background instead: the observed 763.1 m at "
+                   "8.7 d needs D = 0.0616 m2/s, i.e. kp 1.76e-15 against the "
+                   "present 1.0e-15. Disc unchanged at 2.5e-13. permev F makes "
+                   "the kpmin key inert (main_LH.f90:2413), so the background "
+                   "is in the MAP; the map is applied at :864-886, outside "
+                   "every permev gate, so the disc survives (1 run)"),
     28: dict(runs=[633090, 633091, 633092, 633093, 633094, 633095, 633096, 633100, 633101, 633102, 633103, 633104, 633105, 633106],
              parents={**{n: 632961 for n in range(633090, 633097)},
                       **{n: 632962 for n in range(633100, 633107)}},
