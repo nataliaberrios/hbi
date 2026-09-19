@@ -122,7 +122,17 @@ MBIG = 3.0
 # 3.799 d here and 4.300 d everywhere else -- and 4.300 is a landmark, being
 # the cycle-2 origin and the name of june_clean_from_d4300.txt. Shut-ins read
 # 1.081 and 16.650 d. Set False to go back to days since 2012-11-13.
-X_FROM_INJECTION = True
+# X ORIGIN. "resume" puts t = 0 at injection RESUMPTION, data-day 4.300, which
+# is the cycle-2 clock every simulation and every comparison figure uses -- so
+# this figure and those are read off the same axis. Cycle 1 then sits at
+# NEGATIVE time, which is correct and informative rather than a defect: the
+# first shut-in is at -2.72 d and the final one at +12.85 d.
+#   "begin"  t = 0 at first injection, data-day 0.501
+#   "zero"   no shift, days since 2012-11-13
+X_ORIGIN = "resume"
+_ORIGINS = {"resume": (4.300, "Days since injection resumed"),
+            "begin": (0.501, "Days since injection began"),
+            "zero": (0.0, "Days since 2012-11-13")}
 
 plt.rcParams.update({"font.size": 12.5, "axes.titlesize": 14,
                      "axes.labelsize": 13.5, "axes.edgecolor": MUTED,
@@ -186,9 +196,7 @@ def main(argv=None):
 
 def _draw(big, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
     """One figure. `big` adds the Mw >= MBIG overlay and changes the stem."""
-    off = T_ON if X_FROM_INJECTION else 0.0
-    xlab = ("Days since injection began" if X_FROM_INJECTION
-            else "Days since 2012-11-13")
+    off, xlab = _ORIGINS[X_ORIGIN]
     fig, (ax, axq) = plt.subplots(
         2, 1, figsize=(12.0, 8.6), dpi=200, sharex=True,
         gridspec_kw=dict(height_ratios=[2.9, 1.45], hspace=0.08))
@@ -220,11 +228,11 @@ def _draw(big, t_abs, r, mw, ti, q, tp, dp, D_trig, D_back):
                    edgecolors=INK, linewidths=0.6, zorder=6)
 
     ax.set(ylabel="Distance from injection point (m)",
-           xlim=(0, t_abs.max() - off), ylim=(0, 1750))
+           xlim=(-off, t_abs.max() - off), ylim=(0, 1750))
 
     # ------------------------------------------- lower: Q and dp, Taiyi 2a
     axq.plot(ti - off, q, "-", lw=2.0, color=INK, zorder=4)
-    axq.set(xlabel=xlab, xlim=(0, t_abs.max() - off), ylim=(0, 70))
+    axq.set(xlabel=xlab, xlim=(-off, t_abs.max() - off), ylim=(0, 70))
     axq.set_ylabel("Q (L/s)", color=INK)
     axq.tick_params(axis="y", color=MUTED, labelcolor=INK)
     axq.set_axisbelow(True)
