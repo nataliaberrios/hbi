@@ -1,0 +1,10 @@
+# build artifacts -- currently untracked and easy to commit by accident
+*.o
+*.mod
+lhbiem
+
+# Figures ARE tracked, both png and pdf -- hbi_analysis/refresh_figures.sbatch
+# regenerates them, but having them in the repo means they can be viewed without
+# a Sherlock account. Note png does not delta-compress: each regenerate-and-commit
+# adds a fresh full-size blob permanently, so avoid committing every refresh --
+# commit when a figure's content actually changes.
