@@ -48,6 +48,25 @@ overshoots the plateau by +17.8%. It is plotted as
 [extra_632960_best_late](extra_632960_best_late.png). Worth a look before
 trusting the ranking — τ₀ 10.36 is the *measured* stress.
 
+## Read `contrast_drift.png` before these
+
+The overnight sweep finished, and it says the late-window miss these all share
+is **not fixable with permeability**. The drift in Δp/q from the plateau to the
+late window is set by the `kpmax/kpmin` contrast and by nothing else — +2% at 3×
+falling monotonically to −23% at 400×, with the two stress states collapsing
+onto one curve. Your well measures −2%.
+
+At contrast 6× (`633091`) the model gets **λ = 0.99× *and* drift +0.7%**
+together — front and linearity, matched, which no other run of ~105 has done.
+But the pressure level there is **+1051%**, because `kpmin` has been pinned at
+1e-15 in every run, so contrast and absolute permeability are one knob. And
+freeing `kpmin` cannot rescue it: scaling all permeability by *s* moves Δp as
+1/*s* and the front as √*s*, so removing that 11.5× excess takes λ to ~3.4×.
+
+Front, injectivity level and injectivity linearity are three constraints on one
+scalar field, and a two-zone map with slip-driven enhancement cannot meet them
+at once. See [contrast_drift](../contrast_drift.png).
+
 ## What to look at first
 
 Panels (c) and (d) are where these all fail in the same way, and it is the

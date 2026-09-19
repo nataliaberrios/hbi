@@ -113,6 +113,10 @@ def main(argv=None):
         d = sf.run_data(n, dk)
         if d is None or d.get("tpw") is None or len(d["T"]) < 3:
             return None
+        # a run cut short has no late window, so its drift is meaningless
+        if abs(d["t_end"] - sf.ffloat(dk["tmax"]) * 365.0) > 0.05:
+            print(f"  {n}: only reached {d['t_end']:.2f} d, skipped")
+            return None
         dpm = d["ppw"] - PS
         mp, ml = avg(d["tpw"], dpm, PLAT), avg(d["tpw"], dpm, LATE)
         o = np.argsort(d["T"])

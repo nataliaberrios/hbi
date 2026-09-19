@@ -87,6 +87,12 @@ def score_one(n, obs, ref):
     d = sf.run_data(n, dk)
     if d is None or d.get("tpw") is None or len(d["T"]) < 3:
         return None
+    # REACHED tmax? This loop runs unattended while runs are still going, and
+    # sf.run_data happily returns a partial run -- 633100 was mid-flush when it
+    # was first measured. A run cut short reads as a better pressure match than
+    # it is, because the late window it misses is the window it fails.
+    if abs(d["t_end"] - sf.ffloat(dk["tmax"]) * 365.0) > 0.05:
+        return None
     LOBS, to, dpo = ref
     o = np.argsort(d["T"])
     T, R = np.asarray(d["T"])[o], np.asarray(d["R"])[o] * 1000.0
