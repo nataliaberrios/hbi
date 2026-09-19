@@ -70,7 +70,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, "/home/users/nberrios/3dhbi/hbi_analysis/notebooks")
+sys.path.insert(0, "/home/users/nberrios/3dhbi/hbi_analysis")
 from sim_curves import load_slip, _deck, _ff, _path
+# sim t = 0 is NOT data-day 0 for cycle-2 runs. Comparing the simulation
+# at sim-day t against the observed profile at data-day t credited every
+# such run with 4.3 extra days: 633001 read 1.27x on the front where the
+# true value is 0.88x. OBS_TIMES are DATA-days throughout; the simulation
+# is sampled at td - t0.
+from injection_t0 import t0_of
 
 OBS = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
 OBS_TIMES = [3, 5, 7, 9, 11, 13, 15, 17]
@@ -119,12 +126,17 @@ def compare(jobs, tag, td, x_km, obs_cm):
     rows = []
     for c, job in zip(cols, jobs):
         d = _deck(job)
+        ts = td - t0_of(d)          # data-day -> this run's sim clock
+        if ts <= 0:
+            print(f"  [skip] {job}: data-day {td} is before its t0 "
+                  f"({t0_of(d)} d)"); continue
         try:
-            r, sl, ta = load_slip(job, td, how="strike")
+            r, sl, ta = load_slip(job, ts, how="strike")
         except FileNotFoundError:
             print(f"  [skip] {job}: no slip output"); continue
-        if abs(ta - td) > 0.05:
-            print(f"  [skip] {job}: nearest frame to {td} d is {ta:.2f} d")
+        if abs(ta - ts) > 0.05:
+            print(f"  [skip] {job}: nearest frame to sim {ts:.2f} d "
+                  f"(data-day {td}) is {ta:.2f} d")
             continue
         sl_cm = sl * 100.0
         xs = np.concatenate([-r[::-1], r[1:]])
@@ -199,7 +211,12 @@ def main():
         tend = float(t[nt - 1])
         dtout_d = _ff(d.get("dtout", "0.0002")) * 365.0
         tol = max(0.5 * dtout_d, 1e-6)
-        avail = [i for i, td in enumerate(OBS_TIMES) if td <= tend + tol]
+        # tend is SIM days; OBS_TIMES are DATA-days. Without the offset a
+        # 13.1 d cycle-2 run looked able to reach data-day 13, which is
+        # sim-day 8.7 -- it can, but it cannot reach data-day 17.
+        _t0 = t0_of(_deck(job))
+        avail = [i for i, td in enumerate(OBS_TIMES)
+                 if 0 < td - _t0 <= tend + tol]
         dropped = [OBS_TIMES[i] for i in range(len(OBS_TIMES)) if i not in avail]
         if not avail:
             print(f"  {job}: ends at {tend:.2f} d, before the first observed "
@@ -211,8 +228,12 @@ def main():
         fig, (a0, a1, a2) = plt.subplots(1, 3, figsize=(15.0, 4.3), dpi=200,
                                          constrained_layout=True)
         rows = []
+        t0 = t0_of(_deck(job))
         for k, (i, td) in enumerate(zip(avail, times)):
-            r, sl, ta = load_slip(job, td, how="strike")
+            if td - t0 <= 0:
+                print(f"  [skip] data-day {td} precedes t0 = {t0} d")
+                continue
+            r, sl, ta = load_slip(job, td - t0, how="strike")
             xo_m, so_cm = x_obs_km * 1000.0, obs_cm[:, i]
             sl_cm = sl * 100.0                      # sim is metres
             # simulated profile mirrored about the injector for a like-for-like
