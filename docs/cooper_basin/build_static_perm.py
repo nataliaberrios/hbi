@@ -263,10 +263,36 @@ def main(argv=None):
     print(f"  map verified: {chk.size} cells, {frac:.4%} at kpmax "
           f"(pi r^2 predicts {exp:.4%})")
 
+    # FILENUMBER MUST BE THE FIRST LINE, for two independent reasons, and
+    # writing hdr first violated both.
+    #
+    # 1. march26_submit_hbi_git_scratch.sh:85 does
+    #    FILE_NUM=$(awk 'NR==1 {print $2}'), so a comment on line 1 made
+    #    FILE_NUM="CYCLE" and the post-run rsync globbed *CYCLE*.dat, moving
+    #    nothing.
+    # 2. WORSE, and the real bug: main_LH.f90:2674 is
+    #    read(33,*,iostat=ios) param,pvalue -- LIST-DIRECTED, so it needs TWO
+    #    values and CONTINUES INTO THE NEXT RECORD to get them. A bare "!"
+    #    header line supplies only one, so the read consumed "filenumber" as
+    #    its pvalue and discarded 633120. `number` kept its default 0 and the
+    #    run wrote slip0.dat, pf0.dat, ... Every other key parsed fine, since
+    #    the next read resumed cleanly, so the run was scientifically valid and
+    #    only misnamed -- but silently, which is the dangerous part.
+    #
+    # A scan of all ~100 res6*.in decks found this deck was the only one
+    # affected: the others put filenumber on line 1 and none has a bare "!"
+    # immediately preceding a key.
     out = [f"{k} {over.get(k, v)}" for k, v in pairs]
+    assert out[0].startswith("filenumber "), \
+        f"filenumber must be the first deck line, got {out[0]!r}"
+    body = out[:1] + hdr + out[1:]
+    for i, (a_, b_) in enumerate(zip(body, body[1:])):
+        assert not (a_.strip() == "!" and not b_.startswith("!")), (
+            f"line {i+1} is a bare '!' and line {i+2} is the key "
+            f"{b_.split()[0]!r}; Fortran's list-directed read will swallow it")
     dp = IN / f"res{NEW}.in"
     assert not dp.exists(), f"{dp} already exists -- pick a new filenumber"
-    dp.write_text("\n".join(hdr + out) + "\n")
+    dp.write_text("\n".join(body) + "\n")
     print(f"wrote {dp}")
 
     # --- read it back and re-diff, so what is on disk is what was checked
