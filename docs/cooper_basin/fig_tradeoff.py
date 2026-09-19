@@ -2,64 +2,50 @@
 """PAPER FIGURE: the seismicity front is blind to the permeability that sets
 total slip.
 
-This is the figure the paper is built on. Everything else either sets it up
-(the model description, the analytical solution) or follows from it (the joint
-constraint, the slip partitioning).
+Seven runs at tau_0 = 11.53 MPa, disc 300 m, with kpmax swept over a 31-fold
+range of contrast kpmax/kpmin (13x to 400x). ONLY kpmax moves -- stress state,
+disc radius, fluid, injection history and mesh are identical -- so nothing but
+the permeability can explain any difference between the curves.
 
-ONE ROW OF THE GRID. tau_0 = 11.53 MPa, disc 300 m, and kpmax swept over a
-31-fold range of contrast kpmax/kpmin (13x to 400x). Only kpmax moves; the
-stress state, the disc, the fluid, the injection history and the mesh are
-identical across the seven runs, so nothing but the permeability can explain any
-difference between them.
+    over a 31-fold range of permeability contrast
+      lambda/lambda_obs   spans 1.01x        (1.02 1.03 1.03 1.03 1.03 1.02)
+      R/R_obs at 8.7 d    spans 1.03x        (0.86 to 0.89)
+      TOTAL SLIP          spans 12.15x       (4.06x down to 0.33x)
+      wellhead dp         spans 533 points   (+527% down to -6%)
 
-WHAT THE THREE PANELS SAY
+The seismicity front is constant to ONE PERCENT -- inside the scatter of the
+observed front itself -- while total slip varies by an order of magnitude. The
+front does not constrain total slip, and the pressure history that separates
+these models is not a refinement but a necessity.
 
-  (a)  the seven model fronts lie on top of each other and on the data
-  (b)  the seven wellhead pressure histories fan across the whole axis
-  (c)  lambda/lambda_obs is flat while total slip falls monotonically
+PANEL (d) IS THE POINT, AND IT HAS ONE AXIS. All three observables are plotted
+as model/observed, so a perfect match is the dashed line at 1 and the three
+curves can share a log axis. lambda lies ON that line across the whole sweep;
+slip crosses it near 65x; pressure crosses it near 290x. That the crossings sit
+at DIFFERENT contrasts is the paper's open question, and a reader should see it
+without being told.
 
-The point is the CONTRAST between (a) and (b), so they share a time axis and are
-drawn at the same scale. A reader should be able to see that the curves which
-are indistinguishable in (a) are obviously distinguishable in (b).
+An earlier version put dp on a twin axis in percent, which needed a second
+coloured spine and coloured ticks and still did not let the reader compare the
+three. Expressing dp as a ratio removes the twin axis entirely.
 
-Panel (c) is the quantitative version, and the numbers are the result:
-
-    over a 31-fold range of permeability contrast,
-      lambda/lambda_obs spans 1.01x        (1.02, 1.03, 1.03, 1.03, 1.03, 1.02)
-      R/R_obs at 8.7 d   spans 1.03x       (0.86 to 0.89)
-      TOTAL SLIP         spans 12.15x      (4.06x down to 0.33x)
-      wellhead dp        spans 533 points  (+527% down to -6%)
-
-So the seismicity front is constant to ONE PERCENT -- far inside the scatter of
-the observed front itself -- while total slip varies by an order of magnitude.
-The front does not constrain total slip at all, and the pressure history that
-separates these models is not a refinement but a necessity.
-
-THE TWO TARGETS DO NOT AGREE, and the figure shows where. Total slip matches the
-catalogue at contrast 65x, where dp is +89%; dp matches at 250-320x, where slip
-is 0.36-0.40x. Either the crack-model inversion of the catalogue overestimates
-slip by ~2.5x, or the model is missing slip. That is the paper's open question
-and panel (c) is where a reader should be able to see it.
-
-THE STRONGEST FORM OF THIS IS NOT IN THE SWEEP. Comparing 633001 with 633120,
-where permeability EVOLUTION is off and the background is 1.76x higher, the
-front moves 14% (lambda 0.99x -> 0.85x) and total slip moves a factor of TEN
-(0.42x -> 4.06x). That pair is not plotted here because 633120 changes the model
-structure rather than one parameter, so it does not belong on a one-parameter
-axis; it is quoted in the caption and shown in static_perm_compare.
+DESIGN. Journal register, not slide register: 190 mm AGU two-column width, bare
+bold panel letters and NO descriptive titles (the caption does that work), no
+grid, no in-panel annotations, top and right spines off, one legend per panel at
+most. Observed data is the same dark red in every panel and always the thickest
+line, so it is identified once and read everywhere.
 
 DEFINITIONS ARE IMPORTED, NOT REIMPLEMENTED. The seismicity front is
-compare_arms.seismicity_front (events sorted by time, binned 100 at a time,
-the 90th-95th percentile band of each bin's distance, initial cloud radius
+compare_arms.seismicity_front (events sorted by time, binned 100 at a time, the
+90th-95th percentile band of each bin's distance, initial cloud radius
 subtracted); lambda is compare_arms.lam, least squares through the origin; the
-pressure datum is fault_pressure.datum(). A figure from this script cannot
-disagree with the scorer about what any of those mean.
+pressure datum is fault_pressure.datum(). This figure cannot disagree with the
+scorer about what any of those mean.
 
-TWO FRONT NUMBERS EXIST AND BOTH ARE PRINTED. lambda/lambda_obs is the slope of
-the sqrt(t) fit; R/R_obs at 8.7 d is the radius. They differ (0.99 vs 0.88 for
-633001) because the model grows diffusively at the right rate from a cloud that
-starts too small. Quoting one as though it were the other has misled this
-project twice.
+TWO CURVES LEAVE PANEL (b). At 13x and 30x contrast the model reaches 73 and
+37 MPa; the axis stops at 28 so the matched cases stay legible. That belongs in
+the caption rather than in a rescale that would flatten the plateau the figure
+exists to show.
 
 Usage:
   python fig_tradeoff.py                 # tau_0 = 11.53, the paper's row
@@ -97,14 +83,29 @@ FIG = Path(H) / "figures" / "cycle2"
 OBS_SLIP = Path("/home/users/nberrios/3dhbi/hbi/slip_profiles_strike.txt")
 OT = [3, 5, 7, 9, 11, 13, 15, 17]
 T0, TMAX, T_EVAL = 4.300, 13.2, 8.7
-INK, MUTED, OBSC = "#1a1a19", "#6b6b66", "#a8071a"
+DP_TOP = 28.0
+INK, OBSC = "#141413", "#a8071a"
+CB_TICKS = [13, 30, 65, 145, 250, 400]
 
-plt.rcParams.update({"font.size": 9.5, "axes.titlesize": 10.5,
-                     "axes.labelsize": 10, "axes.edgecolor": MUTED,
-                     "text.color": INK, "axes.labelcolor": INK,
-                     "xtick.color": MUTED, "ytick.color": MUTED,
-                     "xtick.labelcolor": INK, "ytick.labelcolor": INK,
-                     "legend.fontsize": 8, "legend.frameon": False})
+plt.rcParams.update({
+    "font.size": 8.5, "axes.labelsize": 9, "legend.fontsize": 8,
+    "xtick.labelsize": 8.5, "ytick.labelsize": 8.5,
+    "axes.edgecolor": INK, "axes.linewidth": 0.7,
+    "text.color": INK, "axes.labelcolor": INK,
+    "xtick.color": INK, "ytick.color": INK,
+    "xtick.direction": "out", "ytick.direction": "out",
+    "xtick.major.width": 0.7, "ytick.major.width": 0.7,
+    "xtick.major.size": 3.0, "ytick.major.size": 3.0,
+    "axes.grid": False, "legend.frameon": False,
+    "axes.spines.top": False, "axes.spines.right": False,
+    "pdf.fonttype": 42, "ps.fonttype": 42,
+})
+
+
+def panel(ax, letter):
+    """Bold letter above the axes, outside the data area. No title."""
+    ax.text(-0.17, 1.02, f"({letter})", transform=ax.transAxes,
+            fontsize=10, fontweight="bold", va="bottom", ha="left")
 
 
 def members(tau):
@@ -125,11 +126,11 @@ def members(tau):
             m = re.search(r"disc(\d+)", d["parameter_file"])
             if not m or int(m.group(1)) != 300: continue
             # THE ARM-2 FLUID, EXACTLY. Without beta and Sw_fwid the storage
-            # sweep contaminates the row: 632981 (phi varied) came in at
+            # sweep contaminates the row: 632981 (phi varied) entered at
             # lambda 1.86x and 632971 at 0.08x with zero slip, and 633069-71
-            # (Sw_fwid varied) duplicated 632961's contrast. One stray run at a
-            # repeated contrast makes panel (c) non-monotonic and inflates the
-            # quoted spreads by orders of magnitude.
+            # (Sw_fwid varied) duplicated 632961's 250x. One stray run at a
+            # repeated contrast made panel (d) non-monotonic and inflated the
+            # quoted spreads to lambda 23x and slip 44848x.
             if abs(sf.ffloat(d["eta"]) - 1.27e-4) > 1e-12: continue
             if abs(sf.ffloat(d["phi"]) - 0.01) > 1e-12: continue
             if abs(sf.ffloat(d["beta"]) - 2.25e-8) > 1e-12: continue
@@ -139,11 +140,32 @@ def members(tau):
         except KeyError:
             continue
         out.append((round(c), n))
-    # ONE RUN PER CONTRAST. Duplicates would plot two points at the same x.
     seen = {}
     for c, n in sorted(out):
-        seen.setdefault(c, n)
+        seen.setdefault(c, n)          # one run per contrast
     return sorted(seen.items())
+
+
+def slip_series(n):
+    """(t_days, slip_cm) at the injector, on the run's own output cadence."""
+    t, v = [], []
+    for t_ in np.linspace(0.2, 13.0, 40):
+        try:
+            _, sl, ta = load_slip(n, t_, how="strike")
+            if abs(ta - t_) < 0.3:
+                t.append(t_); v.append(sl[0] * 100)
+        except Exception:
+            pass
+    return np.array(t), np.array(v)
+
+
+def crossing(cs, y):
+    """Contrast at which the model/observed ratio passes 1, log-interpolated."""
+    lc, ly = np.log(np.asarray(cs, float)), np.log(np.asarray(y, float))
+    o = np.argsort(ly)
+    if not (ly.min() < 0 < ly.max()):
+        return np.nan
+    return float(np.exp(np.interp(0.0, ly[o], lc[o])))
 
 
 def main(argv=None):
@@ -171,34 +193,27 @@ def main(argv=None):
     S_OBS = float(np.interp(T_EVAL + T0, OT, peak)) - s0
     P_STATIC = sf.P0 - sf.RHO * sf.G * sf.HW / 1e6
 
-    fig = plt.figure(figsize=(13.2, 4.3), dpi=300)
-    # A DEDICATED COLORBAR COLUMN. Attaching the colorbar to [ar, ap_] with
-    # fraction/pad put its label on top of panel (c)'s y-label.
-    gs = fig.add_gridspec(1, 4, width_ratios=[1, 1, 0.045, 1], wspace=0.40,
-                          left=0.05, right=0.97, bottom=0.135, top=0.90)
-    ar = fig.add_subplot(gs[0, 0])
-    ap_ = fig.add_subplot(gs[0, 1])
-    cax = fig.add_subplot(gs[0, 2])
-    am = fig.add_subplot(gs[0, 3])
-
+    fig, ax = plt.subplots(2, 2, figsize=(7.48, 5.9), dpi=400,
+                           constrained_layout=True)
+    (ar, ap_), (asl, am) = ax
     cs = [c for c, _ in runs]
-    norm = LogNorm(vmin=min(cs) * 0.8, vmax=max(cs) * 1.25)
+    norm = LogNorm(vmin=min(cs) / 1.35, vmax=max(cs) * 1.35)
     cmap = plt.cm.viridis
     tf = np.linspace(0.0, TMAX, 300)
 
-    ar.scatter(ft, fd + org, s=7, color=OBSC, alpha=0.45, lw=0, zorder=1,
-               label="observed")
-    ar.plot(tf, LOBS * np.sqrt(tf) + org, "-", lw=2.2, color=OBSC, zorder=4,
-            label=r"$\lambda_{\rm obs}$ = " f"{LOBS:.0f} m/" r"$\sqrt{\rm d}$")
-    ap_.plot(to, dpo, lw=1.2, color=OBSC, alpha=0.85, zorder=5,
-             label="observed")
+    ar.scatter(ft, fd + org, s=3.5, color=OBSC, alpha=0.28, lw=0, zorder=1)
+    ar.plot(tf, LOBS * np.sqrt(tf) + org, "-", lw=2.0, color=OBSC, zorder=5,
+            label="observed")
+    ap_.plot(to, dpo, lw=1.0, color=OBSC, alpha=0.9, zorder=5)
+    tg = np.linspace(0.2, 13.1, 80)
+    asl.plot(tg, np.interp(tg + T0, OT, peak) - s0, lw=2.0, color=OBSC, zorder=5)
 
-    L, DP, SL = [], [], []
+    L, DPR, SL = [], [], []
     print(f"tau_0 = {a.tau} MPa, disc 300 m, {len(runs)} runs")
     print(f"observed: lambda {LOBS:.1f} m/sqrt(d), R({T_EVAL} d) {R_OBS:.0f} m, "
           f"slip {S_OBS:.3f} cm, datum {fp.datum():.3f} MPa")
     print(f"{'run':>7} {'contrast':>9} {'lam/obs':>8} {'R/R_obs':>8} "
-          f"{'dp %':>7} {'slip':>6}")
+          f"{'dp %':>8} {'dp/obs':>7} {'slip':>6}")
     for c, n in runs:
         col = cmap(norm(c))
         d = sf.run_data(n, sf.deck(n))
@@ -206,78 +221,78 @@ def main(argv=None):
         T, R = np.asarray(d["T"])[oo], np.asarray(d["R"])[oo] * 1000.0
         lam = ca.lam(T, R)
         Rev = float(np.interp(T_EVAL, T, R))
-        ar.plot(T, R, lw=1.5, color=col, alpha=0.95, zorder=3)
+        ar.plot(T, R, lw=1.1, color=col, zorder=3)
 
         dpm = d["ppw"] - P_STATIC
-        ap_.plot(d["tpw"], dpm, lw=1.5, color=col, alpha=0.95, zorder=3)
+        ap_.plot(d["tpw"], np.where(dpm > DP_TOP, np.nan, dpm),
+                 lw=1.1, color=col, zorder=3)
         gr = np.linspace(0.05, min(d["tpw"][-1], to.max(), T_EVAL), 2000)
         ps = np.interp(gr, d["tpw"], dpm)
         ob = np.interp(gr, to, dpo)
         qg = np.interp(gr, obs["ti"] - T0, obs["q"])
         fl = (qg > 0.25 * np.nanmax(obs["q"])) \
             & (np.interp(gr, obs["tp"] - T0, obs["pm"]) > 5.0)
-        e = 100.0 * float(np.mean(ps[fl] - ob[fl])) / float(np.mean(ob[fl]))
+        # dp AS A RATIO, so panel (d) needs no twin axis
+        dpr = float(np.mean(ps[fl])) / float(np.mean(ob[fl]))
 
-        sv, st = [], []
-        for t_ in np.linspace(0.2, 13.0, 40):
-            try:
-                _, sl, ta = load_slip(n, t_, how="strike")
-                if abs(ta - t_) < 0.3:
-                    st.append(t_); sv.append(sl[0] * 100)
-            except Exception:
-                pass
-        sr = float(np.interp(T_EVAL, st, sv)) / S_OBS if st else np.nan
+        st, sv = slip_series(n)
+        asl.plot(st, sv, lw=1.1, color=col, zorder=3)
+        sr = float(np.interp(T_EVAL, st, sv)) / S_OBS if len(st) else np.nan
 
-        L.append(lam / LOBS); DP.append(e); SL.append(sr)
+        L.append(lam / LOBS); DPR.append(dpr); SL.append(sr)
         print(f"{n:>7} {c:>8.0f}x {lam/LOBS:>8.2f} {Rev/R_OBS:>8.2f} "
-              f"{e:>+7.1f} {sr:>6.2f}")
+              f"{100*(dpr-1):>+8.1f} {dpr:>7.2f} {sr:>6.2f}")
 
-    # --- panel (c): the two curves that matter, on one log axis
-    am.axhline(1.0, color=MUTED, lw=0.9, ls=":", zorder=1)
-    am.plot(cs, L, "o-", color="#1d4ed8", lw=1.8, ms=5, zorder=3,
-            label=r"$\lambda/\lambda_{\rm obs}$  (seismicity front)")
-    am.plot(cs, SL, "s-", color="#D55E00", lw=1.8, ms=5, zorder=3,
-            label=r"$\delta/\delta_{\rm obs}$  (total slip)")
+    # --- panel (d): one axis, three observables, a match is the line at 1
+    am.axhline(1.0, color=INK, lw=0.8, ls=(0, (4, 3)), zorder=1)
+    mk = dict(ms=4.0, mew=0.6, mec=INK, lw=1.5, zorder=3)
+    am.plot(cs, L, "o-", color="#1d4ed8", label="seismicity front", **mk)
+    am.plot(cs, SL, "s-", color="#D55E00", label="total slip", **mk)
+    am.plot(cs, DPR, "^-", color="#0e7a63", label="wellhead pressure", **mk)
     am.set_xscale("log"); am.set_yscale("log")
-    am.set(xlabel=r"Permeability contrast  $k_{p,\max}/k_{p,\min}$",
-           ylabel="Model / observed")
-    am.set_title("(c)  The front is flat; the slip is not")
-    am.legend(loc="upper left")
-    at = am.twinx()
-    at.plot(cs, DP, "^--", color="#009E73", lw=1.5, ms=5, zorder=2)
-    at.axhline(0.0, color="#009E73", lw=0.7, ls=":", alpha=0.6)
-    at.set_ylabel("Wellhead pressure error (%)", color="#009E73")
-    at.tick_params(axis="y", colors="#009E73", labelcolor="#009E73")
-    at.spines["right"].set_color("#009E73")
+    am.set(xlabel=r"Permeability contrast, $k_{p,\max}/k_{p,\min}$",
+           ylabel="Model / observed", ylim=(0.2, 9))
+    am.set_xticks(CB_TICKS)
+    am.set_xticklabels([str(t) for t in CB_TICKS])
+    am.minorticks_off()
+    am.set_yticks([0.25, 0.5, 1, 2, 4, 8])
+    am.set_yticklabels(["0.25", "0.5", "1", "2", "4", "8"])
+    am.legend(loc="upper right", handlelength=1.8, borderaxespad=0.2,
+              labelspacing=0.35)
 
-    ar.set(xlabel=f"Days since data-day {T0}", ylabel="Front radius (m)",
-           xlim=(0, TMAX), ylim=(0, 1200))
-    ar.set_title("(a)  Seismicity front")
-    ar.legend(loc="lower right")
-    ap_.set(xlabel=f"Days since data-day {T0}",
+    ar.set(xlabel="Time since injection resumed (d)",
+           ylabel="Front radius (m)", xlim=(0, TMAX), ylim=(0, 1150))
+    ar.legend(loc="lower right", handlelength=1.6)
+    ap_.set(xlabel="Time since injection resumed (d)",
             ylabel=r"Pressure change from $p_{f0}$ (MPa)",
-            xlim=(0, TMAX), ylim=(0, 28))
-    ap_.set_title("(b)  Wellhead pressure")
-    ap_.legend(loc="upper left")
+            xlim=(0, TMAX), ylim=(0, DP_TOP))
+    asl.set(xlabel="Time since injection resumed (d)",
+            ylabel="Slip at the injector (cm)", xlim=(0, TMAX), ylim=(0, 24))
+    for x, l in zip((ar, ap_, asl, am), "abcd"):
+        panel(x, l)
 
     sm = ScalarMappable(norm=norm, cmap=cmap); sm.set_array([])
-    # LABEL ABOVE THE BAR, TICKS ON ITS LEFT. With the label on the bar's
-    # right it ran into panel (c)'s y-label even with a dedicated column, since
-    # a colorbar label extends outside its own axes.
-    fig.colorbar(sm, cax=cax)
-    cax.yaxis.set_ticks_position("left")
-    cax.set_title(r"$k_{p,\max}/k_{p,\min}$", fontsize=8.5, pad=7)
+    # SLIM AND FULL HEIGHT. A short colorbar centred on the figure reads as a
+    # floating fifth element; spanning the full height makes it furniture.
+    cb = fig.colorbar(sm, ax=ax.ravel().tolist(), location="right",
+                      shrink=0.94, aspect=46, pad=0.012, ticks=CB_TICKS)
+    cb.ax.set_yticklabels([str(t) for t in CB_TICKS])
+    cb.ax.minorticks_off()
+    cb.ax.tick_params(length=2.5, width=0.6)
+    cb.outline.set_linewidth(0.6)
+    cb.set_label(r"$k_{p,\max}/k_{p,\min}$", fontsize=8.5, labelpad=4)
 
-    spread_l = max(L) / min(L)
-    spread_s = max(SL) / min(SL)
     print(f"\nover a {max(cs)/min(cs):.0f}-fold contrast range: "
-          f"lambda spans {spread_l:.2f}x, total slip spans {spread_s:.2f}x, "
-          f"dp spans {max(DP)-min(DP):.0f} points")
+          f"lambda spans {max(L)/min(L):.2f}x, slip spans {max(SL)/min(SL):.2f}x, "
+          f"dp spans {max(DPR)/min(DPR):.2f}x")
+    print(f"model/observed = 1 crossings:  slip {crossing(cs, SL):.0f}x, "
+          f"pressure {crossing(cs, DPR):.0f}x, front never "
+          f"(flat at {np.mean(L):.2f})")
 
     stem = a.out or f"fig_tradeoff_tau{int(round(a.tau*100))}"
     FIG.mkdir(parents=True, exist_ok=True)
     for e_ in ("png", "pdf"):
-        fig.savefig(FIG / f"{stem}.{e_}", bbox_inches="tight")
+        fig.savefig(FIG / f"{stem}.{e_}")
     plt.close(fig)
     print(f"wrote {FIG}/{stem}.png")
 
