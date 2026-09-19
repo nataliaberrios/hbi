@@ -225,6 +225,11 @@ def main(argv=None):
         org = float(np.median(re_[np.argsort(te)][:10]))
         ft, fd = seismicity_front(te, re_ - org)
         Lo = lam(ft, fd)
+        # fd has the initial cloud radius removed, so add org back for an
+        # absolute radius comparable with the model's R.
+        R_OBS_87 = float(np.interp(8.7, ft, np.maximum.accumulate(fd + org)))
+        print(f"  observed R at 8.7 d = {R_OBS_87:.1f} m "
+              f"(running max of the percentile front)")
         tf = np.linspace(0.0, TMAX, 300)
         art.scatter(ft, fd + org, s=13, color=OBSC, alpha=0.75, lw=0,
                     label=f"observed seismicity front ({len(ft)} points)")
@@ -270,6 +275,13 @@ def main(argv=None):
                 # cell, calculate_slip_front in the notebook's cell 50 -- so it
                 # is plotted the same way, as points with one lambda*sqrt line.
                 Lr, LrV = lam(Tm, Rm), lam(Vs, Rm)
+                # R/R_obs AT 8.7 d, on the project's own front. Reported next
+                # to lambda because the two disagree and both matter: lambda is
+                # the slope of the sqrt(t) fit, this is the radius itself. A
+                # run can be 0.99x on one and 0.88x on the other -- diffusive
+                # growth at the right rate from a cloud that starts too small.
+                if Tm[0] <= 8.7 <= Tm[-1]:
+                    fr = float(np.interp(8.7, Tm, Rm)) / R_OBS_87
                 art.scatter(Tm, Rm, s=9, color=c, alpha=0.7, lw=0,
                             label=lab + f"   |   $\\lambda$ = {Lr:.1f}"
                                   f"  ({Lr/Lo:.2f}$\\times$ observed)")
@@ -292,9 +304,10 @@ def main(argv=None):
                 if hi > 0.2:
                     gr = np.linspace(0.05, hi, 2000)
                     ps = np.interp(gr, d["tpw"], d["ppw"]) - P_STATIC
-                    ob = np.interp(gr, obs["tp"] - T0, obs["pm"]) - P_REF
+                    ob = np.interp(gr, _to, _dpo)
                     qg = np.interp(gr, obs["ti"] - T0, obs["q"])
-                    fl = (qg > 0.25 * np.nanmax(obs["q"])) & (ob > 5.0 - P_REF)
+                    fl = (qg > 0.25 * np.nanmax(obs["q"])) \
+                        & (np.interp(gr, obs["tp"] - T0, obs["pm"]) > 5.0)
                     dpb = float(np.mean(ps[fl] - ob[fl]))
                     dpp = 100.0 * dpb / float(np.mean(ob[fl]))
             print(f"  {n:>7} {tau:6.2f} {fr:11.2f} {dpb:+9.2f} {dpp:+7.1f}")
