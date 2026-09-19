@@ -202,6 +202,18 @@ def score(n, obs, t_eval):
     d = sf.run_data(n, dk)
     if d is None:
         return None
+    # T0 IS A MODULE CONSTANT, SO EVERY RUN SCORED HERE MUST START AT 4.300 d.
+    # 632995 starts at 3.5575 (it keeps the 17.8 h trickle), and scoring it with
+    # this T0 compared its t = 0 against data-day 4.300 -- a 0.74 d
+    # misalignment that read the model's early ramp against later data and
+    # reported dp +9.7% where the aligned figure gives +20.1%, i.e. no different
+    # from 632960's +19.4%. Off-clock runs belong in compare_trickle.py, which
+    # takes each run's own t0 explicitly.
+    if "d4300" not in dk.get("injection_file", "d4300"):
+        raise SystemExit(
+            f"{n} uses {dk['injection_file'].strip()}, not the d4300 file, so "
+            f"its clock does not start at T0 = {T0}. Scoring it here would "
+            f"misalign it. Use compare_trickle.py.")
     r = dict(n=n, arm=arm_of(n), t_end=d["t_end"],
              tau0=_ff(dk["muinit"]) * _ff(dk["sigmainit"]))
 
