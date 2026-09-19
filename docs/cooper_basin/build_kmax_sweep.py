@@ -36,8 +36,30 @@ maximum is a silent inconsistency, and presubmit.py checks for exactly that. So
 the pair is one physical change expressed in two places, and the verification
 below requires both to move together and to agree.
 
-tau_0 = 10.36 MPa ONLY, by instruction -- the MEASURED shear stress. Parent is
-res632960.in, disc 300 m, arm 2.
+STRESS STATES. Run first at tau_0 = 10.36 MPa, the MEASURED shear stress, then
+extended to the next two up, 11.53 and 12.71, on the reasoning that kpmax
+behaves OPPOSITELY to the disc radius as stress rises. The disc sets WHERE kp
+starts high; kpmax sets the CEILING that permev grows toward, and kp relaxes
+toward it at a rate proportional to slip velocity (main_LH.f90:2426) with no
+healing at kT = 1e15. So at higher tau_0, where more of the fault slips, more
+of it reaches kpmax -- kpmax matters MORE exactly where the disc matters less
+(29 points of dp range at tau_0 10.36, only 3 at 15.00).
+
+The two extra states are also where the answer would be most useful: 11.53 is
+the current best joint cell and the sweep tests how ROBUST that match is to a
+parameter with no recorded justification; 12.71 is where dp crosses zero on the
+disc sweep, and if lambda is kpmax-sensitive then lowering kpmax there should
+move lambda toward 1 AND dp toward 0 together.
+
+A CAVEAT ON THE PREMISE. CONCLUSIONS.md records that the front holds at
+0.98-1.03x across a 100x change in kpmax, i.e. that lambda is INSENSITIVE to
+it. If that survives the corrected datum and the lambda definition, then kpmax
+is a clean dp-only lever and the reasoning above about lambda is wrong. The
+tau_0 10.36 sweep measures lambda(kpmax) directly and settles it. The
+contrast values do not depend on the answer, which is why all three states are
+built without waiting.
+
+Parents are res632960/1/2, disc 300 m, arm 2.
 
 WHAT TO WATCH FOR. At low contrast the disc is barely more permeable than the
 background, so injectivity collapses and dp should rise steeply; that may drive
@@ -56,10 +78,12 @@ from pathlib import Path
 import numpy as np
 
 IN = Path("/home/groups/edunham/nberrios/3dhbi/examples/grid_search_inputs")
-PARENT = 632960                # arm 2, tau_0 10.36 (MEASURED), disc 300 m
 DAYS, SAFE = 13.1, 0.8
-R_MAX_PARENT = 831.0           # measured 13.1 d front for the parent
-FIRST = 633080
+# (parent, tau_0, MEASURED 13.1 d front in m, first filenumber). The front is
+# measured, not estimated, and bounds its own block -- see the domain note.
+PARENTS = {10.36: (632960, 831.0, 633080),
+           11.53: (632961, 932.0, 633090),
+           12.71: (632962, 1082.0, 633100)}
 CONTRASTS = [2.75, 6.0, 13.0, 30.0, 65.0, 145.0, 400.0]
 TAIYI_NEAR, TAIYI_FAR = 1.1e-12, 4.0e-13
 
@@ -82,8 +106,27 @@ def ff(x):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--tau", nargs="+", type=float, default=[10.36],
+                    help="which stress states to build; parents are fixed")
     a = ap.parse_args(argv)
+    for t in a.tau:
+        assert t in PARENTS, f"no parent registered for tau_0 = {t}"
+    allrows, allmade = [], []
+    for TAU in a.tau:
+        PARENT, R_MAX_PARENT, FIRST = PARENTS[TAU]
+        _build(TAU, PARENT, R_MAX_PARENT, FIRST, a.write, allrows, allmade)
+    if allmade:
+        print(f"\nall {len(allmade)} decks verified across "
+              f"{len(a.tau)} stress state(s). Submit from {IN}:")
+        for n, c, kx, mn in allmade:
+            d = dict(read_deck(IN / f"res{n}.in"))
+            print(f"  sbatch march26_submit_hbi_git_scratch.sh -i res{n}.in "
+                  f"-w {d['injection_file'].strip(chr(34))} -p {mn}")
+    elif not a.write:
+        print("\ndry run -- nothing written. re-run with --write")
 
+
+def _build(TAU, PARENT, R_MAX_PARENT, FIRST, write, allrows, allmade):
     pairs = read_deck(IN / f"res{PARENT}.in")
     base = dict(pairs)
     ds = ff(base["ds"]) * 1000.0
@@ -97,11 +140,12 @@ def main(argv=None):
     disc = float(m0.group(1))
 
     assert abs(f0 - 0.60) < 1e-9, f"parent f0 is {f0}"
-    assert abs(mu * sig - 10.36) < 0.02, \
-        f"parent tau_0 is {mu*sig:.2f}, expected the measured 10.36"
+    assert abs(mu * sig - TAU) < 0.02, \
+        f"res{PARENT}: tau_0 is {mu*sig:.2f}, expected {TAU}"
     assert abs(ff(base["kp"]) - km) < 1e-20, "parent kp != kpmin"
 
-    print(f"parent res{PARENT}.in: tau_0 {mu*sig:.2f} MPa (MEASURED), "
+    tag = " (MEASURED)" if abs(TAU - 10.36) < 0.02 else ""
+    print(f"\nparent res{PARENT}.in: tau_0 {mu*sig:.2f} MPa{tag}, "
           f"disc {disc:.0f} m, ds {ds:.0f} m")
     print(f"  kpmax {kx0:.2e}, kpmin {km:.1e}  ->  contrast {kx0/km:.0f}x")
     print(f"  D_far = kpmin/(eta phi beta) = {km/den:.4f} m2/s, FIXED "
@@ -132,11 +176,10 @@ def main(argv=None):
     print(f"\n  present value {kx0:.1e} = {kx0/km:.0f}x sits between "
           f"{CONTRASTS[-2]:.0f}x and {CONTRASTS[-1]:.0f}x, and already exists "
           f"as res{PARENT}.in")
+    allrows.extend(rows)
     if bad:
         sys.exit(f"\n{bad} deck(s) breach L/half {SAFE}. Nothing written.")
-
-    if not a.write:
-        print("\ndry run -- nothing written. re-run with --write")
+    if not write:
         return
 
     c_ = (IMAX - 1) // 2
@@ -185,8 +228,7 @@ def main(argv=None):
             "! checks for it, so the pair is one physical change written twice.",
             f"! The disc radius is unchanged at {disc:.0f} m.",
             "!",
-            f"! tau_0 = {mu*sig:.2f} MPa, the MEASURED shear stress, and this sweep is",
-            "! run at that value only. dp_crit is unchanged at",
+            f"! tau_0 = {mu*sig:.2f} MPa{tag}. dp_crit is unchanged at",
             f"! sigmabar_0(1 - muinit/f0) = {sig*(1-mu/f0):.2f} MPa, so any change in",
             "! slip comes from the pressure field and not from the failure threshold.",
             "!",
@@ -211,7 +253,7 @@ def main(argv=None):
         (IN / f"res{n}.in").write_text("\n".join(lines) + "\n")
         made.append((n, c, kx, mn))
 
-    print("\nverifying")
+    print("  verifying")
     nbad = 0
     ref = dict(pairs)
     for n, c, kx, mn in made:
@@ -230,11 +272,7 @@ def main(argv=None):
               + ("OK" if ok and agree and radok else "<-- WRONG"))
     if nbad:
         sys.exit(f"\n{nbad} problem(s). Nothing submitted.")
-    print(f"\nall {len(made)} verified. Submit from {IN}:")
-    for n, c, kx, mn in made:
-        d = dict(read_deck(IN / f"res{n}.in"))
-        print(f"  sbatch march26_submit_hbi_git_scratch.sh -i res{n}.in "
-              f"-w {d['injection_file'].strip(chr(34))} -p {mn}")
+    allmade.extend(made)
 
 
 if __name__ == "__main__":

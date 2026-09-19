@@ -122,6 +122,18 @@ STAGES = {
                    "eta = 1.27e-4 (one key vs 632950-4); 632970-4 then D-match "
                    "with beta = 1.5768e-7 (one key vs 632960-4). Three-arm A/B/C "
                    "on the fluid at fixed muinit sweep (10 runs)"),
+    28: dict(runs=[633090, 633091, 633092, 633093, 633094, 633095, 633096, 633100, 633101, 633102, 633103, 633104, 633105, 633106],
+             parents={**{n: 632961 for n in range(633090, 633097)},
+                      **{n: 632962 for n in range(633100, 633107)}},
+             title="CYCLE 2 Round 5b \u2014 the kpmax sweep at the next two "
+                   "stress states, tau_0 = 11.53 and 12.71 MPa, kpmin held. "
+                   "Same seven contrasts (2.75x to 400x). kpmax behaves "
+                   "OPPOSITELY to the disc radius as stress rises: the disc "
+                   "sets where kp starts high, kpmax sets the ceiling permev "
+                   "grows toward, so it matters MORE where the disc matters "
+                   "less. 11.53 tests how robust the best joint cell is to a "
+                   "parameter with no recorded justification; 12.71 is where "
+                   "dp crosses zero on the disc sweep (14 runs)"),
     27: dict(runs=list(range(633080, 633087)),
              parents={n: 632960 for n in range(633080, 633087)},
              title="CYCLE 2 Round 5 \u2014 kpmax SWEEP at the MEASURED "
