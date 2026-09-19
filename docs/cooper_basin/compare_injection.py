@@ -27,8 +27,23 @@ volumetric rate. Converting to L/s needs the width:
 W is not in the deck. It is hard-coded at make_sweep_figures.py:55 and applied
 at :284, so the deck file and the field record cannot be compared without it,
 and a wrong W would rescale the whole curve while leaving its shape perfect.
-The peak checks out: file max 0.007994 m^2/s -> 47.96 L/s against a measured
-peak of 47.96 L/s after t0.
+W = 6.0 has NO TRACED PROVENANCE in this repo; it is volume-consistent to 0.3%
+but needs a source or a derivation before it goes in a methods section.
+
+WHAT THE PEAK DEFICIT IS, AND WHY IT IS NOT A DEFECT. The deck peaks at 47.96
+L/s and the raw record at 60.95, which looks like the 285-point table clipping
+21% off the top. It is not. The record is sampled at 1 Hz, and across the whole
+13 days it spends 12.6 MINUTES above 48 L/s -- 92 separate excursions, longest
+6 min -- and 30 SECONDS above 60 L/s, once. A 15-minute rolling mean of the
+measured record peaks at 48.00 L/s, and a 1-hour mean at 47.97, against the
+deck's 47.96.
+
+So the deck file is in effect a 15-min average of the record and reproduces the
+SUSTAINED rate exactly; the grey spikes in panel (a) are second-scale pump and
+gauge transients. Resampling the file more densely would feed 1 Hz noise into a
+model whose diffusion timescale is hours -- worse, not more defensible.
+check_resolution() prints this so the claim is reproducible rather than
+asserted.
 
 WHAT THE THREE PANELS TEST
 
@@ -94,6 +109,40 @@ def cumulative(t_days, q_Ls):
         np.diff(t_days) * 86400.0 * 0.5 * (q_Ls[1:] + q_Ls[:-1]))]) / 1e6
 
 
+def check_resolution(to, qo, deck_peak):
+    """Are the measured spikes sustained rate, or second-scale noise?
+
+    Decides whether the 285-point table is too coarse. Prints how long the
+    record actually spends above the deck's peak, and where a rolling mean of
+    the measured record has to be taken before its peak matches the deck's.
+    """
+    dt = np.diff(to) * 86400.0
+    print(f"\nRESOLUTION: is the deck's {deck_peak:.2f} L/s peak too low?")
+    print(f"  measured record is {len(to)} samples at "
+          f"{np.median(dt):.2f} s sampling")
+    for thr in (deck_peak, 50.0, 55.0, 60.0):
+        m = qo > thr
+        idx = np.where(m)[0]
+        if not len(idx):
+            print(f"  > {thr:5.1f} L/s : never"); continue
+        segs = np.split(idx, np.where(np.diff(idx) > 1)[0] + 1)
+        longest = max((to[g[-1]] - to[g[0]]) * 86400.0 for g in segs)
+        print(f"  > {thr:5.1f} L/s : {dt[m[:-1]].sum()/60.0:7.1f} min total, "
+              f"{len(segs):4d} excursions, longest {longest:6.0f} s")
+    print("  rolling mean of the MEASURED record:")
+    n0 = max(1e-9, float(np.median(dt)))
+    for win in (60, 300, 900, 3600):
+        n = max(1, int(win / n0))
+        if n >= len(qo):
+            continue
+        sm = np.convolve(qo, np.ones(n) / n, mode="valid")
+        tag = "  <-- matches the deck" if abs(sm.max() - deck_peak) < 0.3 else ""
+        print(f"    {win:5d} s window: peak {sm.max():6.2f} L/s{tag}")
+    print("  => the table averages the record, it does not clip it; the spikes "
+          "are\n     second-scale transients the model could not respond to "
+          "anyway.")
+
+
 def main(argv=None):
     obs = sf.observed()
     to = obs["ti"] - T0
@@ -112,6 +161,7 @@ def main(argv=None):
     print(f"measured record after t0: {len(to)} samples, 0 to {to.max():.4f} d")
     print(f"  W = {W} m applied to the deck's m^2/s; peaks "
           f"{qd.max():.3f} (deck) vs {qo.max():.3f} L/s (measured)")
+    check_resolution(to, qo, float(qd.max()))
     print(f"\nVOLUME to {hi:.3f} d")
     vo = float(np.interp(hi, to, Vo)); vd = float(np.interp(hi, td, Vd))
     print(f"  measured {vo:.4f} ML, deck {vd:.4f} ML, "
