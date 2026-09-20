@@ -8,3 +8,10 @@ lhbiem
 # a Sherlock account. Note png does not delta-compress: each regenerate-and-commit
 # adds a fresh full-size blob permanently, so avoid committing every refresh --
 # commit when a figure's content actually changes.
+
+# The Cooper Basin analysis. origin is a PUBLIC fork -- docs/ was pushed there
+# by mistake and purged from all four affected branches on 2026-09-19. It is
+# version-controlled ONLY in the private repo (docs-private / cooper-docs), and
+# is synced there with `bash docs/sync_private.sh`. Keep it ignored so it can
+# never be committed to the fork again.
+docs/
